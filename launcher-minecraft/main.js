@@ -8,15 +8,16 @@ let mainWindow;
 
 function createWindow() {
     mainWindow = new BrowserWindow({
-        width: 1024, // Lo hacemos un poco más ancho para que quepa la consola
-        height: 650,
+        width: 1050,
+        height: 700,
+        resizable: false, // Opcional: Bloquea el tamaño para que el diseño no se rompa
         webPreferences: {
             nodeIntegration: true,
-            contextIsolation: false
+            contextIsolation: false,
+            webviewTag: true // 🔥 ESENCIAL: Permite cargar páginas web dentro de la app
         }
     });
     mainWindow.loadFile('index.html');
-
 }
 
 app.whenReady().then(createWindow);
