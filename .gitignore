@@ -1,0 +1,13 @@
+# --- Exclusiones para el Launcher ---
+launcher-minecraft/node_modules/
+launcher-minecraft/.minecraft/
+launcher-minecraft/profiles.json
+launcher-minecraft/dist/
+
+# --- Exclusiones para la Web (Por si usas Node/npm en el futuro) ---
+website/node_modules/
+
+# --- Archivos del sistema u ocultos ---
+.env
+.DS_Store
+Thumbs.db

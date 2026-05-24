@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kurai Launcher - Historial de Cambios</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <header class="changelog-header">
+        <div class="header-container">
+            <h1>HISTORIAL DE ACTUALIZACIONES</h1>
+            <p>Mantente al tanto de todas las novedades, correcciones y mejoras del launcher.</p>
+            
+            <div class="filter-bar">
+                <button class="filter-btn active" data-filter="all">Todos los cambios</button>
+                <button class="filter-btn" data-filter="add"><i class="fa-solid fa-plus-circle"></i> Características</button>
+                <button class="filter-btn" data-filter="fix"><i class="fa-solid fa-bug-slash"></i> Correcciones</button>
+                <button class="filter-btn" data-filter="perf"><i class="fa-solid fa-bolt"></i> Rendimiento</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="changelog-container">
+
+        <section class="version-block" data-version="1.2.0">
+            <div class="version-sidebar">
+                <div class="version-tag">v1.2.0</div>
+                <time class="version-date">24 de Mayo, 2026</time>
+                <span class="badge badge-major">Major Update</span>
+            </div>
+            
+            <div class="version-content">
+                <h2>La Actualización de Interfaz e Identidad</h2>
+                <p class="version-summary">Esta versión renueva por completo la experiencia visual introduciendo el nuevo sistema de pestañas translúcidas, soporte para submenús web integrados y una reestructuración interna del motor de renderizado.</p>
+                
+                <ul class="change-list">
+                    <li class="change-item type-add">
+                        <span class="change-icon"><i class="fa-solid fa-plus"></i></span>
+                        <div class="change-text"><strong>Añadido:</strong> Submenú inferior integrado en la pantalla principal para alternar entre la web oficial y la comunidad privada.</div>
+                    </li>
+                    <li class="change-item type-add">
+                        <span class="change-icon"><i class="fa-solid fa-plus"></i></span>
+                        <div class="change-text"><strong>Añadido:</strong> Panel de gestión de múltiples cuentas offline para cambiar de jugador al instante en la barra inferior.</div>
+                    </li>
+                    <li class="change-item type-fix">
+                        <span class="change-icon"><i class="fa-solid fa-wrench"></i></span>
+                        <div class="change-text"><strong>Corregido:</strong> Error crítico de permisos en Windows que bloqueaba la descompresión de dependencias nativas durante la compilación.</div>
+                    </li>
+                    <li class="change-item type-perf">
+                        <span class="change-icon"><i class="fa-solid fa-gauge-high"></i></span>
+                        <div class="change-text"><strong>Optimizado:</strong> Reducción del uso de RAM base del launcher en un 25% gracias al desuso de scripts duplicados de Node.</div>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="version-block" data-version="1.1.0">
+            <div class="version-sidebar">
+                <div class="version-tag">v1.1.0</div>
+                <time class="version-date">10 de Mayo, 2026</time>
+                <span class="badge badge-minor">Minor Update</span>
+            </div>
+            
+            <div class="version-content">
+                <h2>Ajustes de Rendimiento y Memoria Dinámica</h2>
+                <p class="version-summary">Implementación del menú de opciones básicas para otorgar al usuario control milimétrico sobre los recursos del sistema compartidos con Minecraft.</p>
+                
+                <ul class="change-list">
+                    <li class="change-item type-add">
+                        <span class="change-icon"><i class="fa-solid fa-plus"></i></span>
+                        <div class="change-text"><strong>Añadido:</strong> Selector de memoria RAM mínima y máxima adaptable desde la pestaña de opciones.</div>
+                    </li>
+                    <li class="change-item type-fix">
+                        <span class="change-icon"><i class="fa-solid fa-wrench"></i></span>
+                        <div class="change-text"><strong>Corregido:</strong> Congelación de la interfaz cuando el estado del perfil activo devolvía un valor nulo en el archivo JSON.</div>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="changelog-footer">
+        <p>&copy; 2026 Kurai Launcher. Desarrollado con tecnología Electron.</p>
+    </footer>
+
+    <script href="script.js" src="script.js"></script>
+</body>
+</html>

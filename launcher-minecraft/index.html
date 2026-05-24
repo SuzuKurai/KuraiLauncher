@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Kurai Launcher Evolution</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #111116; color: white; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        
+        /* 1. BARRA SUPERIOR (NAVBAR PRINCIPAL) */
+        .navbar { height: 55px; background: rgba(17, 17, 22, 0.95); display: flex; justify-content: space-between; align-items: center; padding: 0 25px; border-bottom: 1px solid #252530; z-index: 10; }
+        .navbar h2 { margin: 0; font-size: 18px; color: #7289da; letter-spacing: 1px; }
+        .nav-links { display: flex; gap: 10px; }
+        .nav-btn { padding: 8px 16px; background: transparent; border: none; color: #aaa; font-size: 14px; cursor: pointer; border-radius: 4px; font-weight: bold; transition: 0.2s; }
+        .nav-btn:hover, .nav-btn.active { background: #2f3136; color: white; }
+
+        /* 2. SUBMENÚ DE NAVEGACIÓN WEB (CENTRADO JUSTO ABAJO) */
+        .sub-navbar { height: 40px; background: #16161f; display: flex; justify-content: center; align-items: center; gap: 15px; border-bottom: 1px solid #22222b; z-index: 9; }
+        .sub-btn { padding: 4px 14px; background: #23232c; border: 1px solid #333; color: #ccc; font-size: 12px; cursor: pointer; border-radius: 20px; transition: 0.2s; font-weight: 500; }
+        .sub-btn:hover { border-color: #7289da; color: white; }
+        .sub-btn.active { background: #5865f2; color: white; border-color: #5865f2; box-shadow: 0 2px 8px rgba(88,101,242,0.4); }
+
+        /* CONTENEDOR CENTRAL */
+        .center-container { flex: 1; position: relative; background: #1a1a22; }
+        
+        /* PÁGINA WEB INCRUSTADA */
+        .news-webview { width: 100%; height: 100%; border: none; position: absolute; top: 0; left: 0; z-index: 1; }
+
+        /* VENTANAS MODALES SUPERPUESTAS */
+        .overlay-tab { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17, 17, 22, 0.85); backdrop-filter: blur(8px); display: none; justify-content: center; align-items: center; z-index: 5; }
+        .overlay-tab.active { display: flex; }
+        .card { background: #23232c; padding: 30px; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 100%; max-width: 480px; }
+
+        /* BARRA INFERIOR DE JUEGO */
+        .play-bar { height: 100px; background: linear-gradient(to top, rgba(17,17,22,1) 0%, rgba(20,20,27,0.95) 100%); border-top: 1px solid #252530; display: flex; align-items: center; justify-content: space-between; padding: 0 40px; z-index: 10; box-shadow: 0 -5px 20px rgba(0,0,0,0.4); }
+        .play-bar-section { display: flex; gap: 20px; align-items: center; }
+        
+        .selector-box { display: flex; flex-direction: column; min-width: 180px; }
+        .selector-box label { font-size: 11px; text-transform: uppercase; color: #7289da; font-weight: bold; margin-bottom: 5px; letter-spacing: 0.5px; }
+        select, input[type="text"] { padding: 10px; background: #252533; border: 1px solid #3e3e56; color: white; border-radius: 5px; font-size: 13px; }
+        select:focus, input:focus { border-color: #5865f2; outline: none; }
+
+        /* BOTÓN JUGAR */
+        .btn-launch { width: 220px; height: 55px; background: #3ba55d; color: white; border: none; border-radius: 6px; font-size: 20px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 15px rgba(59,165,93,0.3); letter-spacing: 1px; }
+        .btn-launch:hover { background: #2f854a; transform: translateY(-2px); }
+        .btn-launch:active { transform: translateY(0); }
+
+        .btn-action { padding: 10px; background: #3e3e56; border: none; color: white; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn-action:hover { background: #4e4e6c; }
+        .btn-danger { background: #ed4245; }
+        .btn-danger:hover { background: #c03537; }
+        .btn-primary { background: #5865f2; width: 100%; margin-top: 10px; }
+
+        #status { font-size: 12px; color: #faa61a; text-align: right; font-weight: bold; max-width: 250px; }
+        .flex-row { display: flex; gap: 8px; }
+    </style>
+</head>
+<body>
+
+    <div class="navbar">
+        <h2>KURAI LAUNCHER</h2>
+        <div class="nav-links">
+            <button class="nav-btn active" id="main-btn-home" onclick="switchTab('home')">🎮 Inicio</button>
+            <button class="nav-btn" onclick="switchTab('tab-cuentas')">👤 Cuentas</button>
+            <button class="nav-btn" onclick="switchTab('tab-opciones')">⚙️ Opciones</button>
+        </div>
+    </div>
+
+    <div class="sub-navbar" id="webSubmenu">
+        <button class="sub-btn active" onclick="changeWebpage(this, 'https://google.com')">🏠 Mi Página Web</button>
+        <button class="sub-btn" onclick="changeWebpage(this, 'https://www.minecraft.net/es-es')">⛏️ Minecraft Oficial</button>
+    </div>
+
+    <div class="center-container">
+        
+        <webview id="newsWebview" class="news-webview" src="https://google.com"></webview>
+
+        <div id="tab-cuentas" class="overlay-tab">
+            <div class="card">
+                <h3 style="margin-top:0; color:#7289da;">Gestión de Cuentas Offline</h3>
+                <div class="form-group flex-row" style="align-items: stretch;">
+                    <select id="manageAccountsSelect" style="flex:1;"></select>
+                    <button class="btn-action btn-danger" id="deleteAccountBtn">Eliminar</button>
+                </div>
+                <hr style="border-color: #333; margin: 20px 0;">
+                <h3 style="font-size:16px;">Añadir Nuevo Usuario</h3>
+                <input type="text" id="newUsername" placeholder="Ej: KuraiGamer" style="width:100%; box-sizing:border-box;">
+                <button class="btn-action btn-primary" id="addAccountBtn">Agregar Usuario</button>
+                <button class="btn-action" onclick="switchTab('home')" style="width:100%; margin-top:8px; background:#252533;">Volver</button>
+            </div>
+        </div>
+
+        <div id="tab-opciones" class="overlay-tab">
+            <div class="card">
+                <h3 style="margin-top:0; color:#7289da;">Ajustes de Rendimiento</h3>
+                <div style="margin-bottom:15px;">
+                    <label>Asignación de RAM Máxima (Ej: 4G, 6G):</label>
+                    <input type="text" id="maxRamInput" style="width:100%; box-sizing:border-box;">
+                </div>
+                <div style="margin-bottom:15px;">
+                    <label>Asignación de RAM Mínima (Ej: 1G, 2G):</label>
+                    <input type="text" id="minRamInput" style="width:100%; box-sizing:border-box;">
+                </div>
+                <button class="btn-action btn-primary" id="saveSettingsBtn">Guardar Ajustes</button>
+                <button class="btn-action" onclick="switchTab('home')" style="width:100%; margin-top:8px; background:#252533;">Volver</button>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="play-bar">
+        <div class="play-bar-section">
+            <div class="selector-box">
+                <label>Perfil de Versión</label>
+                <div class="flex-row">
+                    <select id="profileSelect"></select>
+                    <button class="btn-action btn-danger" id="deleteProfileBtn" title="Eliminar Perfil" style="padding: 5px 10px;">X</button>
+                </div>
+            </div>
+            
+            <div class="selector-box">
+                <label>Cuenta Activa</label>
+                <select id="accountSelect"></select>
+            </div>
+
+            <div class="selector-box" style="border-left: 1px solid #333; padding-left: 20px;">
+                <label>Nuevo Perfil Rápido</label>
+                <div class="flex-row">
+                    <input type="text" id="profileName" placeholder="Nombre" style="width:110px; padding:7px;">
+                    <select id="profileVersion" style="padding:7px;">
+                        <option value="1.20.4">1.20.4</option>
+                        <option value="1.20.1">1.20.1</option>
+                        <option value="1.16.5">1.16.5</option>
+                    </select>
+                    <button class="btn-action" id="saveProfileBtn" style="background:#5865f2; padding: 5px 12px;">+</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="play-bar-section">
+            <div id="status">Cargando launcher...</div>
+            <button class="btn-launch" id="launchBtn">¡JUGAR!</button>
+        </div>
+    </div>
+
+<script>
+    const { ipcRenderer } = require('electron');
+    const webview = document.getElementById('newsWebview');
+    const webSubmenu = document.getElementById('webSubmenu');
+
+    // Cambiar pantallas (Modales)
+    function switchTab(tabId) {
+        document.querySelectorAll('.overlay-tab').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+        
+        if(tabId === 'home') {
+            document.getElementById('main-btn-home').classList.add('active');
+            webSubmenu.style.display = 'flex'; // Muestra el submenú en el Inicio
+        } else {
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+            webSubmenu.style.display = 'none'; // Oculta el submenú si entras a opciones/cuentas
+        }
+    }
+
+    // Cambiar la dirección del navegador interno de forma dinámica
+    function changeWebpage(buttonElement, url) {
+        // Quitar la clase activa de todos los sub-botones y ponérsela al seleccionado
+        document.querySelectorAll('.sub-btn').forEach(btn => btn.classList.remove('active'));
+        buttonElement.classList.add('active');
+        
+        // Redireccionar la Webview
+        webview.src = url;
+    }
+
+    // Inicialización del sistema backend (Perfiles, RAM, Cuentas)
+    window.addEventListener('DOMContentLoaded', async () => {
+        const data = await ipcRenderer.invoke('get-profiles');
+        renderAll(data);
+    });
+
+    function renderAll(data) {
+        const profileSelect = document.getElementById('profileSelect');
+        profileSelect.innerHTML = '';
+        if (data.list.length === 0) {
+            profileSelect.innerHTML = '<option value="">Crea un perfil -> </option>';
+        } else {
+            let selectedExist = false;
+            data.list.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id; opt.innerText = `${p.name} (${p.version})`;
+                if (data.selectedProfile === p.id) { opt.selected = true; selectedExist = true; }
+                profileSelect.appendChild(opt);
+            });
+            if (!selectedExist && data.list.length > 0) ipcRenderer.send('select-profile', data.list[0].id);
+        }
+
+        const accountSelect = document.getElementById('accountSelect');
+        const manageAccountsSelect = document.getElementById('manageAccountsSelect');
+        accountSelect.innerHTML = '';
+        manageAccountsSelect.innerHTML = '';
+
+        if (data.accounts.length === 0) {
+            accountSelect.innerHTML = '<option value="">Sin cuentas</option>';
+            manageAccountsSelect.innerHTML = '<option value="">No hay cuentas registradas</option>';
+            document.getElementById('status').innerText = "Crea una cuenta en el menú superior.";
+        } else {
+            let accExist = false;
+            data.accounts.forEach(acc => {
+                const opt1 = document.createElement('option'); opt1.value = acc; opt1.innerText = acc;
+                const opt2 = document.createElement('option'); opt2.value = acc; opt2.innerText = acc;
+                
+                if (data.selectedAccount === acc) { opt1.selected = true; opt2.selected = true; accExist = true; }
+                accountSelect.appendChild(opt1);
+                manageAccountsSelect.appendChild(opt2);
+            });
+            if (!accExist && data.accounts.length > 0) ipcRenderer.send('select-account', data.accounts[0]);
+            else if (data.list.length > 0) document.getElementById('status').innerText = "Listo para la acción.";
+        }
+
+        document.getElementById('maxRamInput').value = data.settings.maxMemory || "4G";
+        document.getElementById('minRamInput').value = data.settings.minMemory || "2G";
+    }
+
+    // --- MANEJO DE EVENTOS ---
+    document.getElementById('saveProfileBtn').addEventListener('click', () => {
+        const name = document.getElementById('profileName').value.trim();
+        if(!name) return alert("Ponle un nombre al perfil");
+        ipcRenderer.send('save-profile', { id: 'id_' + Date.now(), name, version: document.getElementById('profileVersion').value });
+        document.getElementById('profileName').value = '';
+    });
+
+    document.getElementById('profileSelect').addEventListener('change', (e) => ipcRenderer.send('select-profile', e.target.value));
+    document.getElementById('deleteProfileBtn').addEventListener('click', () => ipcRenderer.send('delete-profile', document.getElementById('profileSelect').value));
+
+    document.getElementById('addAccountBtn').addEventListener('click', () => {
+        const username = document.getElementById('newUsername').value.trim();
+        if(!username) return alert("Escribe un usuario");
+        ipcRenderer.send('save-account', username);
+        document.getElementById('newUsername').value = '';
+        switchTab('home');
+    });
+
+    document.getElementById('accountSelect').addEventListener('change', (e) => ipcRenderer.send('select-account', e.target.value));
+    document.getElementById('deleteAccountBtn').addEventListener('click', () => ipcRenderer.send('delete-account', document.getElementById('manageAccountsSelect').value));
+
+    document.getElementById('saveSettingsBtn').addEventListener('click', () => {
+        ipcRenderer.send('save-settings', { maxMemory: document.getElementById('maxRamInput').value, minMemory: document.getElementById('minRamInput').value });
+        switchTab('home');
+    });
+
+    document.getElementById('launchBtn').addEventListener('click', () => ipcRenderer.send('launch-game'));
+
+    ipcRenderer.on('data-updated', (event, data) => renderAll(data));
+    ipcRenderer.on('status-msg', (event, msg) => document.getElementById('status').innerText = msg);
+    ipcRenderer.on('progress', (event, data) => {
+        document.getElementById('status').innerText = `Progreso: ${data.task} (${data.type})`;
+    });
+</script>
+</body>
+</html>

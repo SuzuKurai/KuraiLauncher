@@ -1,0 +1,35 @@
+{
+  "name": "launcher-minecraft",
+  "version": "1.0.0",
+  "description": "Launcher de Minecraft",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --windows"
+  },
+  "dependencies": {
+    "minecraft-launcher-core": "^3.18.2",
+    "xboxlive-auth": "^0.0.1-security"
+  },
+  "devDependencies": {
+    "electron": "^42.2.0",
+    "electron-builder": "^26.8.1"
+  },
+  "build": {
+    "appId": "com.suzu.kurailauncher",
+    "productName": "Kurai Launcher",
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "files": [
+      "**/*",
+      "!.minecraft/**"
+    ]
+  }
+}
