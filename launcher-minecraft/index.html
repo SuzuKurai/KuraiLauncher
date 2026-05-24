@@ -14,10 +14,40 @@
         .nav-btn:hover, .nav-btn.active { background: #2f3136; color: white; }
 
         /* 2. SUBMENÚ DE NAVEGACIÓN WEB (CENTRADO JUSTO ABAJO) */
-        .sub-navbar { height: 40px; background: #16161f; display: flex; justify-content: center; align-items: center; gap: 15px; border-bottom: 1px solid #22222b; z-index: 9; }
-        .sub-btn { padding: 4px 14px; background: #23232c; border: 1px solid #333; color: #ccc; font-size: 12px; cursor: pointer; border-radius: 20px; transition: 0.2s; font-weight: 500; }
-        .sub-btn:hover { border-color: #7289da; color: white; }
-        .sub-btn.active { background: #5865f2; color: white; border-color: #5865f2; box-shadow: 0 2px 8px rgba(88,101,242,0.4); }
+        .sub-navbar { 
+            height: 48px; 
+            background: #14141c; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            gap: 12px; 
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03); 
+            z-index: 9; 
+        }
+        /* BOTONES DE LAS PÁGINAS (Pestañas de la web) */
+        .sub-btn { 
+            padding: 6px 18px; 
+            background: transparent; 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            color: #8e9297; 
+            font-size: 12px; 
+            cursor: pointer; 
+            border-radius: 20px; 
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .sub-btn:hover { 
+            border-color: #7289da; 
+            color: #ffffff; 
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .sub-btn.active { 
+            background: #ffffff; 
+            color: #111116; /* Contraste minimalista invertido para la web activa */
+            border-color: #ffffff; 
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15); 
+        }
 
         /* CONTENEDOR CENTRAL */
         .center-container { flex: 1; position: relative; background: #1a1a22; }
@@ -66,8 +96,8 @@
     </div>
 
     <div class="sub-navbar" id="webSubmenu">
-        <button class="sub-btn active" onclick="changeWebpage(this, 'https://google.com')">🏠 Mi Página Web</button>
-        <button class="sub-btn" onclick="changeWebpage(this, 'https://www.minecraft.net/es-es')">⛏️ Minecraft Oficial</button>
+        <button class="sub-btn active" onclick="changeWebpage(this, 'https://suzukurai.github.io/KuraiLauncher/devlog')">Actualizaciones</button>
+        <button class="sub-btn" onclick="changeWebpage(this, 'https://www.minecraft.net/es-es')">Minecraft Oficial</button>
     </div>
 
     <div class="center-container">
