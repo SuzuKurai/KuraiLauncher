@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8"/>
     <title>Kurai Launcher v0.0.1-beta.2</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #111116; color: white; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
@@ -25,573 +25,396 @@
             color: #ffffff; 
             font-weight: 800;
             letter-spacing: 2px; 
-            background: linear-gradient(45deg, #7289da, #5865f2); 
-            background-clip: text;
+            background: linear-gradient(45deg, #ffffff, #858594);
+            background-clip: text; /* standard property for compatibility */
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        .nav-links { 
+        
+        /* CONTENEDOR PRINCIPAL DOCK-BASED */
+        .main-container { display: flex; flex: 1; height: calc(100vh - 60px); overflow: hidden; position: relative; }
+        
+        /* SIDEBAR (PANEL IZQUIERDO DE PERFILES) */
+        .sidebar { 
+            width: 280px; 
+            background: #14141b; 
+            border-right: 1px solid rgba(255,255,255,0.03); 
             display: flex; 
-            gap: 12px; 
+            flex-direction: column; 
+            padding: 20px;
+            box-sizing: border-box;
         }
+        .sidebar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .sidebar-header h3 { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: #65657b; font-weight: 700; }
         
-        /* BOTONES PRINCIPALES */
-        .nav-btn { 
-            padding: 10px 20px; 
-            background: rgba(255, 255, 255, 0.03); 
-            border: 1px solid rgba(255, 255, 255, 0.05); 
-            color: #99aab5; 
-            font-size: 13px; 
-            cursor: pointer; 
-            border-radius: 8px; 
-            font-weight: 600; 
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex;
-            align-items: center;
-            gap: 8px;
+        .btn-add-profile { 
+            background: #252533; border: none; color: #a5a5b5; width: 28px; height: 28px; 
+            border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px;
+            display: flex; align-items: center; justify-content: center; transition: 0.2s;
         }
-        .nav-btn:hover { 
-            background: rgba(114, 137, 218, 0.1); 
-            border-color: rgba(114, 137, 218, 0.3);
-            color: #ffffff; 
-            transform: translateY(-1px);
-        }
-        .nav-btn.active { 
-            background: #5865f2; 
-            border-color: #5865f2;
-            color: #ffffff; 
-            box-shadow: 0 4px 15px rgba(88, 101, 242, 0.3);
-        }
+        .btn-add-profile:hover { background: #3b3b54; color: white; transform: scale(1.05); }
 
-        /* 2. SUBMENÚ DE NAVEGACIÓN WEB */
-        .sub-navbar { 
-            height: 48px; 
-            background: #14141c; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            gap: 12px; 
-            border-bottom: 1px solid rgba(255, 255, 255, 0.03); 
-            z-index: 9; 
+        .profile-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; padding-right: 2px; }
+        .profile-list::-webkit-scrollbar { width: 4px; }
+        .profile-list::-webkit-scrollbar-thumb { background: #252533; border-radius: 4px; }
+
+        .profile-card { 
+            background: #1a1a24; border: 1px solid rgba(255,255,255,0.02); padding: 12px 15px; 
+            border-radius: 10px; cursor: pointer; display: flex; justify-content: space-between; 
+            align-items: center; transition: 0.2s;
         }
+        .profile-card:hover { background: #222230; border-color: rgba(255,255,255,0.05); }
+        .profile-card.active { background: linear-gradient(135deg, #2b2b3d, #1f1f2e); border: 1px solid rgba(114, 137, 218, 0.3); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         
-        /* BOTONES DE LAS PÁGINAS */
-        .sub-btn { 
-            padding: 6px 18px; 
-            background: transparent; 
-            border: 1px solid rgba(255, 255, 255, 0.1); 
-            color: #8e9297; 
-            font-size: 12px; 
-            cursor: pointer; 
-            border-radius: 20px; 
-            font-weight: 600;
-            transition: all 0.2s ease;
-        }
-        .sub-btn:hover { 
-            border-color: #7289da; 
-            color: #ffffff; 
-            background: rgba(255, 255, 255, 0.02);
-        }
-        .sub-btn.active { 
-            background: #ffffff; 
-            color: #111116; 
-            border-color: #ffffff; 
-            font-weight: 700;
-            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15); 
-        }
+        .profile-info { display: flex; flex-direction: column; gap: 2px; }
+        .profile-name { font-size: 14px; font-weight: 600; color: #e0e0e8; }
+        .profile-card.active .profile-name { color: #ffffff; }
+        .profile-version { font-size: 11px; color: #65657b; font-family: monospace; }
+        .profile-card.active .profile-version { color: #8a9eff; }
 
-        /* CONTENEDOR CENTRAL */
-        .center-container { flex: 1; position: relative; background: #1a1a22; }
+        .btn-delete-profile { background: transparent; border: none; color: #4a4a5a; cursor: pointer; font-size: 14px; padding: 5px; border-radius: 6px; transition: 0.2s; }
+        .btn-delete-profile:hover { color: #ff5c5c; background: rgba(255,92,92,0.1); }
+
+        /* SECCIÓN DE CUENTAS EN SIDEBAR */
+        .account-box { background: #1a1a24; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; border: 1px solid rgba(255,255,255,0.02); }
+        .account-selector { background: #252533; border: none; color: white; padding: 10px; border-radius: 8px; width: 100%; font-size: 13px; outline: none; cursor: pointer; font-weight: 600; }
         
-        /* PÁGINA WEB INCRUSTADA */
-        .news-webview { width: 100%; height: 100%; border: none; position: absolute; top: 0; left: 0; z-index: 1; }
+        .account-actions { display: flex; gap: 6px; }
+        .input-account { flex: 1; background: #252533; border: 1px solid rgba(255,255,255,0.02); color: white; padding: 8px 12px; border-radius: 8px; font-size: 12px; outline: none; }
+        .input-account:focus { border-color: #5865f2; }
+        .btn-account { background: #5865f2; border: none; color: white; padding: 0 12px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .btn-account:hover { background: #4752c4; }
+        .btn-delete-account { background: #2a2a3a; border: none; color: #b5b5c5; padding: 8px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .btn-delete-account:hover { background: #3a1e1e; color: #ff5c5c; }
 
-        /* VENTANAS MODALES SUPERPUESTAS */
-        .overlay-tab { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17, 17, 22, 0.85); backdrop-filter: blur(8px); display: none; justify-content: center; align-items: center; z-index: 5; }
-        .overlay-tab.active { display: flex; }
-        .card { background: #23232c; padding: 30px; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 100%; max-width: 480px; }
-
-        /* BARRA INFERIOR DE JUEGO */
-        .play-bar { height: 100px; background: linear-gradient(to top, rgba(17,17,22,1) 0%, rgba(20,20,27,0.95) 100%); border-top: 1px solid #252530; display: flex; align-items: center; justify-content: space-between; padding: 0 40px; z-index: 10; box-shadow: 0 -5px 20px rgba(0,0,0,0.4); }
-        .play-bar-section { display: flex; gap: 20px; align-items: center; }
+        /* VIEWPORT PRINCIPAL */
+        .viewport { flex: 1; background: #0e0e13; display: flex; flex-direction: column; position: relative; }
         
-        .selector-box { display: flex; flex-direction: column; min-width: 180px; }
-        .selector-box label { font-size: 11px; text-transform: uppercase; color: #7289da; font-weight: bold; margin-bottom: 5px; letter-spacing: 0.5px; }
-        select, input[type="text"] { padding: 10px; background: #252533; border: 1px solid #3e3e56; color: white; border-radius: 5px; font-size: 13px; }
-        select:focus, input:focus { border-color: #5865f2; outline: none; }
+        /* BANNER CENTRAL CON IDENTIDAD VISUAL */
+        .hero-banner { 
+            flex: 1; position: relative; display: flex; flex-direction: column; justify-content: center; 
+            align-items: center; background: radial-gradient(circle at center, #181824 0%, #0e0e13 70%); 
+        }
+        .hero-logo { font-size: 64px; font-weight: 900; letter-spacing: 12px; margin-bottom: 5px; background: linear-gradient(45deg, #ffffff, #4a4a5a); background-clip: text; -webkit-background-clip: text; color: transparent; -webkit-text-fill-color: transparent; text-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .hero-subtitle { font-size: 12px; text-transform: uppercase; letter-spacing: 6px; color: #4e4e5f; font-weight: 700; margin-bottom: 30px; }
 
-        /* BOTÓN JUGAR */
-        .btn-launch { width: 220px; height: 55px; background: #3ba55d; color: white; border: none; border-radius: 6px; font-size: 20px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 15px rgba(59,165,93,0.3); letter-spacing: 1px; }
-        .btn-launch:hover { background: #2f854a; transform: translateY(-2px); }
+        /* DOCK DE LANZAMIENTO (BARRA INFERIOR DE JUEGO) */
+        .launch-dock { 
+            height: 90px; background: #14141b; border-top: 1px solid rgba(255,255,255,0.03); 
+            display: flex; align-items: center; padding: 0 40px; justify-content: space-between; z-index: 5;
+        }
+        .status-container { display: flex; flex-direction: column; gap: 4px; max-width: 40%; }
+        .status-title { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #525266; font-weight: 700; }
+        .status-text { font-size: 13px; color: #a5a5b5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+
+        .btn-launch { 
+            background: linear-gradient(135deg, #5865f2, #404eed); border: none; color: white; 
+            padding: 14px 60px; font-size: 16px; font-weight: 800; border-radius: 12px; 
+            cursor: pointer; letter-spacing: 1px; box-shadow: 0 4px 20px rgba(88, 101, 242, 0.3); transition: 0.2s;
+        }
+        .btn-launch:hover { transform: translateY(-2px); box-shadow: 0 6px 25px rgba(88, 101, 242, 0.45); filter: brightness(1.1); }
         .btn-launch:active { transform: translateY(0); }
 
-        .btn-action { padding: 10px; background: #3e3e56; border: none; color: white; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .btn-action:hover { background: #4e4e6c; }
-        .btn-danger { background: #ed4245; }
-        .btn-danger:hover { background: #c03537; }
-        .btn-primary { background: #5865f2; width: 100%; margin-top: 10px; }
+        .dock-right-actions { display: flex; gap: 10px; }
+        .btn-dock-icon { background: #1a1a24; border: 1px solid rgba(255,255,255,0.02); color: #a5a5b5; width: 44px; height: 44px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; transition: 0.2s; }
+        .btn-dock-icon:hover { background: #222230; color: white; border-color: rgba(255,255,255,0.08); }
 
-        #status { font-size: 12px; color: #faa61a; text-align: right; font-weight: bold; max-width: 250px; }
-        .flex-row { display: flex; gap: 8px; }
+        /* CAPAS MODALES DESLIZANTES / OVERLAYS */
+        .panel-overlay { 
+            position: absolute; top: 0; right: -420px; width: 400px; height: 100%; 
+            background: #14141b; border-left: 1px solid rgba(255,255,255,0.03); 
+            box-shadow: -10px 0 30px rgba(0,0,0,0.25); z-index: 15; transition: cubic-bezier(0.16, 1, 0.3, 1) 0.4s; 
+            display: flex; flex-direction: column; padding: 30px; box-sizing: border-box;
+        }
+        .panel-overlay.open { right: 0; }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .panel-header h3 { margin: 0; font-size: 18px; font-weight: 700; color: white; }
+        .btn-close-panel { background: transparent; border: none; color: #525266; font-size: 20px; cursor: pointer; transition: 0.2s; }
+        .btn-close-panel:hover { color: white; }
+
+        .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+        .form-group label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #65657b; }
+        .form-control { background: #1a1a24; border: 1px solid rgba(255,255,255,0.04); color: white; padding: 10px 14px; border-radius: 8px; font-size: 13px; outline: none; }
+        .form-control:focus { border-color: #5865f2; }
+        
+        .btn-submit { background: #5865f2; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; margin-top: 10px; transition: 0.2s; }
+        .btn-submit:hover { background: #4752c4; }
+
+        /* PANEL DE CONSOLA INTEGRADA MULTILÍNEA */
+        .console-log-container { flex: 1; background: #0a0a0f; border-radius: 12px; padding: 15px; font-family: monospace; font-size: 11px; overflow-y: auto; display: flex; flex-direction: column; border: 1px solid rgba(255,255,255,0.02); }
+        .console-log-container::-webkit-scrollbar { width: 4px; }
+        .console-log-container::-webkit-scrollbar-thumb { background: #1a1a24; border-radius: 4px; }
+
+        /* SELECCIÓN FLOTANTE PARA EL FORMULARIO DE PERFILES */
+        .select-custom { background: #1a1a24; color: white; border: 1px solid rgba(255,255,255,0.04); padding: 10px; border-radius: 8px; font-size: 13px; outline: none; max-height: 150px; }
     </style>
 </head>
 <body>
 
     <div class="navbar">
         <h2>KURAI LAUNCHER</h2>
-        <div class="nav-links">
-            <button class="nav-btn active" id="main-btn-home" onclick="switchTab('home')">🎮 Inicio</button>
-            <button class="nav-btn" onclick="switchTab('tab-cuentas')">👤 Cuentas</button>
-            <button class="nav-btn" onclick="switchTab('tab-opciones')">⚙️ Opciones</button>
-        </div>
+        <div style="font-size: 11px; font-weight: 700; color: #4e4e5f; background: #1a1a24; padding: 6px 14px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.02);">DEVELOPER BUILD</div>
     </div>
 
-    <div class="sub-navbar" id="webSubmenu">
-        <button class="sub-btn active" onclick="changeWebpage(this, 'https://suzukurai.github.io/KuraiLauncher/devlog')">Actualizaciones</button>
-        <button class="sub-btn" onclick="changeWebpage(this, 'https://www.minecraft.net/es-es')">Minecraft Oficial</button>
-    </div>
-
-    <div class="center-container">
+    <div class="main-container">
         
-        <webview id="newsWebview" class="news-webview" src="https://suzukurai.github.io/KuraiLauncher/devlog"></webview>
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h3>Mis Perfiles</h3>
+                <button class="btn-add-profile" id="open-add-profile-btn">+</button>
+            </div>
+            
+            <div class="profile-list" id="profiles-container"></div>
 
-        <div id="tab-cuentas" class="overlay-tab">
-            <div class="card">
-                <h3 style="margin-top:0; color:#7289da;">Gestión de Cuentas Offline</h3>
-                <div class="form-group flex-row" style="align-items: stretch;">
-                    <select id="manageAccountsSelect" style="flex:1;"></select>
-                    <button class="btn-action btn-danger" id="deleteAccountBtn">Eliminar</button>
+            <div class="sidebar-header" style="margin-top: 15px; margin-bottom: 10px;">
+                <h3>Cuenta Activa</h3>
+            </div>
+            <div class="account-box">
+                <select class="account-selector" id="account-dropdown"></select>
+                <div class="account-actions">
+                    <input type="text" class="input-account" id="new-account-input" placeholder="Nuevo usuario..."/>
+                    <button class="btn-account" id="add-account-btn">Añadir</button>
+                    <button class="btn-delete-account" id="delete-account-btn" title="Eliminar cuenta seleccionada">🗑️</button>
                 </div>
-                <hr style="border-color: #333; margin: 20px 0;">
-                <h3 style="font-size:16px;">Añadir Nuevo Usuario</h3>
-                <input type="text" id="newUsername" placeholder="Ej: Steve" style="width:100%; box-sizing:border-box;">
-                <button class="btn-action btn-primary" id="addAccountBtn">Agregar Usuario</button>
-                <button class="btn-action" onclick="switchTab('home')" style="width:100%; margin-top:8px; background:#252533;">Volver</button>
             </div>
         </div>
 
-        <div id="tab-opciones" class="overlay-tab">
-            <div class="card">
-                <h3 style="margin-top:0; color:#7289da;">Ajustes de Rendimiento Global</h3>
-                <div style="margin-bottom:15px;">
-                    <label>Asignación de RAM Máxima (Ej: 4G, 6G):</label>
-                    <input type="text" id="maxRamInput" style="width:100%; box-sizing:border-box;">
-                </div>
-                <div style="margin-bottom:15px;">
-                    <label>Asignación de RAM Mínima (Ej: 1G, 2G):</label>
-                    <input type="text" id="minRamInput" style="width:100%; box-sizing:border-box;">
-                </div>
-
-                <h3 style="font-size:16px; margin-top:20px; color:#7289da;">Filtros de Versiones</h3>
-                <div style="margin-bottom:10px; display:flex; align-items:center; gap:10px;">
-                    <input type="checkbox" id="enableSnapshots" style="width:18px; height:18px; cursor:pointer;">
-                    <label for="enableSnapshots" style="cursor:pointer; font-size:13px;">Habilitar Snapshots (Versiones de prueba)</label>
-                </div>
-                <div style="margin-bottom:10px; display:flex; align-items:center; gap:10px;">
-                    <input type="checkbox" id="enableBetas" style="width:18px; height:18px; cursor:pointer;">
-                    <label for="enableBetas" style="cursor:pointer; font-size:13px;">Habilitar Betas/Alphas Antiguas</label>
-                </div>
-
-                <h3 style="font-size:16px; margin-top:20px; color:#7289da;">Desarrollo</h3>
-                <div style="margin-bottom:20px; display:flex; align-items:center; gap:10px;">
-                    <input type="checkbox" id="showConsoleInput" style="width:18px; height:18px; cursor:pointer;">
-                    <label for="showConsoleInput" style="cursor:pointer; font-size:13px; color:#ffb6c1; font-weight:600;">Mostrar Consola de Logs en tiempo real</label>
-                </div>
-
-                <button class="btn-action btn-primary" id="saveSettingsBtn">Guardar Ajustes</button>
-                <button class="btn-action" onclick="switchTab('home')" style="width:100%; margin-top:8px; background:#252533;">Volver</button>
+        <div class="viewport">
+            
+            <div class="hero-banner">
+                <div class="hero-logo">KURAI</div>
+                <div class="hero-subtitle">Minecraft Client Sandbox</div>
             </div>
-        </div>
 
-        <div id="tab-editar-perfil" class="overlay-tab">
-            <div class="card" style="max-width: 520px;">
-                <h3 style="margin-top:0; color:#7289da;">Configuración Avanzada del Perfil</h3>
+            <div class="launch-dock">
+                <div class="status-container">
+                    <div class="status-title">Estado del Sistema</div>
+                    <div class="status-text" id="status">Listo para jugar. Selecciona un perfil.</div>
+                </div>
                 
-                <div style="margin-bottom:15px;">
-                    <label style="font-size:12px; font-weight:bold;">Nombre del Perfil:</label>
-                    <input type="text" id="editProfileName" style="width:100%; box-sizing:border-box; margin-top:5px;">
+                <button class="btn-launch" id="launch-btn">JUGAR</button>
+                
+                <div class="dock-right-actions">
+                    <button class="btn-dock-icon" id="open-console-btn" title="Consola de Desarrollo">⚙️</button>
+                    <button class="btn-dock-icon" id="open-settings-btn" title="Configuración Global">🔧</button>
                 </div>
+            </div>
 
-                <div class="flex-row" style="margin-bottom:15px;">
-                    <div style="flex:1;">
-                        <label style="font-size:12px; font-weight:bold;">RAM Dedicada (Ej: 4G):</label>
-                        <input type="text" id="editProfileRam" placeholder="Dejar vacío para usar global" style="width:100%; box-sizing:border-box; margin-top:5px;">
-                    </div>
-                    <div style="flex:1;">
-                        <label style="font-size:12px; font-weight:bold;">Versión de Minecraft:</label>
-                        <select id="editProfileVersion" style="width:100%; margin-top:5px; padding:10px;"></select>
-                    </div>
+            <div class="panel-overlay" id="panel-add-profile">
+                <div class="panel-header">
+                    <h3>Crear Perfil</h3>
+                    <button class="btn-close-panel" onclick="togglePanel('panel-add-profile', false)">&times;</button>
                 </div>
+                <div class="form-group">
+                    <label>Nombre del Perfil</label>
+                    <input type="text" class="form-control" id="prof-name" placeholder="Ej: Mi Mundo 1.21"/>
+                </div>
+                <div class="form-group">
+                    <label>Versión de Minecraft (Cargando API Mojang...)</label>
+                    <select class="select-custom" id="prof-version-select" size="8"></select>
+                </div>
+                <button class="btn-submit" id="save-profile-btn">Crear e Instalar</button>
+            </div>
 
-                <div style="margin-bottom:25px;">
-                    <label style="font-size:12px; font-weight:bold;">Ruta de Instalación (.minecraft):</label>
-                    <div class="flex-row" style="margin-top:5px;">
-                        <input type="text" id="editProfilePath" readonly placeholder="Predeterminada (%appdata%/.minecraft)" style="flex:1; background:#1e1e26; color:#aaa; font-size:12px;">
-                        <button class="btn-action" onclick="selectCustomFolder()" style="font-size:12px; background:#5865f2;">Examinar</button>
-                    </div>
-                    <p style="font-size:11px; color:#7289da; margin: 5px 0 0 0; cursor:pointer; text-decoration:underline;" onclick="resetProfilePath()">Restablecer a ruta por defecto (%appdata%)</p>
+            <div class="panel-overlay" id="panel-console" style="width: 500px; right: -520px;">
+                <div class="panel-header">
+                    <h3>Consola del Juego</h3>
+                    <button class="btn-close-panel" onclick="togglePanel('panel-console', false)">&times;</button>
                 </div>
+                <div class="console-log-container" id="consoleOutputs"></div>
+            </div>
 
-                <div class="flex-row">
-                    <button class="btn-action btn-primary" onclick="saveProfileAdvanced()" style="flex:1;">Guardar Cambios</button>
-                    <button class="btn-action" onclick="switchTab('home')" style="background:#252533; width:100px;">Cancelar</button>
+            <div class="panel-overlay" id="panel-settings">
+                <div class="panel-header">
+                    <h3>Configuración Global</h3>
+                    <button class="btn-close-panel" onclick="togglePanel('panel-settings', false)">&times;</button>
                 </div>
+                <div class="form-group">
+                    <label>Memoria RAM Máxima Global</label>
+                    <select class="form-control" id="global-ram-max">
+                        <option value="2G">2 GB</option>
+                        <option value="4G" selected>4 GB</option>
+                        <option value="6G">6 GB</option>
+                        <option value="8G">8 GB</option>
+                    </select>
+                </div>
+                <button class="btn-submit" id="save-settings-btn">Guardar Ajustes</button>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="java-popup-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center;">
+        <div style="background: #16161e; border: 2px solid #ff4a4a; padding: 35px; border-radius: 16px; width: 480px; text-align: center; font-family: 'Segoe UI', sans-serif; color: #ffffff; box-shadow: 0px 15px 40px rgba(0,0,0,0.6);">
+            <div style="font-size: 44px; margin-bottom: 15px;">⚠️</div>
+            <h2 style="margin: 0 0 12px 0; font-size: 24px; color: #ff4a4a; font-weight: 800; letter-spacing: 0.5px;">Error de Ejecución de Java</h2>
+            <p style="font-size: 14px; color: #b3b3b3; line-height: 1.6; margin-bottom: 28px;">
+                Minecraft se detuvo porque el launcher está llamando a un entorno de ejecución antiguo de tu sistema. Las versiones modernas requieren <strong>Java 21 o Java 25</strong>. Asegúrate de instalar el JDK correspondiente.
+            </p>
+            <div style="display: flex; gap: 12px; justify-content: center;">
+                <a href="https://www.oracle.com/java/technologies/downloads/#java21" target="_blank" style="background: #2b2b3d; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 13px; border: 1px solid rgba(255,255,255,0.05); transition: 0.2s;" onmouseover="this.style.background='#3b3b4a'" onmouseout="this.style.background='#2b2b3d'">JDK 21</a>
+                <a href="https://www.oracle.com/java/technologies/downloads/#java25" target="_blank" style="background: #ff4a4a; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 13px; transition: 0.2s;" onmouseover="this.style.background='#e03e3e'" onmouseout="this.style.background='#ff4a4a'">Descargar JDK 25</a>
+                <button onclick="document.getElementById('java-popup-overlay').style.display = 'none'" style="background: #1a1a24; color: #b3b3b3; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px;">Cerrar</button>
             </div>
         </div>
-
     </div>
 
-    <div id="launcherConsole" style="display: none; height: 180px; background: #08080c; border-top: 2px solid #22222c; font-family: 'Consolas', monospace; font-size: 12px; color: #4af626; padding: 12px; overflow-y: auto; box-sizing: border-box;">
-        <div style="color: #666; border-bottom: 1px solid #222; padding-bottom: 4px; margin-bottom: 6px; font-weight: bold; letter-spacing: 1px;">=== CONSOLA DE LOGS EN VIVO (MCLC OUTPUT) ===</div>
-        <div id="consoleOutputs"></div>
-    </div>
+    <script>
+        const { ipcRenderer } = require('electron');
 
-    <div class="play-bar">
-        <div class="play-bar-section">
-            <div class="selector-box">
-                <label>Perfil de Versión</label>
-                <div class="flex-row">
-                    <select id="profileSelect" style="min-width:160px;"></select>
-                    <button class="btn-action" onclick="openEditProfile()" style="background:#252533; border:1px solid #3e3e56; padding: 5px 12px;" title="Configurar este perfil">⚙️</button>
-                    <button class="btn-action btn-danger" id="deleteProfileBtn" title="Eliminar Perfil" style="padding: 5px 12px;">X</button>
-                </div>
-            </div>
+        function togglePanel(id, open) {
+            const el = document.getElementById(id);
+            if(open) el.classList.add('open');
+            else el.classList.remove('open');
+        }
+
+        document.getElementById('open-add-profile-btn').addEventListener('click', async () => {
+            togglePanel('panel-add-profile', true);
+            const select = document.getElementById('prof-version-select');
+            select.innerHTML = '<option disabled>Descargando manifiesto oficial...</option>';
             
-            <div class="selector-box">
-                <label>Cuenta Activa</label>
-                <select id="accountSelect"></select>
-            </div>
-
-            <div class="selector-box" style="border-left: 1px solid #333; padding-left: 20px;">
-                <label>Nuevo Perfil Rápido</label>
-                <div class="flex-row">
-                    <input type="text" id="profileName" placeholder="Nombre" style="width:110px; padding:7px;">
-                    <select id="profileVersion" style="padding:7px;"></select>
-                    <button class="btn-action" id="saveProfileBtn" style="background:#5865f2; padding: 5px 12px;">+</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="play-bar-section">
-            <div id="status">Cargando launcher...</div>
-            <button class="btn-launch" id="launchBtn">¡JUGAR!</button>
-        </div>
-    </div>
-
-<script>
-    const { ipcRenderer } = require('electron');
-    const webview = document.getElementById('newsWebview');
-    const webSubmenu = document.getElementById('webSubmenu');
-
-    let profileBeingEdited = null;
-
-    // 🔥 LOS ARRAYS AHORA SE RELLENAN EXCLUSIVAMENTE CON LA API DINÁMICA DE MOJANG
-    let VERSIONES_ESTABLES = [];
-    let VERSIONES_SNAPSHOTS = [];
-    let VERSIONES_BETAS = [];
-
-    // 🔥 LOGICA PARA DESCARGAR EL LISTADO OFICIAL DESDE EL PROCESO MAIN
-    async function cargarVersionesDesdeAPI() {
-        try {
-            document.getElementById('status').innerText = "Buscando nuevas versiones de Minecraft...";
-            const mcVersions = await ipcRenderer.invoke('get-mojang-versions');
+            const versions = await ipcRenderer.invoke('get-mojang-versions');
+            select.innerHTML = '';
             
-            VERSIONES_ESTABLES = [];
-            VERSIONES_SNAPSHOTS = [];
-            VERSIONES_BETAS = [];
-
-            mcVersions.forEach(v => {
-                if (v.type === 'release') {
-                    VERSIONES_ESTABLES.push(v.id);
-                } else if (v.type === 'snapshot') {
-                    VERSIONES_SNAPSHOTS.push(v.id);
-                } else if (v.type === 'old_beta' || v.type === 'old_alpha') {
-                    VERSIONES_BETAS.push(v.id);
-                }
+            const releases = versions.filter(v => v.type === 'release');
+            releases.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v.id;
+                opt.innerText = `Versión Estable ${v.id}`;
+                select.appendChild(opt);
             });
-            document.getElementById('status').innerText = "Versiones sincronizadas.";
-        } catch (error) {
-            console.error("Fallo de red al obtener manifiesto, usando offline...", error);
-            VERSIONES_ESTABLES = ["1.21.1", "1.21", "1.20.4", "1.19.4", "1.16.5", "1.12.2", "1.8.9", "1.7.10"];
-        }
-    }
-
-    function switchTab(tabId) {
-        document.querySelectorAll('.overlay-tab').forEach(tab => tab.classList.remove('active'));
-        document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-        
-        if(tabId === 'home') {
-            document.getElementById('main-btn-home').classList.add('active');
-            webSubmenu.style.display = 'flex'; 
-        } else {
-            document.getElementById(tabId).classList.add('active');
-            if (window.event && window.event.currentTarget) {
-                window.event.currentTarget.classList.add('active');
-            }
-            webSubmenu.style.display = 'none'; 
-        }
-    }
-
-    function changeWebpage(buttonElement, url) {
-        document.querySelectorAll('.sub-btn').forEach(btn => btn.classList.remove('active'));
-        buttonElement.classList.add('active');
-        
-        if (webview) {
-            webview.setAttribute('src', url);
-            webview.loadURL(url).catch(err => console.log("Cargando WebView..."));
-        }
-    }
-
-    function updateVersionSelect() {
-        const versionSelect = document.getElementById('profileVersion');
-        if(!versionSelect) return;
-        
-        versionSelect.innerHTML = ''; 
-
-        VERSIONES_ESTABLES.forEach(v => {
-            const opt = document.createElement('option');
-            opt.value = v; 
-            opt.innerText = `Release: ${v}`;
-            versionSelect.appendChild(opt);
         });
 
-        if (document.getElementById('enableSnapshots').checked) {
-            VERSIONES_SNAPSHOTS.forEach(v => {
-                const opt = document.createElement('option');
-                opt.value = v; 
-                opt.innerText = `Snapshot: ${v}`;
-                versionSelect.appendChild(opt);
-            });
-        }
+        document.getElementById('open-console-btn').addEventListener('click', () => togglePanel('panel-console', true));
+        document.getElementById('open-settings-btn').addEventListener('click', () => togglePanel('panel-settings', true));
 
-        if (document.getElementById('enableBetas').checked) {
-            VERSIONES_BETAS.forEach(v => {
-                const opt = document.createElement('option');
-                opt.value = v; 
-                opt.innerText = `Beta/Alpha: ${v}`;
-                versionSelect.appendChild(opt);
-            });
-        }
-    }
-
-    async function openEditProfile() {
-        const profileId = document.getElementById('profileSelect').value;
-        if(!profileId) return alert("Por favor, selecciona o crea un perfil primero.");
-        
-        const data = await ipcRenderer.invoke('get-profiles');
-        const targetProfile = data.list.find(p => p.id === profileId);
-        
-        if(targetProfile) {
-            profileBeingEdited = targetProfile.id;
-            document.getElementById('editProfileName').value = targetProfile.name || "";
-            document.getElementById('editProfileRam').value = targetProfile.ram || "";
-            document.getElementById('editProfilePath').value = targetProfile.path || "";
+        document.getElementById('save-profile-btn').addEventListener('click', () => {
+            const name = document.getElementById('prof-name').value.trim();
+            const version = document.getElementById('prof-version-select').value;
             
-            const editVersionSelect = document.getElementById('editProfileVersion');
-            editVersionSelect.innerHTML = '';
-
-            VERSIONES_ESTABLES.forEach(v => {
-                const opt = document.createElement('option');
-                opt.value = v; 
-                opt.innerText = `Release: ${v}`;
-                editVersionSelect.appendChild(opt);
-            });
-
-            if (data.settings && data.settings.enableSnapshots) {
-                VERSIONES_SNAPSHOTS.forEach(v => {
-                    const opt = document.createElement('option');
-                    opt.value = v; 
-                    opt.innerText = `Snapshot: ${v}`;
-                    editVersionSelect.appendChild(opt);
-                });
+            if(!name || !version) {
+                alert('Rellena el nombre y elige una versión válida.');
+                return;
             }
 
-            if (data.settings && data.settings.enableBetas) {
-                VERSIONES_BETAS.forEach(v => {
-                    const opt = document.createElement('option');
-                    opt.value = v; 
-                    opt.innerText = `Beta/Alpha: ${v}`;
-                    editVersionSelect.appendChild(opt);
-                });
-            }
+            const nuevo = {
+                id: 'prof_' + Date.now(),
+                name: name,
+                version: version,
+                ram: '',
+                path: ''
+            };
 
-            const versionExists = Array.from(editVersionSelect.options).some(opt => opt.value === targetProfile.version);
-            if (!versionExists && targetProfile.version) {
-                const opt = document.createElement('option');
-                opt.value = targetProfile.version;
-                opt.innerText = `${targetProfile.version} (Actual del perfil)`;
-                editVersionSelect.appendChild(opt);
-            }
-
-            editVersionSelect.value = targetProfile.version;
-            switchTab('tab-editar-perfil');
-        }
-    }
-
-    async function selectCustomFolder() {
-        const selectedPath = await ipcRenderer.invoke('select-folder');
-        if(selectedPath) {
-            document.getElementById('editProfilePath').value = selectedPath;
-        }
-    }
-
-    function resetProfilePath() {
-        document.getElementById('editProfilePath').value = "";
-    }
-
-    function saveProfileAdvanced() {
-        const name = document.getElementById('editProfileName').value.trim();
-        if(!name) return alert("El perfil debe tener un nombre.");
-
-        const advancedData = {
-            id: profileBeingEdited,
-            name: name,
-            version: document.getElementById('editProfileVersion').value,
-            ram: document.getElementById('editProfileRam').value.trim(),
-            path: document.getElementById('editProfilePath').value.trim()
-        };
-
-        ipcRenderer.send('update-profile-advanced', advancedData);
-        switchTab('home');
-    }
-
-    // --- FLUJO DE INICIALIZACIÓN SECUENCIAL ---
-    window.addEventListener('DOMContentLoaded', async () => {
-        if(webview) {
-            webview.addEventListener('dom-ready', () => {
-                console.log('Navegador interno Kurai listo.');
-            });
-        }
-        
-        // 1. Primero descargamos de internet el manifiesto dinámico de Mojang
-        await cargarVersionesDesdeAPI();
-        
-        // 2. Cargamos el almacenamiento local de perfiles y cuentas
-        const data = await ipcRenderer.invoke('get-profiles');
-        renderAll(data);
-    });
-
-    function renderAll(data) {
-        const profileSelect = document.getElementById('profileSelect');
-        profileSelect.innerHTML = '';
-        if (data.list.length === 0) {
-            profileSelect.innerHTML = '<option value="">Crea un perfil -> </option>';
-        } else {
-            let selectedExist = false;
-            data.list.forEach(p => {
-                const opt = document.createElement('option');
-                opt.value = p.id; opt.innerText = `${p.name} (${p.version})`;
-                if (data.selectedProfile === p.id) { opt.selected = true; selectedExist = true; }
-                profileSelect.appendChild(opt);
-            });
-            if (!selectedExist && data.list.length > 0) ipcRenderer.send('select-profile', data.list[0].id);
-        }
-
-        const accountSelect = document.getElementById('accountSelect');
-        const manageAccountsSelect = document.getElementById('manageAccountsSelect');
-        accountSelect.innerHTML = '';
-        manageAccountsSelect.innerHTML = '';
-
-        if (data.accounts.length === 0) {
-            accountSelect.innerHTML = '<option value="">Sin cuentas</option>';
-            manageAccountsSelect.innerHTML = '<option value="">No hay cuentas registradas</option>';
-            document.getElementById('status').innerText = "Crea una cuenta en el menú superior.";
-        } else {
-            let accExist = false;
-            data.accounts.forEach(acc => {
-                const opt1 = document.createElement('option'); opt1.value = acc; opt1.innerText = acc;
-                const opt2 = document.createElement('option'); opt2.value = acc; opt2.innerText = acc;
-                
-                if (data.selectedAccount === acc) { opt1.selected = true; opt2.selected = true; accExist = true; }
-                accountSelect.appendChild(opt1);
-                manageAccountsSelect.appendChild(opt2);
-            });
-            if (!accExist && data.accounts.length > 0) ipcRenderer.send('select-account', data.accounts[0]);
-            else if (data.list.length > 0) document.getElementById('status').innerText = "Listo para la acción.";
-        }
-
-        document.getElementById('maxRamInput').value = data.settings.maxMemory || "4G";
-        document.getElementById('minRamInput').value = data.settings.minMemory || "2G";
-        
-        document.getElementById('enableSnapshots').checked = data.settings.enableSnapshots || false;
-        document.getElementById('enableBetas').checked = data.settings.enableBetas || false;
-
-        const consolePanel = document.getElementById('launcherConsole');
-        if (data.settings && data.settings.showConsole) {
-            consolePanel.style.display = 'block';
-            document.getElementById('showConsoleInput').checked = true;
-        } else {
-            consolePanel.style.display = 'none';
-            document.getElementById('showConsoleInput').checked = false;
-        }
-
-        updateVersionSelect();
-    }
-
-    document.getElementById('saveProfileBtn').addEventListener('click', () => {
-        const name = document.getElementById('profileName').value.trim();
-        if(!name) return alert("Ponle un nombre al perfil");
-        ipcRenderer.send('save-profile', { id: 'id_' + Date.now(), name, version: document.getElementById('profileVersion').value, ram: "", path: "" });
-        document.getElementById('profileName').value = '';
-    });
-
-    document.getElementById('profileSelect').addEventListener('change', (e) => ipcRenderer.send('select-profile', e.target.value));
-    document.getElementById('deleteProfileBtn').addEventListener('click', () => ipcRenderer.send('delete-profile', document.getElementById('profileSelect').value));
-
-    document.getElementById('addAccountBtn').addEventListener('click', () => {
-        const username = document.getElementById('newUsername').value.trim();
-        if(!username) return alert("Escribe un usuario");
-        ipcRenderer.send('save-account', username);
-        document.getElementById('newUsername').value = '';
-        switchTab('home');
-    });
-
-    document.getElementById('accountSelect').addEventListener('change', (e) => ipcRenderer.send('select-account', e.target.value));
-    document.getElementById('deleteAccountBtn').addEventListener('click', () => ipcRenderer.send('delete-account', document.getElementById('manageAccountsSelect').value));
-
-    document.getElementById('saveSettingsBtn').addEventListener('click', () => {
-        ipcRenderer.send('save-settings', { 
-            maxMemory: document.getElementById('maxRamInput').value, 
-            minMemory: document.getElementById('minRamInput').value,
-            enableSnapshots: document.getElementById('enableSnapshots').checked,
-            enableBetas: document.getElementById('enableBetas').checked,
-            showConsole: document.getElementById('showConsoleInput').checked 
+            ipcRenderer.send('save-profile', nuevo);
+            document.getElementById('prof-name').value = '';
+            togglePanel('panel-add-profile', false);
         });
-        updateVersionSelect();
-        switchTab('home');
-    });
 
-    document.getElementById('launchBtn').addEventListener('click', () => ipcRenderer.send('launch-game'));
+        document.getElementById('save-settings-btn').addEventListener('click', () => {
+            const ramMax = document.getElementById('global-ram-max').value;
+            ipcRenderer.send('save-settings', { maxMemory: ramMax, minMemory: '2G' });
+            togglePanel('panel-settings', false);
+        });
 
-    ipcRenderer.on('data-updated', (event, data) => renderAll(data));
-    ipcRenderer.on('status-msg', (event, msg) => document.getElementById('status').innerText = msg);
-    ipcRenderer.on('progress', (event, data) => {
-        document.getElementById('status').innerText = `Progreso: ${data.task} (${data.type})`;
-    });
+        document.getElementById('add-account-btn').addEventListener('click', () => {
+            const input = document.getElementById('new-account-input');
+            const name = input.value.trim();
+            if(name === "" || name.includes('[object Object]')) return;
+            ipcRenderer.send('save-account', name);
+            input.value = '';
+        });
 
-    ipcRenderer.on('console-log', (event, text) => {
-        const container = document.getElementById('consoleOutputs');
-        if (!container) return;
-        
-        const line = document.createElement('div');
-        line.style.marginBottom = '3px';
-        line.style.lineHeight = '18px';
-        line.style.whiteSpace = 'pre-wrap';
-        
-        if (text.includes('[ERROR]')) {
-            line.style.color = '#ff4a4a';
-        } else if (text.includes('[DEBUG]')) {
-            line.style.color = '#7289da';
-        } else {
-            line.style.color = '#e0e0e0';
+        document.getElementById('account-dropdown').addEventListener('change', (e) => {
+            ipcRenderer.send('select-account', e.target.value);
+        });
+
+        document.getElementById('delete-account-btn').addEventListener('click', () => {
+            const dropdown = document.getElementById('account-dropdown');
+            if(dropdown.value) {
+                ipcRenderer.send('delete-account', dropdown.value);
+            }
+        });
+
+        function renderAll(data) {
+            const container = document.getElementById('profiles-container');
+            container.innerHTML = '';
+
+            if (data.list && data.list.length > 0) {
+                data.list.forEach(p => {
+                    const card = document.createElement('div');
+                    card.className = `profile-card ${data.selectedProfile === p.id ? 'active' : ''}`;
+                    
+                    card.innerHTML = `
+                        <div class="profile-info" onclick="ipcRenderer.send('select-profile', '${p.id}')">
+                            <span class="profile-name">${p.name}</span>
+                            <span class="profile-version">Minecraft ${p.version}</span>
+                        </div>
+                        <button class="btn-delete-profile" onclick="ipcRenderer.send('delete-profile', '${p.id}')">🗑️</button>
+                    `;
+                    container.appendChild(card);
+                });
+            } else {
+                container.innerHTML = '<div style="font-size:12px; color:#525266; text-align:center; padding:20px;">No hay perfiles creados</div>';
+            }
+
+            const accDropdown = document.getElementById('account-dropdown');
+            accDropdown.innerHTML = '';
+            if (data.accounts && data.accounts.length > 0) {
+                data.accounts.forEach(acc => {
+                    const opt = document.createElement('option');
+                    opt.value = acc;
+                    opt.innerText = acc;
+                    if(data.selectedAccount === acc) opt.selected = true;
+                    accDropdown.appendChild(opt);
+                });
+            } else {
+                const opt = document.createElement('option');
+                opt.value = "KuraiUser";
+                opt.innerText = "KuraiUser (Invitado)";
+                accDropdown.appendChild(opt);
+            }
+
+            if(data.settings && data.settings.maxMemory) {
+                document.getElementById('global-ram-max').value = data.settings.maxMemory;
+            }
         }
 
-        line.innerText = text;
-        container.appendChild(line);
+        document.getElementById('launch-btn').addEventListener('click', () => ipcRenderer.send('launch-game'));
 
-        const panel = document.getElementById('launcherConsole');
-        panel.scrollTop = panel.scrollHeight;
-    });
-</script>
+        ipcRenderer.on('data-updated', (event, data) => renderAll(data));
+        ipcRenderer.on('status-msg', (event, msg) => document.getElementById('status').innerText = msg);
+        
+        ipcRenderer.on('java-missing-error', () => {
+            document.getElementById('java-popup-overlay').style.display = 'flex';
+        });
+
+        ipcRenderer.on('progress', (event, data) => {
+            document.getElementById('status').innerText = `Progreso: ${data.task} (${data.type})`;
+        });
+
+        ipcRenderer.on('console-log', (event, text) => {
+            const container = document.getElementById('consoleOutputs');
+            if (!container) return;
+            
+            const line = document.createElement('div');
+            line.style.marginBottom = '3px';
+            line.style.lineHeight = '18px';
+            line.style.whiteSpace = 'pre-wrap';
+            
+            if (text.includes('[ERROR]')) {
+                line.style.color = '#ff4a4a';
+            } else if (text.includes('[DEBUG]')) {
+                line.style.color = '#7289da';
+            } else {
+                line.style.color = '#e0e0e0';
+            }
+            
+            line.innerText = text;
+            container.appendChild(line);
+            container.scrollTop = container.scrollHeight;
+        });
+
+        ipcRenderer.invoke('get-profiles').then(data => renderAll(data));
+    </script>
 </body>
 </html>

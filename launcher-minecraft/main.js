@@ -1,31 +1,53 @@
-const { app, BrowserWindow, ipcMain, dialog, net } = require('electron'); 
+const { app, BrowserWindow, ipcMain, dialog, net, nativeImage } = require('electron'); 
 const path = require('path');
 const fs = require('fs');
 const { Client, Authenticator } = require('minecraft-launcher-core');
 const profilesManager = require('./profiles-manager');
 const launcher = new Client();
 
+// 🛠️ MUDAR LA CACHÉ DE ELECTRON A LA RUTA SEGURA DE MINECRAFT
+const rutaRoaming = app.getPath('appData'); 
+const cacheKurai = path.join(rutaRoaming, '.minecraft', '.KuraiLauncher', 'cache');
+
+if (!fs.existsSync(cacheKurai)){
+    fs.mkdirSync(cacheKurai, { recursive: true });
+}
+app.setPath('userData', cacheKurai); 
+
 let mainWindow;
 
-function createWindow() {
+const ICONO_URL = 'https://raw.githubusercontent.com/SuzuKurai/KuraiLauncher/refs/heads/main/launcher-minecraft/media/KuraiLauncher.png';
+
+async function createWindow() {
+    let appIcon = null;
+    try {
+        const response = await net.fetch(ICONO_URL);
+        const buffer = await response.arrayBuffer();
+        appIcon = nativeImage.createFromBuffer(Buffer.from(buffer));
+    } catch (error) {
+        console.error("No se pudo cargar el icono online:", error);
+    }
+
     mainWindow = new BrowserWindow({
-        width: 1150,
-        height: 750,
+        width: 1150,                       
+        height: 720,                      
+        minWidth: 950,
+        minHeight: 600,
         resizable: true, 
-        icon: path.join(__dirname, 'media/KuraiLauncher.png'),
+        icon: appIcon || undefined,       
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false,
             webviewTag: true 
         }
     });
-    mainWindow.setMenuBarVisibility(false);
+
+    mainWindow.setMenuBarVisibility(false); 
     mainWindow.loadFile('index.html');
 }
 
 app.whenReady().then(createWindow);
 
-// --- FUNCIÓN PARA CONSULTAR LA API EN TIEMPO REAL DE MOJANG ---
 function fetchMojangVersions() {
     return new Promise((resolve) => {
         const request = net.request('https://piston-meta.mojang.com/mc/game/version_manifest_v2.json');
@@ -53,7 +75,6 @@ function fetchMojangVersions() {
     });
 }
 
-// --- FUNCIÓN AUXILIAR DE SEGURIDAD PARA PASAR DATOS LIMPIOS AL FRONTEND ---
 function getSanitizedData() {
     let data = { list: [], selectedProfile: "", accounts: [], selectedAccount: "", settings: {} };
     try {
@@ -70,18 +91,35 @@ function getSanitizedData() {
     return data;
 }
 
-// --- CANAL IPC PARA DESCARGAR VERSIONES EN VIVO ---
 ipcMain.handle('get-mojang-versions', async () => {
     return await fetchMojangVersions();
 });
 
-// --- CANALES IPC PARA PERFILES ---
 ipcMain.handle('get-profiles', () => {
     return getSanitizedData();
 });
 
-ipcMain.on('save-profile', (event, profile) => {
-    try { profilesManager.save(profile); } catch(e){}
+ipcMain.on('save-profile', (event, nuevoPerfil) => {
+    try { 
+        let data = profilesManager.getAll();
+        if (!data) {
+            data = { list: [], selectedProfile: "", accounts: [], selectedAccount: "", settings: {} };
+        }
+        if (!data.list || !Array.isArray(data.list)) {
+            data.list = [];
+        }
+
+        data.list.push(nuevoPerfil);
+        
+        if (!data.selectedProfile || data.selectedProfile === "") {
+            data.selectedProfile = nuevoPerfil.id;
+        }
+        
+        profilesManager.save(data); 
+        console.log(`[OK] Perfil "${nuevoPerfil.name}" creado correctamente.`);
+    } catch(e){
+        console.error("Error crítico al crear perfil rápido:", e);
+    }
     mainWindow.webContents.send('data-updated', getSanitizedData());
 });
 
@@ -96,19 +134,17 @@ ipcMain.on('select-profile', (event, id) => {
 });
 
 ipcMain.on('update-profile-advanced', (event, updatedProfile) => {
-    try { profilesManager.save(updatedProfile); } catch(e){}
+    try { 
+        const data = profilesManager.getAll();
+        const index = data.list.findIndex(p => p.id === updatedProfile.id);
+        if (index !== -1) {
+            data.list[index] = updatedProfile;
+            profilesManager.save(data);
+        }
+    } catch(e){}
     mainWindow.webContents.send('data-updated', getSanitizedData());
 });
 
-ipcMain.handle('select-folder', async () => {
-    const result = await dialog.showOpenDialog(mainWindow, {
-        properties: ['openDirectory'],
-        title: 'Selecciona la carpeta para este perfil (.minecraft)'
-    });
-    return result.canceled ? null : result.filePaths[0];
-});
-
-// --- CANALES PARA CONFIGURACIÓN GLOBAL ---
 ipcMain.on('save-settings', (event, newSettings) => {
     try {
         if (typeof profilesManager.saveSettings === 'function') {
@@ -124,7 +160,6 @@ ipcMain.on('save-settings', (event, newSettings) => {
     mainWindow.webContents.send('data-updated', getSanitizedData());
 });
 
-// --- CANALES PARA CUENTAS ---
 ipcMain.on('save-account', (event, username) => {
     let cleanUsername = username;
     if (username && typeof username === 'object') cleanUsername = username.username || username.name;
@@ -166,7 +201,7 @@ ipcMain.on('delete-account', (event, username) => {
     mainWindow.webContents.send('data-updated', getSanitizedData());
 });
 
-// --- CANAL OPTIMIZADO PARA LANZAR EL JUEGO ---
+// --- CANAL DE LANZAMIENTO CON ESCANEO AGRESIVO DE JAVA 25 ---
 ipcMain.on('launch-game', async (event) => {
     const data = getSanitizedData();
     const currentProfile = data.list.find(p => p.id === data.selectedProfile);
@@ -203,11 +238,14 @@ ipcMain.on('launch-game', async (event) => {
         .trim();
 
     let javaPathManual = undefined;
+    
+    // 🔍 LISTA DE RUTAS AMPLIADA: Buscamos todas las variantes de instalación posibles de Oracle e Eclipse Temurin para Java 25
     const posiblesRutasJava = [
-        "C:\\Program Files\\Java\\jdk-21\\bin\\javaw.exe",
-        "C:\\Program Files (x86)\\Minecraft Launcher\\runtime\\java-runtime-gamma\\windows-x64\\java-runtime-gamma\\bin\\javaw.exe",
-        path.join(app.getPath('appData'), 'Local\\Packages\\Microsoft.42941CD7D105E_8wekyb3d8bbwe\\LocalCache\\Local\\runtime\\java-runtime-gamma\\windows-x64\\java-runtime-gamma\\bin\\javaw.exe'),
-        path.join(app.getPath('home'), 'CurseForge\\Minecraft\\Install\\runtime\\java-runtime-gamma\\windows-x64\\java-runtime-gamma\\bin\\javaw.exe')
+        "C:\\Program Files\\Java\\jdk-25\\bin\\javaw.exe",
+        "C:\\Program Files\\Java\\jre-25\\bin\\javaw.exe",
+        "C:\\Program Files\\Eclipse Foundation\\jdk-25-hotspot\\bin\\javaw.exe",
+        "C:\\Program Files\\Eclipse Adoptium\\jdk-25-hotspot\\bin\\javaw.exe",
+        "C:\\Program Files (x86)\\Java\\jdk-25\\bin\\javaw.exe"
     ];
 
     for (const ruta of posiblesRutasJava) {
@@ -216,6 +254,33 @@ ipcMain.on('launch-game', async (event) => {
             break;
         }
     }
+
+    // 💡 Si no está en las rutas por defecto, escaneamos dinámicamente la carpeta C:\Program Files\Java para encontrar cualquier subcarpeta que empiece con "jdk-25"
+    if (!javaPathManual) {
+        const baseJavaDir = "C:\\Program Files\\Java";
+        if (fs.existsSync(baseJavaDir)) {
+            try {
+                const carpetas = fs.readdirSync(baseJavaDir);
+                const carpetaJdk25 = carpetas.find(f => f.toLowerCase().includes('jdk-25') || f.toLowerCase().includes('25'));
+                if (carpetaJdk25) {
+                    const rutaDetectada = path.join(baseJavaDir, carpetaJdk25, 'bin', 'javaw.exe');
+                    if (fs.existsSync(rutaDetectada)) {
+                        javaPathManual = rutaDetectada;
+                    }
+                }
+            } catch (err) {
+                console.error("Error escaneando directorio de Java:", err);
+            }
+        }
+    }
+
+    // 🚨 ÚLTIMA SALVAGUARDA: Si fallan los escaneos manuales, tiramos de 'javaw' global (pero avisando en debug)
+    if (!javaPathManual) {
+        console.log("[DEBUG] No se halló el ejecutable físico de Java 25. Usando comando de entorno global.");
+        javaPathManual = "javaw"; 
+    }
+
+    console.log(`[DEBUG] Ejecutando Minecraft con el binario de Java asignado en: ${javaPathManual}`);
 
     let opts = {
         authorization: {
@@ -229,7 +294,7 @@ ipcMain.on('launch-game', async (event) => {
             meta: { type: "mojang", demo: false }
         },
         root: finalRoot,
-        javaPath: javaPathManual ? javaPathManual : undefined,                                      
+        javaPath: javaPathManual,                                      
         version: {
             number: cleanVersion,                    
             type: "release"
@@ -250,10 +315,20 @@ ipcMain.on('launch-game', async (event) => {
         console.log(`[DEBUG] ${e}`);
         if(mainWindow) mainWindow.webContents.send('console-log', `[DEBUG] ${e}`);
     });
+
     launcher.on('data', (e) => {
         console.log(`[DATA] ${e}`);
         if(mainWindow) mainWindow.webContents.send('console-log', `[INFO] ${e}`);
+        
+        // Atrapamos tanto el error de código de clase como el mensaje de LinkageError explícito
+        if (e.includes("UnsupportedClassVersionError") || e.includes("class file version 69.0") || e.includes("LinkageError occurred")) {
+            if (mainWindow) {
+                mainWindow.webContents.send('status-msg', 'Error: Versión de Java incompatible o desactualizada detectada.');
+                mainWindow.webContents.send('java-missing-error');
+            }
+        }
     });
+
     launcher.on('error', (e) => {
         console.error("[ERROR CRÍTICO]", e);
         if(mainWindow) {
