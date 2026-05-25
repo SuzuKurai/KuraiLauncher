@@ -1,7 +1,7 @@
 {
   "name": "launcher-minecraft",
-  "version": "1.0.0",
-  "description": "Launcher de Minecraft",
+  "version": "0.0.1-beta.1",
+  "description": "Kurai Launcher",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
