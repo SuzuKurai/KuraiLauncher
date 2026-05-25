@@ -283,38 +283,39 @@
     const webview = document.getElementById('newsWebview');
     const webSubmenu = document.getElementById('webSubmenu');
 
-    // Identificador del perfil activo en edición
     let profileBeingEdited = null;
 
-    // BANCO MÁSTER COMPLETO DE RELEASES OFICIALES
-    const VERSIONES_ESTABLES = [
-        "1.21.11", "1.21.10", "1.21.9", "1.21.8", "1.21.7", "1.21.6", "1.21.5", "1.21.4", "1.21.3", "1.21.2", "1.21.1", "1.21",
-        "1.20.6", "1.20.5", "1.20.4", "1.20.3", "1.20.2", "1.20.1", "1.20",
-        "1.19.4", "1.19.3", "1.19.2", "1.19.1", "1.19",
-        "1.18.2", "1.18.1", "1.18",
-        "1.17.1", "1.17",
-        "1.16.5", "1.16.4", "1.16.3", "1.16.2", "1.16.1", "1.16",
-        "1.15.2", "1.15.1", "1.15",
-        "1.14.4", "1.14.3", "1.14.2", "1.14.1", "1.14",
-        "1.13.2", "1.13.1", "1.13",
-        "1.12.2", "1.12.1", "1.12",
-        "1.11.2", "1.11",
-        "1.10.2", "1.10.1", "1.10",
-        "1.9.4", "1.9.3", "1.9.2", "1.9.1", "1.9",
-        "1.8.9", "1.8.8", "1.8.7", "1.8.6", "1.8.5", "1.8.4", "1.8.3", "1.8.2", "1.8.1", "1.8",
-        "1.7.10", "1.7.9", "1.7.8", "1.7.7", "1.7.6", "1.7.5", "1.7.4", "1.7.3", "1.7.2", "1.7.1", "1.7",
-        "1.6.4", "1.6.3", "1.6.2", "1.6.1", "1.6",
-        "1.5.2", "1.5.1", "1.5",
-        "1.4.7", "1.4.6", "1.4.5", "1.4.4", "1.4.3", "1.4.2", "1.4.1", "1.4",
-        "1.3.2", "1.3.1", "1.3",
-        "1.2.5", "1.2.4", "1.2.3", "1.2.2", "1.2.1", "1.2",
-        "1.1.2", "1.1.1",
-        "1.0.1", "1.0"
-    ];
-    const VERSIONES_SNAPSHOTS = ["1.21-pre1", "24w14a", "23w45a"];
-    const VERSIONES_BETAS = ["b1.7.3", "a1.1.2"];
+    // 🔥 LOS ARRAYS AHORA SE RELLENAN EXCLUSIVAMENTE CON LA API DINÁMICA DE MOJANG
+    let VERSIONES_ESTABLES = [];
+    let VERSIONES_SNAPSHOTS = [];
+    let VERSIONES_BETAS = [];
 
-    // Cambiar pantallas (Modales)
+    // 🔥 LOGICA PARA DESCARGAR EL LISTADO OFICIAL DESDE EL PROCESO MAIN
+    async function cargarVersionesDesdeAPI() {
+        try {
+            document.getElementById('status').innerText = "Buscando nuevas versiones de Minecraft...";
+            const mcVersions = await ipcRenderer.invoke('get-mojang-versions');
+            
+            VERSIONES_ESTABLES = [];
+            VERSIONES_SNAPSHOTS = [];
+            VERSIONES_BETAS = [];
+
+            mcVersions.forEach(v => {
+                if (v.type === 'release') {
+                    VERSIONES_ESTABLES.push(v.id);
+                } else if (v.type === 'snapshot') {
+                    VERSIONES_SNAPSHOTS.push(v.id);
+                } else if (v.type === 'old_beta' || v.type === 'old_alpha') {
+                    VERSIONES_BETAS.push(v.id);
+                }
+            });
+            document.getElementById('status').innerText = "Versiones sincronizadas.";
+        } catch (error) {
+            console.error("Fallo de red al obtener manifiesto, usando offline...", error);
+            VERSIONES_ESTABLES = ["1.21.1", "1.21", "1.20.4", "1.19.4", "1.16.5", "1.12.2", "1.8.9", "1.7.10"];
+        }
+    }
+
     function switchTab(tabId) {
         document.querySelectorAll('.overlay-tab').forEach(tab => tab.classList.remove('active'));
         document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
@@ -331,7 +332,6 @@
         }
     }
 
-    // Cambiar la dirección del navegador interno de forma dinámica
     function changeWebpage(buttonElement, url) {
         document.querySelectorAll('.sub-btn').forEach(btn => btn.classList.remove('active'));
         buttonElement.classList.add('active');
@@ -342,7 +342,6 @@
         }
     }
 
-    // Llenar el selector dinámico del Creador Rápido (CORREGIDO)
     function updateVersionSelect() {
         const versionSelect = document.getElementById('profileVersion');
         if(!versionSelect) return;
@@ -375,7 +374,6 @@
         }
     }
 
-    // ABRE EL MODAL AVANZADO DEL PERFIL (CORREGIDO)
     async function openEditProfile() {
         const profileId = document.getElementById('profileSelect').value;
         if(!profileId) return alert("Por favor, selecciona o crea un perfil primero.");
@@ -392,7 +390,6 @@
             const editVersionSelect = document.getElementById('editProfileVersion');
             editVersionSelect.innerHTML = '';
 
-            // 1. Agregar siempre las estables
             VERSIONES_ESTABLES.forEach(v => {
                 const opt = document.createElement('option');
                 opt.value = v; 
@@ -400,7 +397,6 @@
                 editVersionSelect.appendChild(opt);
             });
 
-            // 2. Agregar Snapshots si están habilitadas
             if (data.settings && data.settings.enableSnapshots) {
                 VERSIONES_SNAPSHOTS.forEach(v => {
                     const opt = document.createElement('option');
@@ -410,7 +406,6 @@
                 });
             }
 
-            // 3. Agregar Betas si están habilitadas
             if (data.settings && data.settings.enableBetas) {
                 VERSIONES_BETAS.forEach(v => {
                     const opt = document.createElement('option');
@@ -420,7 +415,6 @@
                 });
             }
 
-            // Salvaguarda
             const versionExists = Array.from(editVersionSelect.options).some(opt => opt.value === targetProfile.version);
             if (!versionExists && targetProfile.version) {
                 const opt = document.createElement('option');
@@ -434,7 +428,6 @@
         }
     }
 
-    // INVOCA AL EXPLORADOR DE SISTEMA DE OPERATIVO DESDE NODE
     async function selectCustomFolder() {
         const selectedPath = await ipcRenderer.invoke('select-folder');
         if(selectedPath) {
@@ -442,12 +435,10 @@
         }
     }
 
-    // LIMPIAR LA RUTA PERSONALIZADA
     function resetProfilePath() {
         document.getElementById('editProfilePath').value = "";
     }
 
-    // ENVÍA LOS CAMBIOS AVANZADOS HACIA EL BACKEND EN NODE.JS
     function saveProfileAdvanced() {
         const name = document.getElementById('editProfileName').value.trim();
         if(!name) return alert("El perfil debe tener un nombre.");
@@ -464,13 +455,18 @@
         switchTab('home');
     }
 
-    // Inicialización del sistema backend
+    // --- FLUJO DE INICIALIZACIÓN SECUENCIAL ---
     window.addEventListener('DOMContentLoaded', async () => {
         if(webview) {
             webview.addEventListener('dom-ready', () => {
                 console.log('Navegador interno Kurai listo.');
             });
         }
+        
+        // 1. Primero descargamos de internet el manifiesto dinámico de Mojang
+        await cargarVersionesDesdeAPI();
+        
+        // 2. Cargamos el almacenamiento local de perfiles y cuentas
         const data = await ipcRenderer.invoke('get-profiles');
         renderAll(data);
     });
@@ -520,7 +516,6 @@
         document.getElementById('enableSnapshots').checked = data.settings.enableSnapshots || false;
         document.getElementById('enableBetas').checked = data.settings.enableBetas || false;
 
-        // 🔥 CONTROL VISUAL DINÁMICO DEL PANEL DE LA CONSOLA SEGÚN AJUSTES
         const consolePanel = document.getElementById('launcherConsole');
         if (data.settings && data.settings.showConsole) {
             consolePanel.style.display = 'block';
@@ -533,7 +528,6 @@
         updateVersionSelect();
     }
 
-    // --- MANEJO DE EVENTOS ---
     document.getElementById('saveProfileBtn').addEventListener('click', () => {
         const name = document.getElementById('profileName').value.trim();
         if(!name) return alert("Ponle un nombre al perfil");
@@ -561,7 +555,7 @@
             minMemory: document.getElementById('minRamInput').value,
             enableSnapshots: document.getElementById('enableSnapshots').checked,
             enableBetas: document.getElementById('enableBetas').checked,
-            showConsole: document.getElementById('showConsoleInput').checked // 🔥 SE ADJUNTA EL ATRIBUTO AL GUARDAR
+            showConsole: document.getElementById('showConsoleInput').checked 
         });
         updateVersionSelect();
         switchTab('home');
@@ -575,7 +569,6 @@
         document.getElementById('status').innerText = `Progreso: ${data.task} (${data.type})`;
     });
 
-    // 🔥 ESCUCHADOR DEL CANAL IPC DE CONSOLA PARA ESCUPIR LOS LOGS EN TIEMPO REAL
     ipcRenderer.on('console-log', (event, text) => {
         const container = document.getElementById('consoleOutputs');
         if (!container) return;
@@ -585,7 +578,6 @@
         line.style.lineHeight = '18px';
         line.style.whiteSpace = 'pre-wrap';
         
-        // Colores según el tipo de log
         if (text.includes('[ERROR]')) {
             line.style.color = '#ff4a4a';
         } else if (text.includes('[DEBUG]')) {
@@ -597,7 +589,6 @@
         line.innerText = text;
         container.appendChild(line);
 
-        // Auto-scroll para mantener la vista en la última línea
         const panel = document.getElementById('launcherConsole');
         panel.scrollTop = panel.scrollHeight;
     });

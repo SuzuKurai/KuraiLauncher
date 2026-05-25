@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron'); 
+const { app, BrowserWindow, ipcMain, dialog, net } = require('electron'); 
 const path = require('path');
 const fs = require('fs');
 const { Client, Authenticator } = require('minecraft-launcher-core');
@@ -9,8 +9,8 @@ let mainWindow;
 
 function createWindow() {
     mainWindow = new BrowserWindow({
-        width: 1920,
-        height: 1080,
+        width: 1150,
+        height: 750,
         resizable: true, 
         webPreferences: {
             nodeIntegration: true,
@@ -18,10 +18,39 @@ function createWindow() {
             webviewTag: true 
         }
     });
+    mainWindow.setMenuBarVisibility(false);
     mainWindow.loadFile('index.html');
 }
 
 app.whenReady().then(createWindow);
+
+// --- FUNCIÓN PARA CONSULTAR LA API EN TIEMPO REAL DE MOJANG ---
+function fetchMojangVersions() {
+    return new Promise((resolve) => {
+        const request = net.request('https://piston-meta.mojang.com/mc/game/version_manifest_v2.json');
+        
+        request.on('response', (response) => {
+            let body = '';
+            response.on('data', (chunk) => { body += chunk; });
+            response.on('end', () => {
+                try {
+                    const data = JSON.parse(body);
+                    resolve(data.versions || []);
+                } catch (e) {
+                    console.error("Error al procesar JSON de Mojang:", e);
+                    resolve([]);
+                }
+            });
+        });
+
+        request.on('error', (err) => {
+            console.error("Error de red conectando con Mojang:", err);
+            resolve([]);
+        });
+
+        request.end();
+    });
+}
 
 // --- FUNCIÓN AUXILIAR DE SEGURIDAD PARA PASAR DATOS LIMPIOS AL FRONTEND ---
 function getSanitizedData() {
@@ -39,6 +68,11 @@ function getSanitizedData() {
     data.settings = data.settings && typeof data.settings === 'object' ? data.settings : {};
     return data;
 }
+
+// --- CANAL IPC PARA DESCARGAR VERSIONES EN VIVO ---
+ipcMain.handle('get-mojang-versions', async () => {
+    return await fetchMojangVersions();
+});
 
 // --- CANALES IPC PARA PERFILES ---
 ipcMain.handle('get-profiles', () => {
@@ -131,7 +165,7 @@ ipcMain.on('delete-account', (event, username) => {
     mainWindow.webContents.send('data-updated', getSanitizedData());
 });
 
-// --- CANAL OPTIMIZADO PARA LANZAR EL JUEGO + REDIRECCIÓN DE CONSOLA ---
+// --- CANAL OPTIMIZADO PARA LANZAR EL JUEGO ---
 ipcMain.on('launch-game', async (event) => {
     const data = getSanitizedData();
     const currentProfile = data.list.find(p => p.id === data.selectedProfile);
@@ -211,7 +245,6 @@ ipcMain.on('launch-game', async (event) => {
     launcher.removeAllListeners('error');
     launcher.removeAllListeners('progress');
 
-    // 🔥 REENVÍO DE LOGS EN VIVO HACIA LA INTERFAZ HTML
     launcher.on('debug', (e) => {
         console.log(`[DEBUG] ${e}`);
         if(mainWindow) mainWindow.webContents.send('console-log', `[DEBUG] ${e}`);
