@@ -34,7 +34,6 @@ function getSanitizedData() {
     } catch (e) {
         console.error("[MANAGER] Error al obtener datos del archivo, se usarán por defecto:", e);
     }
-    // Asegurar que las estructuras cruciales existan siempre limpias
     data.list = Array.isArray(data.list) ? data.list : [];
     data.accounts = Array.isArray(data.accounts) ? data.accounts.filter(acc => typeof acc === 'string' && !acc.includes('[object Object]')) : [];
     data.settings = data.settings && typeof data.settings === 'object' ? data.settings : {};
@@ -42,18 +41,12 @@ function getSanitizedData() {
 }
 
 // --- CANALES IPC PARA PERFILES ---
-
 ipcMain.handle('get-profiles', () => {
     return getSanitizedData();
 });
 
 ipcMain.on('save-profile', (event, profile) => {
-    try { 
-        // Tu profiles-manager espera el perfil individual aquí
-        profilesManager.save(profile); 
-    } catch(e){
-        console.error("Error guardando perfil individual:", e);
-    }
+    try { profilesManager.save(profile); } catch(e){}
     mainWindow.webContents.send('data-updated', getSanitizedData());
 });
 
@@ -68,12 +61,7 @@ ipcMain.on('select-profile', (event, id) => {
 });
 
 ipcMain.on('update-profile-advanced', (event, updatedProfile) => {
-    try { 
-        // Tu manager maneja la actualización del perfil internamente a través de .save()
-        profilesManager.save(updatedProfile); 
-    } catch(e){
-        console.error("Error actualizando perfil avanzado:", e);
-    }
+    try { profilesManager.save(updatedProfile); } catch(e){}
     mainWindow.webContents.send('data-updated', getSanitizedData());
 });
 
@@ -91,9 +79,9 @@ ipcMain.on('save-settings', (event, newSettings) => {
         if (typeof profilesManager.saveSettings === 'function') {
             profilesManager.saveSettings(newSettings);
         } else {
-            // Salvaguarda si no existe la función
             const data = getSanitizedData();
             data.settings = newSettings;
+            if (profilesManager.save) profilesManager.save(data);
         }
     } catch(e){
         console.error("Error guardando opciones:", e);
@@ -101,45 +89,29 @@ ipcMain.on('save-settings', (event, newSettings) => {
     mainWindow.webContents.send('data-updated', getSanitizedData());
 });
 
-// --- CANALES PARA CUENTAS (CORREGIDOS UTILIZANDO LA LOGICA PROPIA DEL MANAGER) ---
+// --- CANALES PARA CUENTAS ---
 ipcMain.on('save-account', (event, username) => {
     let cleanUsername = username;
-    if (username && typeof username === 'object') {
-        cleanUsername = username.username || username.name;
-    }
-    
-    if (!cleanUsername || typeof cleanUsername !== 'string' || cleanUsername.includes('[object Object]') || cleanUsername.trim() === "") {
-        console.error("[CUENTAS] Nombre de usuario inválido omitido:", username);
-        return;
-    }
+    if (username && typeof username === 'object') cleanUsername = username.username || username.name;
+    if (!cleanUsername || typeof cleanUsername !== 'string' || cleanUsername.includes('[object Object]') || cleanUsername.trim() === "") return;
 
     cleanUsername = cleanUsername.trim();
-    
     try {
-        // Tu profiles-manager posee la función nativa saveAccount para registrar usuarios
         if (typeof profilesManager.saveAccount === 'function') {
             profilesManager.saveAccount(cleanUsername);
-        } else {
-            console.error("No se encontró saveAccount en el manager.");
         }
-    } catch (e) {
-        console.error("[CUENTAS] Error al guardar cuenta mediante saveAccount:", e);
-    }
-    
+    } catch (e) {}
     mainWindow.webContents.send('data-updated', getSanitizedData());
 });
 
 ipcMain.on('select-account', (event, username) => {
     let cleanUsername = username && typeof username === 'object' ? (username.username || username.name) : username;
     if (!cleanUsername || cleanUsername.includes('[object Object]')) return;
-
     cleanUsername = cleanUsername.toString().trim();
-
     try { 
         if (typeof profilesManager.selectAccount === 'function') {
             profilesManager.selectAccount(cleanUsername);
         } else {
-            // Si tu manager no maneja selectAccount nativo, modificamos la propiedad si es accesible
             const data = profilesManager.getAll();
             if(data) data.selectedAccount = cleanUsername;
         }
@@ -150,9 +122,7 @@ ipcMain.on('select-account', (event, username) => {
 ipcMain.on('delete-account', (event, username) => {
     let cleanUsername = username && typeof username === 'object' ? (username.username || username.name) : username;
     if (!cleanUsername) return;
-
     cleanUsername = cleanUsername.toString().trim();
-
     try { 
         if (typeof profilesManager.deleteAccount === 'function') {
             profilesManager.deleteAccount(cleanUsername);
@@ -161,8 +131,7 @@ ipcMain.on('delete-account', (event, username) => {
     mainWindow.webContents.send('data-updated', getSanitizedData());
 });
 
-
-// --- CANAL OPTIMIZADO PARA LANZAR EL JUEGO ---
+// --- CANAL OPTIMIZADO PARA LANZAR EL JUEGO + REDIRECCIÓN DE CONSOLA ---
 ipcMain.on('launch-game', async (event) => {
     const data = getSanitizedData();
     const currentProfile = data.list.find(p => p.id === data.selectedProfile);
@@ -173,9 +142,7 @@ ipcMain.on('launch-game', async (event) => {
     }
 
     const activeUser = data.selectedAccount || "KuraiUser";
-
     mainWindow.webContents.send('status-msg', `Iniciando Minecraft versión ${currentProfile.version || "Desconocida"}...`);
-    console.log(`Iniciando Minecraft versión ${currentProfile.version} con el usuario: ${activeUser}...`);
 
     const defaultRoot = path.join(app.getPath('appData'), '.minecraft');
     const finalRoot = currentProfile.path && currentProfile.path.trim() !== "" ? currentProfile.path : defaultRoot;
@@ -239,24 +206,28 @@ ipcMain.on('launch-game', async (event) => {
         overrides: { checkStrict: false }
     };
 
-    console.log("=== PARÁMETROS ENVIADOS A MCLC ===");
-    console.log("Versión de Minecraft:", `"${opts.version.number}"`);
-    console.log("Java Utilizado:", opts.javaPath || "Por defecto del sistema");
-    console.log("Memoria Asignada:", `Max: ${opts.memory.max} / Min: ${opts.memory.min}`);
-    console.log("Ruta de Instancia:", opts.root);
-    console.log("==================================");
-
     launcher.removeAllListeners('debug');
     launcher.removeAllListeners('data');
     launcher.removeAllListeners('error');
     launcher.removeAllListeners('progress');
 
-    launcher.on('debug', (e) => console.log(`[DEBUG] ${e}`));
-    launcher.on('data', (e) => console.log(`[DATA] ${e}`));
+    // 🔥 REENVÍO DE LOGS EN VIVO HACIA LA INTERFAZ HTML
+    launcher.on('debug', (e) => {
+        console.log(`[DEBUG] ${e}`);
+        if(mainWindow) mainWindow.webContents.send('console-log', `[DEBUG] ${e}`);
+    });
+    launcher.on('data', (e) => {
+        console.log(`[DATA] ${e}`);
+        if(mainWindow) mainWindow.webContents.send('console-log', `[INFO] ${e}`);
+    });
     launcher.on('error', (e) => {
         console.error("[ERROR CRÍTICO]", e);
-        mainWindow.webContents.send('status-msg', `Error al lanzar: ${e.message || e}`);
+        if(mainWindow) {
+            mainWindow.webContents.send('console-log', `[ERROR] ${e.message || e}`);
+            mainWindow.webContents.send('status-msg', `Error al lanzar: ${e.message || e}`);
+        }
     });
+    
     launcher.on('progress', (e) => { mainWindow.webContents.send('progress', e); });
 
     launcher.launch(opts);
