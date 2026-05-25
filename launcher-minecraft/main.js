@@ -12,6 +12,7 @@ function createWindow() {
         width: 1150,
         height: 750,
         resizable: true, 
+        icon: path.join(__dirname, 'media/KuraiLauncher.png'),
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false,
