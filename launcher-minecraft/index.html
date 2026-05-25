@@ -6,14 +6,64 @@
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #111116; color: white; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         
-        /* 1. BARRA SUPERIOR (NAVBAR PRINCIPAL) */
-        .navbar { height: 55px; background: rgba(17, 17, 22, 0.95); display: flex; justify-content: space-between; align-items: center; padding: 0 25px; border-bottom: 1px solid #252530; z-index: 10; }
-        .navbar h2 { margin: 0; font-size: 18px; color: #7289da; letter-spacing: 1px; }
-        .nav-links { display: flex; gap: 10px; }
-        .nav-btn { padding: 8px 16px; background: transparent; border: none; color: #aaa; font-size: 14px; cursor: pointer; border-radius: 4px; font-weight: bold; transition: 0.2s; }
-        .nav-btn:hover, .nav-btn.active { background: #2f3136; color: white; }
+        /* 1. BARRA SUPERIOR (NAVBAR PRINCIPAL MODERNIZADA) */
+        .navbar { 
+            height: 60px; 
+            background: rgba(20, 20, 27, 0.75); 
+            backdrop-filter: blur(12px); 
+            -webkit-backdrop-filter: blur(12px);
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 0 30px; 
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05); 
+            z-index: 10; 
+        }
+        .navbar h2 { 
+            margin: 0; 
+            font-size: 16px; 
+            color: #ffffff; 
+            font-weight: 800;
+            letter-spacing: 2px; 
+            background: linear-gradient(45deg, #7289da, #5865f2); 
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .nav-links { 
+            display: flex; 
+            gap: 12px; 
+        }
+        
+        /* BOTONES PRINCIPALES */
+        .nav-btn { 
+            padding: 10px 20px; 
+            background: rgba(255, 255, 255, 0.03); 
+            border: 1px solid rgba(255, 255, 255, 0.05); 
+            color: #99aab5; 
+            font-size: 13px; 
+            cursor: pointer; 
+            border-radius: 8px; 
+            font-weight: 600; 
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .nav-btn:hover { 
+            background: rgba(114, 137, 218, 0.1); 
+            border-color: rgba(114, 137, 218, 0.3);
+            color: #ffffff; 
+            transform: translateY(-1px);
+        }
+        .nav-btn.active { 
+            background: #5865f2; 
+            border-color: #5865f2;
+            color: #ffffff; 
+            box-shadow: 0 4px 15px rgba(88, 101, 242, 0.3);
+        }
 
-        /* 2. SUBMENÚ DE NAVEGACIÓN WEB (CENTRADO JUSTO ABAJO) */
+        /* 2. SUBMENÚ DE NAVEGACIÓN WEB */
         .sub-navbar { 
             height: 48px; 
             background: #14141c; 
@@ -24,7 +74,8 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.03); 
             z-index: 9; 
         }
-        /* BOTONES DE LAS PÁGINAS (Pestañas de la web) */
+        
+        /* BOTONES DE LAS PÁGINAS */
         .sub-btn { 
             padding: 6px 18px; 
             background: transparent; 
@@ -43,7 +94,7 @@
         }
         .sub-btn.active { 
             background: #ffffff; 
-            color: #111116; /* Contraste minimalista invertido para la web activa */
+            color: #111116; 
             border-color: #ffffff; 
             font-weight: 700;
             box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15); 
@@ -102,7 +153,7 @@
 
     <div class="center-container">
         
-        <webview id="newsWebview" class="news-webview" src="https://google.com"></webview>
+        <webview id="newsWebview" class="news-webview" src="https://suzukurai.github.io/KuraiLauncher/devlog"></webview>
 
         <div id="tab-cuentas" class="overlay-tab">
             <div class="card">
@@ -121,7 +172,7 @@
 
         <div id="tab-opciones" class="overlay-tab">
             <div class="card">
-                <h3 style="margin-top:0; color:#7289da;">Ajustes de Rendimiento</h3>
+                <h3 style="margin-top:0; color:#7289da;">Ajustes de Rendimiento Global</h3>
                 <div style="margin-bottom:15px;">
                     <label>Asignación de RAM Máxima (Ej: 4G, 6G):</label>
                     <input type="text" id="maxRamInput" style="width:100%; box-sizing:border-box;">
@@ -130,8 +181,55 @@
                     <label>Asignación de RAM Mínima (Ej: 1G, 2G):</label>
                     <input type="text" id="minRamInput" style="width:100%; box-sizing:border-box;">
                 </div>
+
+                <h3 style="font-size:16px; margin-top:20px; color:#7289da;">Filtros de Versiones</h3>
+                <div style="margin-bottom:10px; display:flex; align-items:center; gap:10px;">
+                    <input type="checkbox" id="enableSnapshots" style="width:18px; height:18px; cursor:pointer;">
+                    <label for="enableSnapshots" style="cursor:pointer; font-size:13px;">Habilitar Snapshots (Versiones de prueba)</label>
+                </div>
+                <div style="margin-bottom:20px; display:flex; align-items:center; gap:10px;">
+                    <input type="checkbox" id="enableBetas" style="width:18px; height:18px; cursor:pointer;">
+                    <label for="enableBetas" style="cursor:pointer; font-size:13px;">Habilitar Betas/Alphas Antiguas</label>
+                </div>
+
                 <button class="btn-action btn-primary" id="saveSettingsBtn">Guardar Ajustes</button>
                 <button class="btn-action" onclick="switchTab('home')" style="width:100%; margin-top:8px; background:#252533;">Volver</button>
+            </div>
+        </div>
+
+        <div id="tab-editar-perfil" class="overlay-tab">
+            <div class="card" style="max-width: 520px;">
+                <h3 style="margin-top:0; color:#7289da;">Configuración Avanzada del Perfil</h3>
+                
+                <div style="margin-bottom:15px;">
+                    <label style="font-size:12px; font-weight:bold;">Nombre del Perfil:</label>
+                    <input type="text" id="editProfileName" style="width:100%; box-sizing:border-box; margin-top:5px;">
+                </div>
+
+                <div class="flex-row" style="margin-bottom:15px;">
+                    <div style="flex:1;">
+                        <label style="font-size:12px; font-weight:bold;">RAM Dedicada (Ej: 4G):</label>
+                        <input type="text" id="editProfileRam" placeholder="Dejar vacío para usar global" style="width:100%; box-sizing:border-box; margin-top:5px;">
+                    </div>
+                    <div style="flex:1;">
+                        <label style="font-size:12px; font-weight:bold;">Versión de Minecraft:</label>
+                        <select id="editProfileVersion" style="width:100%; margin-top:5px; padding:10px;"></select>
+                    </div>
+                </div>
+
+                <div style="margin-bottom:25px;">
+                    <label style="font-size:12px; font-weight:bold;">Ruta de Instalación (.minecraft):</label>
+                    <div class="flex-row" style="margin-top:5px;">
+                        <input type="text" id="editProfilePath" readonly placeholder="Predeterminada (%appdata%/.minecraft)" style="flex:1; background:#1e1e26; color:#aaa; font-size:12px;">
+                        <button class="btn-action" onclick="selectCustomFolder()" style="font-size:12px; background:#5865f2;">Examinar</button>
+                    </div>
+                    <p style="font-size:11px; color:#7289da; margin: 5px 0 0 0; cursor:pointer; text-decoration:underline;" onclick="resetProfilePath()">Restablecer a ruta por defecto (%appdata%)</p>
+                </div>
+
+                <div class="flex-row">
+                    <button class="btn-action btn-primary" onclick="saveProfileAdvanced()" style="flex:1;">Guardar Cambios</button>
+                    <button class="btn-action" onclick="switchTab('home')" style="background:#252533; width:100px;">Cancelar</button>
+                </div>
             </div>
         </div>
 
@@ -142,8 +240,9 @@
             <div class="selector-box">
                 <label>Perfil de Versión</label>
                 <div class="flex-row">
-                    <select id="profileSelect"></select>
-                    <button class="btn-action btn-danger" id="deleteProfileBtn" title="Eliminar Perfil" style="padding: 5px 10px;">X</button>
+                    <select id="profileSelect" style="min-width:160px;"></select>
+                    <button class="btn-action" onclick="openEditProfile()" style="background:#252533; border:1px solid #3e3e56; padding: 5px 12px;" title="Configurar este perfil">⚙️</button>
+                    <button class="btn-action btn-danger" id="deleteProfileBtn" title="Eliminar Perfil" style="padding: 5px 12px;">X</button>
                 </div>
             </div>
             
@@ -156,11 +255,7 @@
                 <label>Nuevo Perfil Rápido</label>
                 <div class="flex-row">
                     <input type="text" id="profileName" placeholder="Nombre" style="width:110px; padding:7px;">
-                    <select id="profileVersion" style="padding:7px;">
-                        <option value="1.20.4">1.20.4</option>
-                        <option value="1.20.1">1.20.1</option>
-                        <option value="1.16.5">1.16.5</option>
-                    </select>
+                    <select id="profileVersion" style="padding:7px;"></select>
                     <button class="btn-action" id="saveProfileBtn" style="background:#5865f2; padding: 5px 12px;">+</button>
                 </div>
             </div>
@@ -177,6 +272,37 @@
     const webview = document.getElementById('newsWebview');
     const webSubmenu = document.getElementById('webSubmenu');
 
+    // Identificador del perfil activo en edición
+    let profileBeingEdited = null;
+
+    // BANCO MÁSTER COMPLETO DE RELEASES OFICIALES
+    const VERSIONES_ESTABLES = [
+        "1.21.11", "1.21.10", "1.21.9", "1.21.8", "1.21.7", "1.21.6", "1.21.5", "1.21.4", "1.21.3", "1.21.2", "1.21.1", "1.21",
+        "1.20.6", "1.20.5", "1.20.4", "1.20.3", "1.20.2", "1.20.1", "1.20",
+        "1.19.4", "1.19.3", "1.19.2", "1.19.1", "1.19",
+        "1.18.2", "1.18.1", "1.18",
+        "1.17.1", "1.17",
+        "1.16.5", "1.16.4", "1.16.3", "1.16.2", "1.16.1", "1.16",
+        "1.15.2", "1.15.1", "1.15",
+        "1.14.4", "1.14.3", "1.14.2", "1.14.1", "1.14",
+        "1.13.2", "1.13.1", "1.13",
+        "1.12.2", "1.12.1", "1.12",
+        "1.11.2", "1.11",
+        "1.10.2", "1.10.1", "1.10",
+        "1.9.4", "1.9.3", "1.9.2", "1.9.1", "1.9",
+        "1.8.9", "1.8.8", "1.8.7", "1.8.6", "1.8.5", "1.8.4", "1.8.3", "1.8.2", "1.8.1", "1.8",
+        "1.7.10", "1.7.9", "1.7.8", "1.7.7", "1.7.6", "1.7.5", "1.7.4", "1.7.3", "1.7.2", "1.7.1", "1.7",
+        "1.6.4", "1.6.3", "1.6.2", "1.6.1", "1.6",
+        "1.5.2", "1.5.1", "1.5",
+        "1.4.7", "1.4.6", "1.4.5", "1.4.4", "1.4.3", "1.4.2", "1.4.1", "1.4",
+        "1.3.2", "1.3.1", "1.3",
+        "1.2.5", "1.2.4", "1.2.3", "1.2.2", "1.2.1", "1.2",
+        "1.1.2", "1.1.1",
+        "1.0.1", "1.0"
+    ];
+    const VERSIONES_SNAPSHOTS = ["1.21-pre1", "24w14a", "23w45a"];
+    const VERSIONES_BETAS = ["b1.7.3", "a1.1.2"];
+
     // Cambiar pantallas (Modales)
     function switchTab(tabId) {
         document.querySelectorAll('.overlay-tab').forEach(tab => tab.classList.remove('active'));
@@ -184,26 +310,156 @@
         
         if(tabId === 'home') {
             document.getElementById('main-btn-home').classList.add('active');
-            webSubmenu.style.display = 'flex'; // Muestra el submenú en el Inicio
+            webSubmenu.style.display = 'flex'; 
         } else {
             document.getElementById(tabId).classList.add('active');
-            event.currentTarget.classList.add('active');
-            webSubmenu.style.display = 'none'; // Oculta el submenú si entras a opciones/cuentas
+            if (window.event && window.event.currentTarget) {
+                window.event.currentTarget.classList.add('active');
+            }
+            webSubmenu.style.display = 'none'; 
         }
     }
 
     // Cambiar la dirección del navegador interno de forma dinámica
     function changeWebpage(buttonElement, url) {
-        // Quitar la clase activa de todos los sub-botones y ponérsela al seleccionado
         document.querySelectorAll('.sub-btn').forEach(btn => btn.classList.remove('active'));
         buttonElement.classList.add('active');
         
-        // Redireccionar la Webview
-        webview.src = url;
+        if (webview) {
+            webview.setAttribute('src', url);
+            webview.loadURL(url).catch(err => console.log("Cargando WebView..."));
+        }
     }
 
-    // Inicialización del sistema backend (Perfiles, RAM, Cuentas)
+    // Llenar el selector dinámico del Creador Rápido (CORREGIDO)
+    function updateVersionSelect() {
+        const versionSelect = document.getElementById('profileVersion');
+        if(!versionSelect) return;
+        
+        versionSelect.innerHTML = ''; 
+
+        VERSIONES_ESTABLES.forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v; // 🔥 Mantiene el valor limpio "1.21.1"
+            opt.innerText = `Release: ${v}`;
+            versionSelect.appendChild(opt);
+        });
+
+        if (document.getElementById('enableSnapshots').checked) {
+            VERSIONES_SNAPSHOTS.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v; // 🔥 Mantiene el valor limpio "24w14a"
+                opt.innerText = `Snapshot: ${v}`;
+                versionSelect.appendChild(opt);
+            });
+        }
+
+        if (document.getElementById('enableBetas').checked) {
+            VERSIONES_BETAS.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v; // 🔥 Mantiene el valor limpio "b1.7.3"
+                opt.innerText = `Beta/Alpha: ${v}`;
+                versionSelect.appendChild(opt);
+            });
+        }
+    }
+
+    // ABRE EL MODAL AVANZADO DEL PERFIL (CORREGIDO)
+    async function openEditProfile() {
+        const profileId = document.getElementById('profileSelect').value;
+        if(!profileId) return alert("Por favor, selecciona o crea un perfil primero.");
+        
+        const data = await ipcRenderer.invoke('get-profiles');
+        const targetProfile = data.list.find(p => p.id === profileId);
+        
+        if(targetProfile) {
+            profileBeingEdited = targetProfile.id;
+            document.getElementById('editProfileName').value = targetProfile.name || "";
+            document.getElementById('editProfileRam').value = targetProfile.ram || "";
+            document.getElementById('editProfilePath').value = targetProfile.path || "";
+            
+            const editVersionSelect = document.getElementById('editProfileVersion');
+            editVersionSelect.innerHTML = '';
+
+            // 1. Agregar siempre las estables
+            VERSIONES_ESTABLES.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v; // 🔥 Limpio
+                opt.innerText = `Release: ${v}`;
+                editVersionSelect.appendChild(opt);
+            });
+
+            // 2. Agregar Snapshots si están habilitadas
+            if (data.settings && data.settings.enableSnapshots) {
+                VERSIONES_SNAPSHOTS.forEach(v => {
+                    const opt = document.createElement('option');
+                    opt.value = v; // 🔥 Limpio
+                    opt.innerText = `Snapshot: ${v}`;
+                    editVersionSelect.appendChild(opt);
+                });
+            }
+
+            // 3. Agregar Betas si están habilitadas
+            if (data.settings && data.settings.enableBetas) {
+                VERSIONES_BETAS.forEach(v => {
+                    const opt = document.createElement('option');
+                    opt.value = v; // 🔥 Limpio
+                    opt.innerText = `Beta/Alpha: ${v}`;
+                    editVersionSelect.appendChild(opt);
+                });
+            }
+
+            // Salvaguarda
+            const versionExists = Array.from(editVersionSelect.options).some(opt => opt.value === targetProfile.version);
+            if (!versionExists && targetProfile.version) {
+                const opt = document.createElement('option');
+                opt.value = targetProfile.version;
+                opt.innerText = `${targetProfile.version} (Actual del perfil)`;
+                editVersionSelect.appendChild(opt);
+            }
+
+            editVersionSelect.value = targetProfile.version;
+            switchTab('tab-editar-perfil');
+        }
+    }
+
+    // 🔥 INVOCA AL EXPLORADOR DE SISTEMA DE OPERATIVO DESDE NODE
+    async function selectCustomFolder() {
+        const selectedPath = await ipcRenderer.invoke('select-folder');
+        if(selectedPath) {
+            document.getElementById('editProfilePath').value = selectedPath;
+        }
+    }
+
+    // LIMPIAR LA RUTA PERSONALIZADA
+    function resetProfilePath() {
+        document.getElementById('editProfilePath').value = "";
+    }
+
+    // 🔥 ENVÍA LOS CAMBIOS AVANZADOS HACIA EL BACKEND EN NODE.JS
+    function saveProfileAdvanced() {
+        const name = document.getElementById('editProfileName').value.trim();
+        if(!name) return alert("El perfil debe tener un nombre.");
+
+        const advancedData = {
+            id: profileBeingEdited,
+            name: name,
+            version: document.getElementById('editProfileVersion').value,
+            ram: document.getElementById('editProfileRam').value.trim(),
+            path: document.getElementById('editProfilePath').value.trim()
+        };
+
+        ipcRenderer.send('update-profile-advanced', advancedData);
+        switchTab('home');
+    }
+
+    // Inicialización del sistema backend
     window.addEventListener('DOMContentLoaded', async () => {
+        if(webview) {
+            webview.addEventListener('dom-ready', () => {
+                console.log('Navegador interno Kurai listo.');
+            });
+        }
         const data = await ipcRenderer.invoke('get-profiles');
         renderAll(data);
     });
@@ -249,13 +505,18 @@
 
         document.getElementById('maxRamInput').value = data.settings.maxMemory || "4G";
         document.getElementById('minRamInput').value = data.settings.minMemory || "2G";
+        
+        document.getElementById('enableSnapshots').checked = data.settings.enableSnapshots || false;
+        document.getElementById('enableBetas').checked = data.settings.enableBetas || false;
+
+        updateVersionSelect();
     }
 
     // --- MANEJO DE EVENTOS ---
     document.getElementById('saveProfileBtn').addEventListener('click', () => {
         const name = document.getElementById('profileName').value.trim();
         if(!name) return alert("Ponle un nombre al perfil");
-        ipcRenderer.send('save-profile', { id: 'id_' + Date.now(), name, version: document.getElementById('profileVersion').value });
+        ipcRenderer.send('save-profile', { id: 'id_' + Date.now(), name, version: document.getElementById('profileVersion').value, ram: "", path: "" });
         document.getElementById('profileName').value = '';
     });
 
@@ -274,7 +535,13 @@
     document.getElementById('deleteAccountBtn').addEventListener('click', () => ipcRenderer.send('delete-account', document.getElementById('manageAccountsSelect').value));
 
     document.getElementById('saveSettingsBtn').addEventListener('click', () => {
-        ipcRenderer.send('save-settings', { maxMemory: document.getElementById('maxRamInput').value, minMemory: document.getElementById('minRamInput').value });
+        ipcRenderer.send('save-settings', { 
+            maxMemory: document.getElementById('maxRamInput').value, 
+            minMemory: document.getElementById('minRamInput').value,
+            enableSnapshots: document.getElementById('enableSnapshots').checked,
+            enableBetas: document.getElementById('enableBetas').checked
+        });
+        updateVersionSelect();
         switchTab('home');
     });
 
