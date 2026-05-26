@@ -20,17 +20,18 @@
     "productName": "KuraiLauncher",
     "win": {
       "target": [
-        "nsis"
+        "portable"
       ],
       "icon": "icon.ico",
       "requestedExecutionLevel": "asInvoker" 
     },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "Kurai Launcher"
-    }
+    "portable": {
+      "artifactName": "${productName}_Portable_${version}.${ext}",
+      "splashImage": null
+    },
+    "files": [
+      "**/*",
+      "!dist/${/*}"
+    ]
   }
 }
