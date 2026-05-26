@@ -334,7 +334,8 @@ ipcMain.on('launch-game', async (event) => {
         version: { number: cleanVersion, type: "release" },
         memory: { max: maxRamMb, min: minRamMb },
         customArgs: customJvmArgs, 
-        overrides: { checkStrict: false }
+        overrides: { checkStrict: false },
+        customflags: ["-Xss1M"]
     };
 
     launcher.removeAllListeners('debug');
