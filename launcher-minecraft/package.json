@@ -21,11 +21,16 @@
     "win": {
       "target": [
         "nsis"
-      ]
+      ],
+      "icon": "media/icon.ico",
+      "requestedExecutionLevel": "asInvoker"
     },
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Kurai Launcher"
     },
     "files": [
       "**/*",
