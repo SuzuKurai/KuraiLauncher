@@ -1,6 +1,6 @@
 {
   "name": "launcher-minecraft",
-  "version": "0.0.1-beta.1",
+  "version": "0.0.1-beta.2",
   "description": "Kurai Launcher",
   "main": "main.js",
   "scripts": {
