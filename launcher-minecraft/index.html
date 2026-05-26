@@ -141,7 +141,7 @@
         .form-control { background: #1a1a24; border: 1px solid rgba(255,255,255,0.04); color: white; padding: 10px 14px; border-radius: 8px; font-size: 13px; outline: none; box-sizing: border-box; width: 100%; }
         .form-control:focus { border-color: #5865f2; }
         
-        /* FILTROS DE VERSIONES (SNAPSHOTS, BETAS, ALPHAS) */
+        /* FILTROS DE VERSIONES */
         .version-filters { display: flex; flex-wrap: wrap; gap: 12px; background: #1a1a24; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.02); }
         .filter-checkbox-label { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #e0e0e8; cursor: pointer; user-select: none; }
         .filter-checkbox-label input { accent-color: #5865f2; cursor: pointer; }
@@ -165,7 +165,7 @@
 
     <div class="navbar">
         <h2>KURAI LAUNCHER</h2>
-        <div style="font-size: 11px; font-weight: 700; color: #4e4e5f; background: #1a1a24; padding: 6px 14px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.02);">DEVELOPER BUILD</div>
+        <div style="font-size: 11px; font-weight: 700; color: #4e4e5f; background: #1a1a24; padding: 6px 14px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.02);" id="launcher-tag-version">Cargando...</div>
     </div>
 
     <div class="main-container">
@@ -308,10 +308,24 @@
         </div>
     </div>
 
+    <div id="update-popup-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10000; align-items: center; justify-content: center;">
+        <div style="background: #16161e; border: 2px solid #5865f2; padding: 35px; border-radius: 16px; width: 460px; text-align: center; color: #ffffff; box-shadow: 0px 15px 40px rgba(0,0,0,0.6);">
+            <div style="font-size: 44px; margin-bottom: 12px;">🚀</div>
+            <h2 style="margin: 0 0 10px 0; font-size: 22px; color: #5865f2; font-weight: 800; letter-spacing: 0.5px;">¡Nueva actualización disponible!</h2>
+            <p style="font-size: 14px; color: #b3b3b3; line-height: 1.6; margin-bottom: 25px;" id="update-popup-text">
+                Una nueva versión del launcher está lista para descargar.
+            </p>
+            <div style="display: flex; gap: 12px; justify-content: center;">
+                <button id="btn-download-update" style="background: #5865f2; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px; transition: 0.2s;">Descargar Ahora</button>
+                <button onclick="document.getElementById('update-popup-overlay').style.display = 'none'" style="background: #252533; color: #a5a5b5; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px;">Más tarde</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const { ipcRenderer } = require('electron');
 
-        let rawMojangVersions = []; // Caché local para filtrar dinámicamente sin re-peticiones de red
+        let rawMojangVersions = []; 
         let currentProfilesCache = [];
 
         function togglePanel(id, open) {
@@ -326,7 +340,6 @@
             document.getElementById('prof-name').value = "";
         }
 
-        // Evento interactivo para actualizar el texto de la barra de RAM
         const ramSlider = document.getElementById('global-ram-slider');
         const ramDisplay = document.getElementById('ram-display');
         ramSlider.addEventListener('input', (e) => {
@@ -334,7 +347,6 @@
             ramDisplay.innerText = `${val} GB (${val * 1024} MB)`;
         });
 
-        // Poblar y Filtrar Versiones según los checkboxes seleccionados
         function populateVersionsList(selectedVersionToMatch = "") {
             const select = document.getElementById('prof-version-select');
             select.innerHTML = '';
@@ -371,18 +383,15 @@
             }
         }
 
-        // Escuchadores de eventos para los filtros en tiempo real
         document.getElementById('filter-snapshots').addEventListener('change', () => populateVersionsList());
         document.getElementById('filter-betas').addEventListener('change', () => populateVersionsList());
 
-        // Cargar datos de red iniciales una sola vez para mejorar rendimiento
         async function loadMojangManifest() {
             if (rawMojangVersions.length === 0) {
                 rawMojangVersions = await ipcRenderer.invoke('get-mojang-versions');
             }
         }
 
-        // Botón "+" para crear Perfil Nuevo
         document.getElementById('open-add-profile-btn').addEventListener('click', async () => {
             document.getElementById('panel-profile-title').innerText = "Crear Perfil";
             document.getElementById('prof-editing-id').value = "";
@@ -396,7 +405,6 @@
             populateVersionsList();
         });
 
-        // Gatillo para abrir panel en Modo EDICIÓN
         async function openEditProfileMode(profileId) {
             const profile = currentProfilesCache.find(p => p.id === profileId);
             if (!profile) return;
@@ -411,7 +419,6 @@
 
             await loadMojangManifest();
 
-            // Si es una snapshot o beta antigua, forzar el encendido automático de su checkbox correspondiente para que salga en la lista
             const mojangVerMeta = rawMojangVersions.find(v => v.id === profile.version);
             if (mojangVerMeta) {
                 if (mojangVerMeta.type === 'snapshot') document.getElementById('filter-snapshots').checked = true;
@@ -428,7 +435,6 @@
         
         document.getElementById('open-settings-btn').addEventListener('click', () => togglePanel('panel-settings', true));
 
-        // Evento de guardado (sirve unificado tanto para crear como para editar)
         document.getElementById('save-profile-btn').addEventListener('click', () => {
             const name = document.getElementById('prof-name').value.trim();
             const version = document.getElementById('prof-version-select').value;
@@ -548,8 +554,25 @@
         ipcRenderer.on('data-updated', (event, data) => renderAll(data));
         ipcRenderer.on('status-msg', (event, msg) => document.getElementById('status').innerText = msg);
         ipcRenderer.on('java-missing-error', () => document.getElementById('java-popup-overlay').style.display = 'flex');
+        
         ipcRenderer.on('progress', (event, data) => {
             document.getElementById('status').innerText = `Progreso: ${data.task} (${data.type})`;
+        });
+
+        // ESCUCHADOR DE ACTUALIZACIONES DISPONIBLES
+        ipcRenderer.on('update-available', (event, versions) => {
+            document.getElementById('update-popup-text').innerHTML = `Tu versión actual es la <strong>${versions.current}</strong>.<br>La nueva versión <strong>${versions.latest}</strong> ya está disponible para descargar.`;
+            document.getElementById('update-popup-overlay').style.display = 'flex';
+            
+            document.getElementById('btn-download-update').onclick = () => {
+                ipcRenderer.send('open-url', versions.url);
+                document.getElementById('update-popup-overlay').style.display = 'none';
+            };
+        });
+
+        // Pintar la etiqueta de versión en el Navbar superior
+        ipcRenderer.invoke('get-launcher-version').then(v => {
+            document.getElementById('launcher-tag-version').innerText = `VERSION v${v}`;
         });
 
         ipcRenderer.invoke('get-profiles').then(data => renderAll(data));

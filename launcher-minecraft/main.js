@@ -1,9 +1,14 @@
-const { app, BrowserWindow, ipcMain, dialog, net, nativeImage } = require('electron'); 
+const { app, BrowserWindow, ipcMain, dialog, net, nativeImage, shell } = require('electron'); 
 const path = require('path');
 const fs = require('fs');
 const { Client, Authenticator } = require('minecraft-launcher-core');
 const profilesManager = require('./profiles-manager');
 const launcher = new Client();
+
+// CONSTANTES DE VERSIÓN DEL LAUNCHER
+const LAUNCHER_VERSION = '0.0.1-beta.2';
+// Cambia esto por la URL real de tu repositorio donde alojes el JSON de control de versión
+const UPDATE_CHECK_URL = 'https://raw.githubusercontent.com/SuzuKurai/KuraiLauncher/main/version.json';
 
 const rutaRoaming = app.getPath('appData'); 
 const cacheKurai = path.join(rutaRoaming, '.minecraft', '.KuraiLauncher', 'cache');
@@ -44,6 +49,11 @@ async function createWindow() {
 
     mainWindow.setMenuBarVisibility(false); 
     mainWindow.loadFile('index.html');
+
+    // Comprobar actualizaciones tras cargar la interfaz
+    mainWindow.webContents.on('did-finish-load', () => {
+        checkLauncherUpdates();
+    });
 }
 
 function createConsoleWindow() {
@@ -74,6 +84,34 @@ function createConsoleWindow() {
 }
 
 app.whenReady().then(createWindow);
+
+// FUNCIÓN PARA VERIFICAR SI HAY ACTUALIZACIONES EN LA WEB
+function checkLauncherUpdates() {
+    const request = net.request(UPDATE_CHECK_URL);
+    request.on('response', (response) => {
+        let body = '';
+        response.on('data', (chunk) => { body += chunk; });
+        response.on('end', () => {
+            try {
+                const data = JSON.parse(body);
+                // Si la versión remota es diferente o superior a la local
+                if (data.version && data.version !== LAUNCHER_VERSION) {
+                    mainWindow.webContents.send('update-available', {
+                        current: LAUNCHER_VERSION,
+                        latest: data.version,
+                        url: data.url || 'https://github.com/'
+                    });
+                }
+            } catch (e) {
+                console.error("Error leyendo JSON de actualización remota:", e);
+            }
+        });
+    });
+    request.on('error', (err) => {
+        console.error("No se pudo conectar con el servidor de actualizaciones:", err);
+    });
+    request.end();
+}
 
 function fetchMojangVersions() {
     return new Promise((resolve) => {
@@ -126,11 +164,18 @@ ipcMain.handle('get-profiles', () => {
     return getSanitizedData();
 });
 
+ipcMain.handle('get-launcher-version', () => {
+    return LAUNCHER_VERSION;
+});
+
 ipcMain.on('open-external-console', () => {
     createConsoleWindow();
 });
 
-// MODIFICADO: Soporte inteligente para crear o actualizar un perfil existente (Modo Edición)
+ipcMain.on('open-url', (event, url) => {
+    shell.openExternal(url); // Abre el navegador predeterminado del sistema con la URL de descarga
+});
+
 ipcMain.on('save-profile', (event, perfilEntrante) => {
     try { 
         let data = profilesManager.getAll();
@@ -139,10 +184,8 @@ ipcMain.on('save-profile', (event, perfilEntrante) => {
         
         const indexExistente = data.list.findIndex(p => p.id === perfilEntrante.id);
         if (indexExistente !== -1) {
-            // Edición: Actualizar datos conservando propiedades personalizadas si las tuviera
             data.list[indexExistente] = { ...data.list[indexExistente], ...perfilEntrante };
         } else {
-            // Creación: Insertar nuevo perfil
             data.list.push(perfilEntrante);
         }
 
