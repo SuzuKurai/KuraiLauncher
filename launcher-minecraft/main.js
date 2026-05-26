@@ -8,7 +8,7 @@ const launcher = new Client();
 // CONSTANTES DE VERSIÓN DEL LAUNCHER
 const LAUNCHER_VERSION = '0.0.1-beta.2';
 // Cambia esto por la URL real de tu repositorio donde alojes el JSON de control de versión
-const UPDATE_CHECK_URL = 'https://raw.githubusercontent.com/SuzuKurai/KuraiLauncher/main/version.json';
+const UPDATE_CHECK_URL = 'https://raw.githubusercontent.com/SuzuKurai/KuraiLauncher/refs/heads/main/launcher-minecraft/version.json';
 
 const rutaRoaming = app.getPath('appData'); 
 const cacheKurai = path.join(rutaRoaming, '.minecraft', '.KuraiLauncher', 'cache');

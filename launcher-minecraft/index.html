@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8"/>
-    <title>Kurai Launcher v0.0.1-beta.2</title>
+    <title>Kurai Launcher</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #111116; color: white; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         
@@ -572,7 +572,7 @@
 
         // Pintar la etiqueta de versión en el Navbar superior
         ipcRenderer.invoke('get-launcher-version').then(v => {
-            document.getElementById('launcher-tag-version').innerText = `VERSION v${v}`;
+            document.getElementById('launcher-tag-version').innerText = `v${v}`;
         });
 
         ipcRenderer.invoke('get-profiles').then(data => renderAll(data));
