@@ -7,7 +7,7 @@ const profilesManager = require('./profiles-manager');
 const launcher = new Client();
 
 // CONSTANTES DE VERSIÓN DEL LAUNCHER
-const LAUNCHER_VERSION = '0.0.1-beta.2';
+const LAUNCHER_VERSION = '0.0.1-beta.3';
 // Cambia esto por la URL real de tu repositorio donde alojes el JSON de control de versión
 const UPDATE_CHECK_URL = 'https://raw.githubusercontent.com/SuzuKurai/KuraiLauncher/refs/heads/main/launcher-minecraft/version.json';
 
