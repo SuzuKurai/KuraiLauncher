@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Consola de Salida - Historial de Ticks</title>
+    <style>
+        body {
+            background-color: #0a0a0f;
+            color: #d8d8e6;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 12px;
+            margin: 0;
+            padding: 15px;
+            height: 100vh;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .console-header {
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #4a4a5e;
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            flex-shrink: 0;
+        }
+        #console-feed {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        #console-feed::-webkit-scrollbar { width: 5px; }
+        #console-feed::-webkit-scrollbar-thumb { background: #1a1a26; border-radius: 4px; }
+        
+        .tick-line { white-space: pre-wrap; line-height: 18px; word-break: break-all; }
+        .tick-line.error { color: #ff4a4a; font-weight: bold; }
+        .tick-line.debug { color: #7289da; }
+        .tick-line.info { color: #e0e0e0; }
+    </style>
+</head>
+<body>
+
+    <div class="console-header">Consola (Live)</div>
+    <div id="console-feed"></div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+        const feedContainer = document.getElementById('console-feed');
+
+        // Escucha asíncrona de los flujos del juego enviada por ticks del proceso Main
+        ipcRenderer.on('console-tick-log', (event, log) => {
+            const line = document.createElement('div');
+            line.className = `tick-line ${log.level}`;
+            line.innerText = log.text;
+            
+            feedContainer.appendChild(line);
+
+            // Fuerza el scroll automático inmediato al fondo en cada tick
+            feedContainer.scrollTop = feedContainer.scrollHeight;
+        });
+    </script>
+</body>
+</html>

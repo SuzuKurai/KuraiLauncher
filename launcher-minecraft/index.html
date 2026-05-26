@@ -26,7 +26,7 @@
             font-weight: 800;
             letter-spacing: 2px; 
             background: linear-gradient(45deg, #ffffff, #858594);
-            background-clip: text; /* standard property for compatibility */
+            background-clip: text;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -66,37 +66,35 @@
         .profile-card:hover { background: #222230; border-color: rgba(255,255,255,0.05); }
         .profile-card.active { background: linear-gradient(135deg, #2b2b3d, #1f1f2e); border: 1px solid rgba(114, 137, 218, 0.3); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         
-        .profile-info { display: flex; flex-direction: column; gap: 2px; }
+        .profile-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
         .profile-name { font-size: 14px; font-weight: 600; color: #e0e0e8; }
         .profile-card.active .profile-name { color: #ffffff; }
         .profile-version { font-size: 11px; color: #65657b; font-family: monospace; }
         .profile-card.active .profile-version { color: #8a9eff; }
 
-        .btn-delete-profile { background: transparent; border: none; color: #4a4a5a; cursor: pointer; font-size: 14px; padding: 5px; border-radius: 6px; transition: 0.2s; }
-        .btn-delete-profile:hover { color: #ff5c5c; background: rgba(255,92,92,0.1); }
+        .profile-actions-buttons { display: flex; gap: 4px; }
+        .btn-action-profile { background: transparent; border: none; color: #4a4a5a; cursor: pointer; font-size: 13px; padding: 5px; border-radius: 6px; transition: 0.2s; }
+        .btn-action-profile:hover { color: white; background: rgba(255,255,255,0.05); }
+        .btn-action-profile.delete:hover { color: #ff5c5c; background: rgba(255,92,92,0.1); }
 
         /* SECCIÓN DE CUENTAS EN SIDEBAR */
         .account-box { background: #1a1a24; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; border: 1px solid rgba(255,255,255,0.02); }
         .account-selector { background: #252533; border: none; color: white; padding: 10px; border-radius: 8px; width: 100%; font-size: 13px; outline: none; cursor: pointer; font-weight: 600; }
         
-        .account-actions { display: flex; gap: 6px; }
-        .input-account { flex: 1; background: #252533; border: 1px solid rgba(255,255,255,0.02); color: white; padding: 8px 12px; border-radius: 8px; font-size: 12px; outline: none; }
+        .account-actions { display: flex; gap: 6px; align-items: center; }
+        .input-account { flex: 1; background: #252533; border: 1px solid rgba(255,255,255,0.02); color: white; padding: 8px 12px; border-radius: 8px; font-size: 12px; outline: none; min-width: 0; }
         .input-account:focus { border-color: #5865f2; }
-        .btn-account { background: #5865f2; border: none; color: white; padding: 0 12px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; transition: 0.2s; }
-        .btn-account:hover { background: #4752c4; }
-        .btn-delete-account { background: #2a2a3a; border: none; color: #b5b5c5; padding: 8px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        
+        .btn-account { background: #5865f2; border: none; color: white; width: 32px; height: 32px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; flex-shrink: 0; }
+        .btn-account:hover { background: #4752c4; transform: scale(1.05); }
+        .btn-delete-account { background: #2a2a3a; border: none; color: #b5b5c5; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .btn-delete-account:hover { background: #3a1e1e; color: #ff5c5c; }
 
         /* VIEWPORT PRINCIPAL */
         .viewport { flex: 1; background: #0e0e13; display: flex; flex-direction: column; position: relative; }
         
-        /* BANNER CENTRAL CON IDENTIDAD VISUAL */
-        .hero-banner { 
-            flex: 1; position: relative; display: flex; flex-direction: column; justify-content: center; 
-            align-items: center; background: radial-gradient(circle at center, #181824 0%, #0e0e13 70%); 
-        }
-        .hero-logo { font-size: 64px; font-weight: 900; letter-spacing: 12px; margin-bottom: 5px; background: linear-gradient(45deg, #ffffff, #4a4a5a); background-clip: text; -webkit-background-clip: text; color: transparent; -webkit-text-fill-color: transparent; text-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .hero-subtitle { font-size: 12px; text-transform: uppercase; letter-spacing: 6px; color: #4e4e5f; font-weight: 700; margin-bottom: 30px; }
+        /* CONTENEDOR INTEGRADO PARA EL DEVLOG WEB */
+        .devlog-container { flex: 1; width: 100%; height: 100%; border: none; background: #0e0e13; }
 
         /* DOCK DE LANZAMIENTO (BARRA INFERIOR DE JUEGO) */
         .launch-dock { 
@@ -121,32 +119,46 @@
 
         /* CAPAS MODALES DESLIZANTES / OVERLAYS */
         .panel-overlay { 
-            position: absolute; top: 0; right: -420px; width: 400px; height: 100%; 
+            position: absolute; top: 0; right: -452px; width: 430px; height: 100%; 
             background: #14141b; border-left: 1px solid rgba(255,255,255,0.03); 
             box-shadow: -10px 0 30px rgba(0,0,0,0.25); z-index: 15; transition: cubic-bezier(0.16, 1, 0.3, 1) 0.4s; 
-            display: flex; flex-direction: column; padding: 30px; box-sizing: border-box;
+            display: flex; flex-direction: column; padding: 25px; box-sizing: border-box;
         }
         .panel-overlay.open { right: 0; }
-        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-        .panel-header h3 { margin: 0; font-size: 18px; font-weight: 700; color: white; }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .panel-header h3 { margin: 0; font-size: 18px; font-weight: 700; color: white; letter-spacing: 0.5px; }
         .btn-close-panel { background: transparent; border: none; color: #525266; font-size: 20px; cursor: pointer; transition: 0.2s; }
         .btn-close-panel:hover { color: white; }
 
-        .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
-        .form-group label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #65657b; }
-        .form-control { background: #1a1a24; border: 1px solid rgba(255,255,255,0.04); color: white; padding: 10px 14px; border-radius: 8px; font-size: 13px; outline: none; }
+        .panel-scrollable-content { flex: 1; overflow-y: auto; padding-right: 5px; display: flex; flex-direction: column; gap: 18px; }
+        .panel-scrollable-content::-webkit-scrollbar { width: 4px; }
+        .panel-scrollable-content::-webkit-scrollbar-thumb { background: #252533; border-radius: 4px; }
+
+        .settings-section-title { font-size: 11px; text-transform: uppercase; color: #5865f2; letter-spacing: 1px; font-weight: 800; margin-bottom: 5px; padding-bottom: 4px; border-bottom: 1px solid rgba(88, 101, 242, 0.15); }
+
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group label { font-size: 12px; font-weight: 700; color: #858594; }
+        .form-control { background: #1a1a24; border: 1px solid rgba(255,255,255,0.04); color: white; padding: 10px 14px; border-radius: 8px; font-size: 13px; outline: none; box-sizing: border-box; width: 100%; }
         .form-control:focus { border-color: #5865f2; }
         
-        .btn-submit { background: #5865f2; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; margin-top: 10px; transition: 0.2s; }
+        /* FILTROS DE VERSIONES (SNAPSHOTS, BETAS, ALPHAS) */
+        .version-filters { display: flex; flex-wrap: wrap; gap: 12px; background: #1a1a24; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.02); }
+        .filter-checkbox-label { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #e0e0e8; cursor: pointer; user-select: none; }
+        .filter-checkbox-label input { accent-color: #5865f2; cursor: pointer; }
+
+        .ram-slider-container { display: flex; flex-direction: column; gap: 8px; background: #1a1a24; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.02); }
+        .ram-labels { display: flex; justify-content: space-between; align-items: center; }
+        .ram-value { font-family: monospace; font-size: 13px; color: #5865f2; font-weight: bold; background: rgba(88, 101, 242, 0.1); padding: 2px 8px; border-radius: 5px; }
+        .slider-input { -webkit-appearance: none; width: 100%; height: 6px; background: #252533; border-radius: 5px; outline: none; cursor: pointer; }
+        .slider-input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 5px; background: #5865f2; cursor: pointer; transition: 0.1s; }
+        .slider-input::-webkit-slider-thumb:hover { transform: scale(1.15); filter: brightness(1.1); }
+
+        .btn-submit { background: #5865f2; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; margin-top: 10px; transition: 0.2s; flex-shrink: 0; }
         .btn-submit:hover { background: #4752c4; }
+        .btn-secondary { background: #252533; color: #a5a5b5; border: 1px solid rgba(255,255,255,0.02); padding: 12px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; text-align: center; }
+        .btn-secondary:hover { background: #3b3b54; color: white; }
 
-        /* PANEL DE CONSOLA INTEGRADA MULTILÍNEA */
-        .console-log-container { flex: 1; background: #0a0a0f; border-radius: 12px; padding: 15px; font-family: monospace; font-size: 11px; overflow-y: auto; display: flex; flex-direction: column; border: 1px solid rgba(255,255,255,0.02); }
-        .console-log-container::-webkit-scrollbar { width: 4px; }
-        .console-log-container::-webkit-scrollbar-thumb { background: #1a1a24; border-radius: 4px; }
-
-        /* SELECCIÓN FLOTANTE PARA EL FORMULARIO DE PERFILES */
-        .select-custom { background: #1a1a24; color: white; border: 1px solid rgba(255,255,255,0.04); padding: 10px; border-radius: 8px; font-size: 13px; outline: none; max-height: 150px; }
+        .select-custom { background: #1a1a24; color: white; border: 1px solid rgba(255,255,255,0.04); padding: 10px; border-radius: 8px; font-size: 13px; outline: none; max-height: 160px; }
     </style>
 </head>
 <body>
@@ -173,7 +185,7 @@
                 <select class="account-selector" id="account-dropdown"></select>
                 <div class="account-actions">
                     <input type="text" class="input-account" id="new-account-input" placeholder="Nuevo usuario..."/>
-                    <button class="btn-account" id="add-account-btn">Añadir</button>
+                    <button class="btn-account" id="add-account-btn" title="Añadir Cuenta">+</button>
                     <button class="btn-delete-account" id="delete-account-btn" title="Eliminar cuenta seleccionada">🗑️</button>
                 </div>
             </div>
@@ -181,10 +193,7 @@
 
         <div class="viewport">
             
-            <div class="hero-banner">
-                <div class="hero-logo">KURAI</div>
-                <div class="hero-subtitle">Minecraft Client Sandbox</div>
-            </div>
+            <webview class="devlog-container" src="https://suzukurai.github.io/KuraiLauncher/devlog/"></webview>
 
             <div class="launch-dock">
                 <div class="status-container">
@@ -195,33 +204,44 @@
                 <button class="btn-launch" id="launch-btn">JUGAR</button>
                 
                 <div class="dock-right-actions">
-                    <button class="btn-dock-icon" id="open-console-btn" title="Consola de Desarrollo">⚙️</button>
-                    <button class="btn-dock-icon" id="open-settings-btn" title="Configuración Global">🔧</button>
+                    <button class="btn-dock-icon" id="open-settings-btn" title="Ajustes del Launcher">🔧</button>
                 </div>
             </div>
 
             <div class="panel-overlay" id="panel-add-profile">
                 <div class="panel-header">
-                    <h3>Crear Perfil</h3>
-                    <button class="btn-close-panel" onclick="togglePanel('panel-add-profile', false)">&times;</button>
+                    <h3 id="panel-profile-title">Crear Perfil</h3>
+                    <button class="btn-close-panel" onclick="closeProfilePanel()">&times;</button>
                 </div>
-                <div class="form-group">
-                    <label>Nombre del Perfil</label>
-                    <input type="text" class="form-control" id="prof-name" placeholder="Ej: Mi Mundo 1.21"/>
-                </div>
-                <div class="form-group">
-                    <label>Versión de Minecraft (Cargando API Mojang...)</label>
-                    <select class="select-custom" id="prof-version-select" size="8"></select>
-                </div>
-                <button class="btn-submit" id="save-profile-btn">Crear e Instalar</button>
-            </div>
+                <div class="panel-scrollable-content">
+                    <input type="hidden" id="prof-editing-id" value=""/>
+                    
+                    <div class="form-group">
+                        <label>Nombre del Perfil</label>
+                        <input type="text" class="form-control" id="prof-name" placeholder="Ej: Mi Mundo 1.21"/>
+                    </div>
 
-            <div class="panel-overlay" id="panel-console" style="width: 500px; right: -520px;">
-                <div class="panel-header">
-                    <h3>Consola del Juego</h3>
-                    <button class="btn-close-panel" onclick="togglePanel('panel-console', false)">&times;</button>
+                    <div class="form-group">
+                        <label>Tipos de Versiones Visibles</label>
+                        <div class="version-filters">
+                            <label class="filter-checkbox-label">
+                                <input type="checkbox" id="filter-releases" checked disabled/> Estables (Releases)
+                            </label>
+                            <label class="filter-checkbox-label">
+                                <input type="checkbox" id="filter-snapshots"/> Snapshots / Pre-releases
+                            </label>
+                            <label class="filter-checkbox-label">
+                                <input type="checkbox" id="filter-betas"/> Antiguas (Betas / Alphas)
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Versión de Minecraft</label>
+                        <select class="select-custom" id="prof-version-select" size="10"></select>
+                    </div>
                 </div>
-                <div class="console-log-container" id="consoleOutputs"></div>
+                <button class="btn-submit" id="save-profile-btn">Guardar Perfil</button>
             </div>
 
             <div class="panel-overlay" id="panel-settings">
@@ -229,31 +249,60 @@
                     <h3>Configuración Global</h3>
                     <button class="btn-close-panel" onclick="togglePanel('panel-settings', false)">&times;</button>
                 </div>
-                <div class="form-group">
-                    <label>Memoria RAM Máxima Global</label>
-                    <select class="form-control" id="global-ram-max">
-                        <option value="2G">2 GB</option>
-                        <option value="4G" selected>4 GB</option>
-                        <option value="6G">6 GB</option>
-                        <option value="8G">8 GB</option>
-                    </select>
+                
+                <div class="panel-scrollable-content">
+                    <div class="settings-section-title">Rendimiento</div>
+                    <div class="form-group">
+                        <label>Asignación de Memoria RAM</label>
+                        <div class="ram-slider-container">
+                            <div class="ram-labels">
+                                <span style="font-size:11px; color:#525266;">Mín: 1 GB</span>
+                                <span class="ram-value" id="ram-display">4 GB (4096 MB)</span>
+                                <span style="font-size:11px; color:#525266;">Máx: 16 GB</span>
+                            </div>
+                            <input type="range" class="slider-input" id="global-ram-slider" min="1" max="16" step="1" value="4"/>
+                        </div>
+                    </div>
+
+                    <div class="settings-section-title">Ajustes de Juego</div>
+                    <div class="form-group">
+                        <label>Directorio de Instalación (.minecraft)</label>
+                        <input type="text" class="form-control" id="global-game-path" placeholder="Por defecto (AppData/Roaming/.minecraft)"/>
+                    </div>
+                    <div class="form-group">
+                        <label>Al hacer clic en JUGAR</label>
+                        <select class="form-control" id="global-launcher-behavior">
+                            <option value="keep">Mantener el launcher abierto</option>
+                            <option value="hide" selected>Ocultar / Minimizar launcher</option>
+                            <option value="close">Cerrar el launcher por completo</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Argumentos JVM avanzados para Java</label>
+                        <input type="text" class="form-control" id="global-jvm-args" placeholder="-XX:+UseG1GC -XX:+UnlockExperimentalVMOptions"/>
+                    </div>
+                    
+                    <div class="settings-section-title">Desarrollo</div>
+                    <div class="form-group">
+                        <button class="btn-secondary" id="open-console-btn">Abrir Ventana de Consola (Live Ticks) ⚙️</button>
+                    </div>
                 </div>
-                <button class="btn-submit" id="save-settings-btn">Guardar Ajustes</button>
+                <button class="btn-submit" id="save-settings-btn">Guardar Cambios</button>
             </div>
 
         </div>
     </div>
 
     <div id="java-popup-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center;">
-        <div style="background: #16161e; border: 2px solid #ff4a4a; padding: 35px; border-radius: 16px; width: 480px; text-align: center; font-family: 'Segoe UI', sans-serif; color: #ffffff; box-shadow: 0px 15px 40px rgba(0,0,0,0.6);">
+        <div style="background: #16161e; border: 2px solid #ff4a4a; padding: 35px; border-radius: 16px; width: 480px; text-align: center; color: #ffffff; box-shadow: 0px 15px 40px rgba(0,0,0,0.6);">
             <div style="font-size: 44px; margin-bottom: 15px;">⚠️</div>
             <h2 style="margin: 0 0 12px 0; font-size: 24px; color: #ff4a4a; font-weight: 800; letter-spacing: 0.5px;">Error de Ejecución de Java</h2>
             <p style="font-size: 14px; color: #b3b3b3; line-height: 1.6; margin-bottom: 28px;">
                 Minecraft se detuvo porque el launcher está llamando a un entorno de ejecución antiguo de tu sistema. Las versiones modernas requieren <strong>Java 21 o Java 25</strong>. Asegúrate de instalar el JDK correspondiente.
             </p>
             <div style="display: flex; gap: 12px; justify-content: center;">
-                <a href="https://www.oracle.com/java/technologies/downloads/#java21" target="_blank" style="background: #2b2b3d; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 13px; border: 1px solid rgba(255,255,255,0.05); transition: 0.2s;" onmouseover="this.style.background='#3b3b4a'" onmouseout="this.style.background='#2b2b3d'">JDK 21</a>
-                <a href="https://www.oracle.com/java/technologies/downloads/#java25" target="_blank" style="background: #ff4a4a; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 13px; transition: 0.2s;" onmouseover="this.style.background='#e03e3e'" onmouseout="this.style.background='#ff4a4a'">Descargar JDK 25</a>
+                <a href="https://www.oracle.com/java/technologies/downloads/#java21" target="_blank" style="background: #2b2b3d; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 13px; border: 1px solid rgba(255,255,255,0.05); transition: 0.2s;">JDK 21</a>
+                <a href="https://www.oracle.com/java/technologies/downloads/#java25" target="_blank" style="background: #ff4a4a; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 13px;">Descargar JDK 25</a>
                 <button onclick="document.getElementById('java-popup-overlay').style.display = 'none'" style="background: #1a1a24; color: #b3b3b3; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px;">Cerrar</button>
             </div>
         </div>
@@ -262,57 +311,159 @@
     <script>
         const { ipcRenderer } = require('electron');
 
+        let rawMojangVersions = []; // Caché local para filtrar dinámicamente sin re-peticiones de red
+        let currentProfilesCache = [];
+
         function togglePanel(id, open) {
             const el = document.getElementById(id);
             if(open) el.classList.add('open');
             else el.classList.remove('open');
         }
 
-        document.getElementById('open-add-profile-btn').addEventListener('click', async () => {
-            togglePanel('panel-add-profile', true);
-            const select = document.getElementById('prof-version-select');
-            select.innerHTML = '<option disabled>Descargando manifiesto oficial...</option>';
-            
-            const versions = await ipcRenderer.invoke('get-mojang-versions');
-            select.innerHTML = '';
-            
-            const releases = versions.filter(v => v.type === 'release');
-            releases.forEach(v => {
-                const opt = document.createElement('option');
-                opt.value = v.id;
-                opt.innerText = `Versión Estable ${v.id}`;
-                select.appendChild(opt);
-            });
+        function closeProfilePanel() {
+            togglePanel('panel-add-profile', false);
+            document.getElementById('prof-editing-id').value = "";
+            document.getElementById('prof-name').value = "";
+        }
+
+        // Evento interactivo para actualizar el texto de la barra de RAM
+        const ramSlider = document.getElementById('global-ram-slider');
+        const ramDisplay = document.getElementById('ram-display');
+        ramSlider.addEventListener('input', (e) => {
+            const val = e.target.value;
+            ramDisplay.innerText = `${val} GB (${val * 1024} MB)`;
         });
 
-        document.getElementById('open-console-btn').addEventListener('click', () => togglePanel('panel-console', true));
+        // Poblar y Filtrar Versiones según los checkboxes seleccionados
+        function populateVersionsList(selectedVersionToMatch = "") {
+            const select = document.getElementById('prof-version-select');
+            select.innerHTML = '';
+
+            const showSnapshots = document.getElementById('filter-snapshots').checked;
+            const showBetas = document.getElementById('filter-betas').checked;
+
+            rawMojangVersions.forEach(v => {
+                let isMatch = false;
+                let displayLabel = v.id;
+
+                if (v.type === 'release') {
+                    isMatch = true;
+                    displayLabel = `Versión Estable ${v.id}`;
+                } else if (v.type === 'snapshot' && showSnapshots) {
+                    isMatch = true;
+                    displayLabel = `Snapshot ${v.id}`;
+                } else if ((v.type === 'old_beta' || v.type === 'old_alpha') && showBetas) {
+                    isMatch = true;
+                    displayLabel = `${v.type === 'old_beta' ? 'Beta' : 'Alpha'} Antigua ${v.id}`;
+                }
+
+                if (isMatch) {
+                    const opt = document.createElement('option');
+                    opt.value = v.id;
+                    opt.innerText = displayLabel;
+                    if(v.id === selectedVersionToMatch) opt.selected = true;
+                    select.appendChild(opt);
+                }
+            });
+
+            if(select.children.length === 0) {
+                select.innerHTML = '<option disabled>Ningún tipo seleccionado</option>';
+            }
+        }
+
+        // Escuchadores de eventos para los filtros en tiempo real
+        document.getElementById('filter-snapshots').addEventListener('change', () => populateVersionsList());
+        document.getElementById('filter-betas').addEventListener('change', () => populateVersionsList());
+
+        // Cargar datos de red iniciales una sola vez para mejorar rendimiento
+        async function loadMojangManifest() {
+            if (rawMojangVersions.length === 0) {
+                rawMojangVersions = await ipcRenderer.invoke('get-mojang-versions');
+            }
+        }
+
+        // Botón "+" para crear Perfil Nuevo
+        document.getElementById('open-add-profile-btn').addEventListener('click', async () => {
+            document.getElementById('panel-profile-title').innerText = "Crear Perfil";
+            document.getElementById('prof-editing-id').value = "";
+            document.getElementById('prof-name').value = "";
+            togglePanel('panel-add-profile', true);
+
+            const select = document.getElementById('prof-version-select');
+            select.innerHTML = '<option disabled>Cargando manifiesto oficial...</option>';
+            
+            await loadMojangManifest();
+            populateVersionsList();
+        });
+
+        // Gatillo para abrir panel en Modo EDICIÓN
+        async function openEditProfileMode(profileId) {
+            const profile = currentProfilesCache.find(p => p.id === profileId);
+            if (!profile) return;
+
+            document.getElementById('panel-profile-title').innerText = "Editar Perfil";
+            document.getElementById('prof-editing-id').value = profile.id;
+            document.getElementById('prof-name').value = profile.name;
+            
+            togglePanel('panel-add-profile', true);
+            const select = document.getElementById('prof-version-select');
+            select.innerHTML = '<option disabled>Cargando manifiesto oficial...</option>';
+
+            await loadMojangManifest();
+
+            // Si es una snapshot o beta antigua, forzar el encendido automático de su checkbox correspondiente para que salga en la lista
+            const mojangVerMeta = rawMojangVersions.find(v => v.id === profile.version);
+            if (mojangVerMeta) {
+                if (mojangVerMeta.type === 'snapshot') document.getElementById('filter-snapshots').checked = true;
+                if (mojangVerMeta.type === 'old_beta' || mojangVerMeta.type === 'old_alpha') document.getElementById('filter-betas').checked = true;
+            }
+
+            populateVersionsList(profile.version);
+        }
+
+        document.getElementById('open-console-btn').addEventListener('click', () => {
+            togglePanel('panel-settings', false);
+            ipcRenderer.send('open-external-console');
+        });
+        
         document.getElementById('open-settings-btn').addEventListener('click', () => togglePanel('panel-settings', true));
 
+        // Evento de guardado (sirve unificado tanto para crear como para editar)
         document.getElementById('save-profile-btn').addEventListener('click', () => {
             const name = document.getElementById('prof-name').value.trim();
             const version = document.getElementById('prof-version-select').value;
+            const editingId = document.getElementById('prof-editing-id').value;
             
             if(!name || !version) {
                 alert('Rellena el nombre y elige una versión válida.');
                 return;
             }
 
-            const nuevo = {
-                id: 'prof_' + Date.now(),
+            const perfilObj = {
+                id: editingId ? editingId : 'prof_' + Date.now(),
                 name: name,
                 version: version,
                 ram: '',
                 path: ''
             };
 
-            ipcRenderer.send('save-profile', nuevo);
-            document.getElementById('prof-name').value = '';
-            togglePanel('panel-add-profile', false);
+            ipcRenderer.send('save-profile', perfilObj);
+            closeProfilePanel();
         });
 
         document.getElementById('save-settings-btn').addEventListener('click', () => {
-            const ramMax = document.getElementById('global-ram-max').value;
-            ipcRenderer.send('save-settings', { maxMemory: ramMax, minMemory: '2G' });
+            const ramGb = ramSlider.value;
+            const customPath = document.getElementById('global-game-path').value.trim();
+            const behavior = document.getElementById('global-launcher-behavior').value;
+            const jvmArgs = document.getElementById('global-jvm-args').value.trim();
+
+            ipcRenderer.send('save-settings', { 
+                maxMemory: `${ramGb}G`, 
+                minMemory: '2G',
+                gamePath: customPath,
+                launcherBehavior: behavior,
+                jvmArgs: jvmArgs
+            });
             togglePanel('panel-settings', false);
         });
 
@@ -336,11 +487,12 @@
         });
 
         function renderAll(data) {
+            currentProfilesCache = data.list || [];
             const container = document.getElementById('profiles-container');
             container.innerHTML = '';
 
-            if (data.list && data.list.length > 0) {
-                data.list.forEach(p => {
+            if (currentProfilesCache.length > 0) {
+                currentProfilesCache.forEach(p => {
                     const card = document.createElement('div');
                     card.className = `profile-card ${data.selectedProfile === p.id ? 'active' : ''}`;
                     
@@ -349,7 +501,10 @@
                             <span class="profile-name">${p.name}</span>
                             <span class="profile-version">Minecraft ${p.version}</span>
                         </div>
-                        <button class="btn-delete-profile" onclick="ipcRenderer.send('delete-profile', '${p.id}')">🗑️</button>
+                        <div class="profile-actions-buttons">
+                            <button class="btn-action-profile" onclick="openEditProfileMode('${p.id}')" title="Editar Perfil">🔧</button>
+                            <button class="btn-action-profile delete" onclick="ipcRenderer.send('delete-profile', '${p.id}')" title="Eliminar Perfil">🗑️</button>
+                        </div>
                     `;
                     container.appendChild(card);
                 });
@@ -374,8 +529,17 @@
                 accDropdown.appendChild(opt);
             }
 
-            if(data.settings && data.settings.maxMemory) {
-                document.getElementById('global-ram-max').value = data.settings.maxMemory;
+            if(data.settings) {
+                if(data.settings.maxMemory) {
+                    const num = parseInt(data.settings.maxMemory, 10);
+                    if(!isNaN(num)) {
+                        ramSlider.value = num;
+                        ramDisplay.innerText = `${num} GB (${num * 1024} MB)`;
+                    }
+                }
+                if(data.settings.gamePath) document.getElementById('global-game-path').value = data.settings.gamePath;
+                if(data.settings.launcherBehavior) document.getElementById('global-launcher-behavior').value = data.settings.launcherBehavior;
+                if(data.settings.jvmArgs) document.getElementById('global-jvm-args').value = data.settings.jvmArgs;
             }
         }
 
@@ -383,35 +547,9 @@
 
         ipcRenderer.on('data-updated', (event, data) => renderAll(data));
         ipcRenderer.on('status-msg', (event, msg) => document.getElementById('status').innerText = msg);
-        
-        ipcRenderer.on('java-missing-error', () => {
-            document.getElementById('java-popup-overlay').style.display = 'flex';
-        });
-
+        ipcRenderer.on('java-missing-error', () => document.getElementById('java-popup-overlay').style.display = 'flex');
         ipcRenderer.on('progress', (event, data) => {
             document.getElementById('status').innerText = `Progreso: ${data.task} (${data.type})`;
-        });
-
-        ipcRenderer.on('console-log', (event, text) => {
-            const container = document.getElementById('consoleOutputs');
-            if (!container) return;
-            
-            const line = document.createElement('div');
-            line.style.marginBottom = '3px';
-            line.style.lineHeight = '18px';
-            line.style.whiteSpace = 'pre-wrap';
-            
-            if (text.includes('[ERROR]')) {
-                line.style.color = '#ff4a4a';
-            } else if (text.includes('[DEBUG]')) {
-                line.style.color = '#7289da';
-            } else {
-                line.style.color = '#e0e0e0';
-            }
-            
-            line.innerText = text;
-            container.appendChild(line);
-            container.scrollTop = container.scrollHeight;
         });
 
         ipcRenderer.invoke('get-profiles').then(data => renderAll(data));

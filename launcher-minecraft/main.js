@@ -5,7 +5,6 @@ const { Client, Authenticator } = require('minecraft-launcher-core');
 const profilesManager = require('./profiles-manager');
 const launcher = new Client();
 
-// 🛠️ MUDAR LA CACHÉ DE ELECTRON A LA RUTA SEGURA DE MINECRAFT
 const rutaRoaming = app.getPath('appData'); 
 const cacheKurai = path.join(rutaRoaming, '.minecraft', '.KuraiLauncher', 'cache');
 
@@ -15,6 +14,7 @@ if (!fs.existsSync(cacheKurai)){
 app.setPath('userData', cacheKurai); 
 
 let mainWindow;
+let consoleWindow = null; 
 
 const ICONO_URL = 'https://raw.githubusercontent.com/SuzuKurai/KuraiLauncher/refs/heads/main/launcher-minecraft/media/KuraiLauncher.png';
 
@@ -44,6 +44,33 @@ async function createWindow() {
 
     mainWindow.setMenuBarVisibility(false); 
     mainWindow.loadFile('index.html');
+}
+
+function createConsoleWindow() {
+    if (consoleWindow) {
+        consoleWindow.focus(); 
+        return;
+    }
+
+    consoleWindow = new BrowserWindow({
+        width: 750,
+        height: 480,
+        minWidth: 500,
+        minHeight: 300,
+        title: "Consola de Depuración - Kurai Launcher",
+        backgroundColor: "#0a0a0f",
+        webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false
+        }
+    });
+
+    consoleWindow.setMenuBarVisibility(false);
+    consoleWindow.loadFile('console.html');
+
+    consoleWindow.on('closed', () => {
+        consoleWindow = null; 
+    });
 }
 
 app.whenReady().then(createWindow);
@@ -83,10 +110,10 @@ function getSanitizedData() {
             data = { ...data, ...managerData };
         }
     } catch (e) {
-        console.error("[MANAGER] Error al obtener datos del archivo, se usarán por defecto:", e);
+        console.error("[MANAGER] Error al obtener datos:", e);
     }
     data.list = Array.isArray(data.list) ? data.list : [];
-    data.accounts = Array.isArray(data.accounts) ? data.accounts.filter(acc => typeof acc === 'string' && !acc.includes('[object Object]')) : [];
+    data.accounts = Array.isArray(data.accounts) ? data.accounts.filter(acc => typeof acc === 'string') : [];
     data.settings = data.settings && typeof data.settings === 'object' ? data.settings : {};
     return data;
 }
@@ -99,26 +126,30 @@ ipcMain.handle('get-profiles', () => {
     return getSanitizedData();
 });
 
-ipcMain.on('save-profile', (event, nuevoPerfil) => {
+ipcMain.on('open-external-console', () => {
+    createConsoleWindow();
+});
+
+// MODIFICADO: Soporte inteligente para crear o actualizar un perfil existente (Modo Edición)
+ipcMain.on('save-profile', (event, perfilEntrante) => {
     try { 
         let data = profilesManager.getAll();
-        if (!data) {
-            data = { list: [], selectedProfile: "", accounts: [], selectedAccount: "", settings: {} };
-        }
-        if (!data.list || !Array.isArray(data.list)) {
-            data.list = [];
+        if (!data) data = { list: [], selectedProfile: "", accounts: [], selectedAccount: "", settings: {} };
+        if (!data.list) data.list = [];
+        
+        const indexExistente = data.list.findIndex(p => p.id === perfilEntrante.id);
+        if (indexExistente !== -1) {
+            // Edición: Actualizar datos conservando propiedades personalizadas si las tuviera
+            data.list[indexExistente] = { ...data.list[indexExistente], ...perfilEntrante };
+        } else {
+            // Creación: Insertar nuevo perfil
+            data.list.push(perfilEntrante);
         }
 
-        data.list.push(nuevoPerfil);
-        
-        if (!data.selectedProfile || data.selectedProfile === "") {
-            data.selectedProfile = nuevoPerfil.id;
-        }
-        
+        if (!data.selectedProfile) data.selectedProfile = perfilEntrante.id;
         profilesManager.save(data); 
-        console.log(`[OK] Perfil "${nuevoPerfil.name}" creado correctamente.`);
     } catch(e){
-        console.error("Error crítico al crear perfil rápido:", e);
+        console.error("Error al guardar perfil:", e);
     }
     mainWindow.webContents.send('data-updated', getSanitizedData());
 });
@@ -133,18 +164,6 @@ ipcMain.on('select-profile', (event, id) => {
     mainWindow.webContents.send('data-updated', getSanitizedData());
 });
 
-ipcMain.on('update-profile-advanced', (event, updatedProfile) => {
-    try { 
-        const data = profilesManager.getAll();
-        const index = data.list.findIndex(p => p.id === updatedProfile.id);
-        if (index !== -1) {
-            data.list[index] = updatedProfile;
-            profilesManager.save(data);
-        }
-    } catch(e){}
-    mainWindow.webContents.send('data-updated', getSanitizedData());
-});
-
 ipcMain.on('save-settings', (event, newSettings) => {
     try {
         if (typeof profilesManager.saveSettings === 'function') {
@@ -154,54 +173,26 @@ ipcMain.on('save-settings', (event, newSettings) => {
             data.settings = newSettings;
             if (profilesManager.save) profilesManager.save(data);
         }
-    } catch(e){
-        console.error("Error guardando opciones:", e);
-    }
+    } catch(e){}
     mainWindow.webContents.send('data-updated', getSanitizedData());
 });
 
 ipcMain.on('save-account', (event, username) => {
-    let cleanUsername = username;
-    if (username && typeof username === 'object') cleanUsername = username.username || username.name;
-    if (!cleanUsername || typeof cleanUsername !== 'string' || cleanUsername.includes('[object Object]') || cleanUsername.trim() === "") return;
-
-    cleanUsername = cleanUsername.trim();
-    try {
-        if (typeof profilesManager.saveAccount === 'function') {
-            profilesManager.saveAccount(cleanUsername);
-        }
-    } catch (e) {}
+    if (!username || typeof username !== 'string' || username.trim() === "") return;
+    try { if (typeof profilesManager.saveAccount === 'function') profilesManager.saveAccount(username.trim()); } catch (e) {}
     mainWindow.webContents.send('data-updated', getSanitizedData());
 });
 
 ipcMain.on('select-account', (event, username) => {
-    let cleanUsername = username && typeof username === 'object' ? (username.username || username.name) : username;
-    if (!cleanUsername || cleanUsername.includes('[object Object]')) return;
-    cleanUsername = cleanUsername.toString().trim();
-    try { 
-        if (typeof profilesManager.selectAccount === 'function') {
-            profilesManager.selectAccount(cleanUsername);
-        } else {
-            const data = profilesManager.getAll();
-            if(data) data.selectedAccount = cleanUsername;
-        }
-    } catch(e){}
+    try { if (typeof profilesManager.selectAccount === 'function') profilesManager.selectAccount(username); } catch(e){}
     mainWindow.webContents.send('data-updated', getSanitizedData());
 });
 
 ipcMain.on('delete-account', (event, username) => {
-    let cleanUsername = username && typeof username === 'object' ? (username.username || username.name) : username;
-    if (!cleanUsername) return;
-    cleanUsername = cleanUsername.toString().trim();
-    try { 
-        if (typeof profilesManager.deleteAccount === 'function') {
-            profilesManager.deleteAccount(cleanUsername);
-        }
-    } catch(e){}
+    try { if (typeof profilesManager.deleteAccount === 'function') profilesManager.deleteAccount(username); } catch(e){}
     mainWindow.webContents.send('data-updated', getSanitizedData());
 });
 
-// --- CANAL DE LANZAMIENTO CON ESCANEO AGRESIVO DE JAVA 25 ---
 ipcMain.on('launch-game', async (event) => {
     const data = getSanitizedData();
     const currentProfile = data.list.find(p => p.id === data.selectedProfile);
@@ -214,11 +205,16 @@ ipcMain.on('launch-game', async (event) => {
     const activeUser = data.selectedAccount || "KuraiUser";
     mainWindow.webContents.send('status-msg', `Iniciando Minecraft versión ${currentProfile.version || "Desconocida"}...`);
 
-    const defaultRoot = path.join(app.getPath('appData'), '.minecraft');
-    const finalRoot = currentProfile.path && currentProfile.path.trim() !== "" ? currentProfile.path : defaultRoot;
-
     const globalSettings = data.settings || {};
-    const rawMax = currentProfile.ram && currentProfile.ram.trim() !== "" ? currentProfile.ram : (globalSettings.maxMemory || "4G");
+    const defaultRoot = path.join(app.getPath('appData'), '.minecraft');
+    let finalRoot = defaultRoot;
+    if (globalSettings.gamePath && globalSettings.gamePath.trim() !== "") {
+        finalRoot = globalSettings.gamePath.trim();
+    } else if (currentProfile.path && currentProfile.path.trim() !== "") {
+        finalRoot = currentProfile.path;
+    }
+
+    const rawMax = globalSettings.maxMemory || "4G";
     const rawMin = globalSettings.minMemory || "2G";
 
     const parseRamToMb = (ramString) => {
@@ -238,8 +234,6 @@ ipcMain.on('launch-game', async (event) => {
         .trim();
 
     let javaPathManual = undefined;
-    
-    // 🔍 LISTA DE RUTAS AMPLIADA: Buscamos todas las variantes de instalación posibles de Oracle e Eclipse Temurin para Java 25
     const posiblesRutasJava = [
         "C:\\Program Files\\Java\\jdk-25\\bin\\javaw.exe",
         "C:\\Program Files\\Java\\jre-25\\bin\\javaw.exe",
@@ -249,13 +243,9 @@ ipcMain.on('launch-game', async (event) => {
     ];
 
     for (const ruta of posiblesRutasJava) {
-        if (fs.existsSync(ruta)) {
-            javaPathManual = ruta;
-            break;
-        }
+        if (fs.existsSync(ruta)) { javaPathManual = ruta; break; }
     }
 
-    // 💡 Si no está en las rutas por defecto, escaneamos dinámicamente la carpeta C:\Program Files\Java para encontrar cualquier subcarpeta que empiece con "jdk-25"
     if (!javaPathManual) {
         const baseJavaDir = "C:\\Program Files\\Java";
         if (fs.existsSync(baseJavaDir)) {
@@ -264,23 +254,18 @@ ipcMain.on('launch-game', async (event) => {
                 const carpetaJdk25 = carpetas.find(f => f.toLowerCase().includes('jdk-25') || f.toLowerCase().includes('25'));
                 if (carpetaJdk25) {
                     const rutaDetectada = path.join(baseJavaDir, carpetaJdk25, 'bin', 'javaw.exe');
-                    if (fs.existsSync(rutaDetectada)) {
-                        javaPathManual = rutaDetectada;
-                    }
+                    if (fs.existsSync(rutaDetectada)) javaPathManual = rutaDetectada;
                 }
-            } catch (err) {
-                console.error("Error escaneando directorio de Java:", err);
-            }
+            } catch (err) {}
         }
     }
 
-    // 🚨 ÚLTIMA SALVAGUARDA: Si fallan los escaneos manuales, tiramos de 'javaw' global (pero avisando en debug)
-    if (!javaPathManual) {
-        console.log("[DEBUG] No se halló el ejecutable físico de Java 25. Usando comando de entorno global.");
-        javaPathManual = "javaw"; 
-    }
+    if (!javaPathManual) javaPathManual = "javaw"; 
 
-    console.log(`[DEBUG] Ejecutando Minecraft con el binario de Java asignado en: ${javaPathManual}`);
+    let customJvmArgs = [];
+    if(globalSettings.jvmArgs && globalSettings.jvmArgs.trim() !== "") {
+        customJvmArgs = globalSettings.jvmArgs.trim().split(' ');
+    }
 
     let opts = {
         authorization: {
@@ -295,14 +280,9 @@ ipcMain.on('launch-game', async (event) => {
         },
         root: finalRoot,
         javaPath: javaPathManual,                                      
-        version: {
-            number: cleanVersion,                    
-            type: "release"
-        },
-        memory: {
-            max: maxRamMb,                                       
-            min: minRamMb                                        
-        },
+        version: { number: cleanVersion, type: "release" },
+        memory: { max: maxRamMb, min: minRamMb },
+        customArgs: customJvmArgs, 
         overrides: { checkStrict: false }
     };
 
@@ -311,33 +291,35 @@ ipcMain.on('launch-game', async (event) => {
     launcher.removeAllListeners('error');
     launcher.removeAllListeners('progress');
 
-    launcher.on('debug', (e) => {
-        console.log(`[DEBUG] ${e}`);
-        if(mainWindow) mainWindow.webContents.send('console-log', `[DEBUG] ${e}`);
-    });
+    const sendLogTick = (level, text) => {
+        if (consoleWindow) consoleWindow.webContents.send('console-tick-log', { level, text });
+    };
+
+    launcher.on('debug', (e) => { sendLogTick('debug', `[DEBUG] ${e}`); });
 
     launcher.on('data', (e) => {
-        console.log(`[DATA] ${e}`);
-        if(mainWindow) mainWindow.webContents.send('console-log', `[INFO] ${e}`);
-        
-        // Atrapamos tanto el error de código de clase como el mensaje de LinkageError explícito
+        sendLogTick('info', `[INFO] ${e}`);
         if (e.includes("UnsupportedClassVersionError") || e.includes("class file version 69.0") || e.includes("LinkageError occurred")) {
             if (mainWindow) {
-                mainWindow.webContents.send('status-msg', 'Error: Versión de Java incompatible o desactualizada detectada.');
+                mainWindow.webContents.send('status-msg', 'Error: Versión de Java incompatible detectada.');
                 mainWindow.webContents.send('java-missing-error');
             }
         }
     });
 
     launcher.on('error', (e) => {
-        console.error("[ERROR CRÍTICO]", e);
-        if(mainWindow) {
-            mainWindow.webContents.send('console-log', `[ERROR] ${e.message || e}`);
-            mainWindow.webContents.send('status-msg', `Error al lanzar: ${e.message || e}`);
-        }
+        sendLogTick('error', `[ERROR] ${e.message || e}`);
+        if(mainWindow) mainWindow.webContents.send('status-msg', `Error al lanzar: ${e.message || e}`);
     });
     
-    launcher.on('progress', (e) => { mainWindow.webContents.send('progress', e); });
+    launcher.on('progress', (e) => { if(mainWindow) mainWindow.webContents.send('progress', e); });
 
-    launcher.launch(opts);
+    launcher.launch(opts).then(() => {
+        const behavior = globalSettings.launcherBehavior || "hide";
+        if (behavior === "hide" && mainWindow) {
+            mainWindow.minimize();
+        } else if (behavior === "close") {
+            app.quit();
+        }
+    });
 });
