@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, dialog, net, nativeImage, shell } = require('electron'); 
 const path = require('path');
 const fs = require('fs');
+const os = require('os'); // <-- Módulo nativo añadido para detectar la RAM
 const { Client, Authenticator } = require('minecraft-launcher-core');
 const profilesManager = require('./profiles-manager');
 const launcher = new Client();
@@ -156,6 +157,13 @@ function getSanitizedData() {
     return data;
 }
 
+// CANAL IPC PARA DETECTAR LA RAM MÁXIMA DEL SISTEMA REAL
+ipcMain.handle('get-system-ram', () => {
+    const totalBytes = os.totalmem();
+    // Convierte bytes a Gigabytes (1 GB = 1024 * 1024 * 1024 bytes) redondeando hacia abajo
+    return Math.floor(totalBytes / (1024 * 1024 * 1024));
+});
+
 ipcMain.handle('get-mojang-versions', async () => {
     return await fetchMojangVersions();
 });
@@ -173,7 +181,7 @@ ipcMain.on('open-external-console', () => {
 });
 
 ipcMain.on('open-url', (event, url) => {
-    shell.openExternal(url); // Abre el navegador predeterminado del sistema con la URL de descarga
+    shell.openExternal(url); 
 });
 
 ipcMain.on('save-profile', (event, perfilEntrante) => {

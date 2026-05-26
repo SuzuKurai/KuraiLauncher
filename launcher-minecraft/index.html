@@ -258,7 +258,7 @@
                             <div class="ram-labels">
                                 <span style="font-size:11px; color:#525266;">Mín: 1 GB</span>
                                 <span class="ram-value" id="ram-display">4 GB (4096 MB)</span>
-                                <span style="font-size:11px; color:#525266;">Máx: 16 GB</span>
+                                <span style="font-size:11px; color:#525266;" id="ram-max-label">Detectando...</span>
                             </div>
                             <input type="range" class="slider-input" id="global-ram-slider" min="1" max="16" step="1" value="4"/>
                         </div>
@@ -342,10 +342,31 @@
 
         const ramSlider = document.getElementById('global-ram-slider');
         const ramDisplay = document.getElementById('ram-display');
+        const ramMaxLabel = document.getElementById('ram-max-label');
+
         ramSlider.addEventListener('input', (e) => {
             const val = e.target.value;
             ramDisplay.innerText = `${val} GB (${val * 1024} MB)`;
         });
+
+        // FUNCIÓN AÑADIDA PARA CONTROLAR EL INTEGRADO DE LA RAM DE FORMA DINÁMICA
+        async function detectarYConfigurarRam() {
+            try {
+                const maxRamSistema = await ipcRenderer.invoke('get-system-ram');
+                ramSlider.max = maxRamSistema;
+                ramMaxLabel.innerText = `Máx: ${maxRamSistema} GB`;
+                
+                // Si por algún error el valor cargado supera la RAM del sistema, lo reajustamos al 50%
+                if (parseInt(ramSlider.value) > maxRamSistema) {
+                    ramSlider.value = Math.floor(maxRamSistema / 2) || 2;
+                    ramDisplay.innerText = `${ramSlider.value} GB (${ramSlider.value * 1024} MB)`;
+                }
+            } catch (error) {
+                console.error("Error al detectar la RAM:", error);
+                ramSlider.max = 16;
+                ramMaxLabel.innerText = "Máx: 16 GB";
+            }
+        }
 
         function populateVersionsList(selectedVersionToMatch = "") {
             const select = document.getElementById('prof-version-select');
@@ -575,7 +596,10 @@
             document.getElementById('launcher-tag-version').innerText = `v${v}`;
         });
 
-        ipcRenderer.invoke('get-profiles').then(data => renderAll(data));
+        // Inicializar perfiles y ejecutar la detección automática de RAM del sistema al abrir el launcher
+        detectarYConfigurarRam().then(() => {
+            ipcRenderer.invoke('get-profiles').then(data => renderAll(data));
+        });
     </script>
 </body>
 </html>

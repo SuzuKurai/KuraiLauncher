@@ -16,14 +16,14 @@
     "electron-builder": "^26.8.1"
   },
   "build": {
-    "appId": "com.suzu.kurailauncher",
-    "productName": "Kurai Launcher",
+    "appId": "com.suzukurai.kurailauncher",
+    "productName": "KuraiLauncher",
     "win": {
       "target": [
         "nsis"
       ],
-      "icon": "media/icon.ico",
-      "requestedExecutionLevel": "asInvoker"
+      "icon": "icon.ico",
+      "requestedExecutionLevel": "asInvoker" 
     },
     "nsis": {
       "oneClick": false,
@@ -31,10 +31,6 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Kurai Launcher"
-    },
-    "files": [
-      "**/*",
-      "!.minecraft/**"
-    ]
+    }
   }
 }
