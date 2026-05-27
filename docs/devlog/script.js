@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // 2. DETECTOR DE RELEASE EN GITHUB (Verificación automática por enlace)
+    // 2. DETECTOR DE RELEASES REALES EN GITHUB
     async function verificarReleasesEnGithub() {
         for (const btn of downloadButtons) {
             const textSpan = btn.querySelector('span');
@@ -48,27 +48,49 @@ document.addEventListener('DOMContentLoaded', () => {
                 continue;
             }
 
-            try {
-                // Hacemos una petición HEAD (más rápida y ligera que un GET) para validar si el enlace de la release existe
-                const response = await fetch(targetUrl, { method: 'HEAD' });
+            // EXTRAER EL TAG DEL ENLACE (Ej: "v0.0.1-beta.3")
+            // Convertimos la URL interna de verificación a una consulta directa sobre los assets/archivos
+            // Si el tag tiene la estructura clásica, apuntamos al .exe que genera GitHub al compilar.
+            const parts = targetUrl.split('/tag/');
+            const tag = parts.length > 1 ? parts[1] : '';
+            
+            // Generamos un enlace de validación al ejecutable oficial que DEBE existir en los servidores de GitHub.
+            // Si la release no existe, el binario descarga dará un 404 rotundo e infalible.
+            const urlVerificacionBinario = `https://github.com/SuzuKurai/KuraiLauncher/releases/download/${tag}/KuraiLauncher_Setup.exe`;
 
-                if (response.ok) {
-                    configurarBotonDisponible(btn, textSpan, icon, targetUrl);
-                } else {
+            try {
+                // Hacemos la consulta al servidor de descargas (da 404 real si la release o el archivo no existen)
+                const response = await fetch(urlVerificacionBinario, { method: 'HEAD' });
+
+                if (response.status === 404) {
                     configurarBotonEnEspera(btn, textSpan, icon);
+                } else {
+                    // Si responde cualquier otra cosa válida, la release está lista
+                    configurarBotonDisponible(btn, textSpan, icon, targetUrl);
                 }
             } catch (error) {
-                // Plan de respaldo: Intentamos con fetch tipo GET por si las restricciones del entorno bloquean HEAD
+                // Plan de respaldo por si HEAD tiene restricciones en el entorno local
                 try {
-                    const responseGet = await fetch(targetUrl);
+                    const responseGet = await fetch(urlVerificacionBinario);
                     if (responseGet.status === 404) {
                         configurarBotonEnEspera(btn, textSpan, icon);
                     } else {
                         configurarBotonDisponible(btn, textSpan, icon, targetUrl);
                     }
                 } catch(e) {
-                    // Si hay un bloqueo estricto de CORS en el Webview local, por seguridad permitimos el clic
-                    configurarBotonDisponible(btn, textSpan, icon, targetUrl);
+                    // Si hay un bloqueo estricto de CORS que impida leer los binarios, 
+                    // consultamos la API de GitHub para verificar el tag de manera segura sin salir de la web
+                    try {
+                        const apiResponse = await fetch(`https://api.github.com/repos/SuzuKurai/KuraiLauncher/releases/tags/${tag}`);
+                        if (apiResponse.ok) {
+                            configurarBotonDisponible(btn, textSpan, icon, targetUrl);
+                        } else {
+                            configurarBotonEnEspera(btn, textSpan, icon);
+                        }
+                    } catch(apiErr) {
+                        // En caso de fallo absoluto de red total, permitimos el clic por defecto
+                        configurarBotonDisponible(btn, textSpan, icon, targetUrl);
+                    }
                 }
             }
         }
@@ -96,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
         icon.className = "fa-solid fa-clock";
         
         btn.onclick = (e) => {
-            e.preventDefault(); // Deshabilita cualquier acción de clic
+            e.preventDefault();
         };
     }
 
