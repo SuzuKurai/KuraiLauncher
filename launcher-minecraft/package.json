@@ -1,8 +1,9 @@
 {
-  "name": "launcher-minecraft",
+  "name": "kurai-launcher",
   "version": "0.0.1-beta.2",
   "description": "Kurai Launcher",
   "main": "main.js",
+  "author": "SuzuKurai",
   "scripts": {
     "start": "electron .",
     "dist": "electron-builder --windows"
@@ -24,7 +25,7 @@
         "portable",
         "dir"
       ],
-      "icon": "KuraiLauncher.ico",
+      "icon": "media/KuraiLauncher.ico",
       "requestedExecutionLevel": "asInvoker"
     },
     "nsis": {
@@ -40,7 +41,7 @@
     },
     "files": [
       "**/*",
-      "!dist/${/*}"
+      "!dist/**/*"
     ]
   }
 }
