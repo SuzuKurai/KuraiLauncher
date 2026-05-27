@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const versionBlocks = document.querySelectorAll('.version-block');
     const downloadButtons = document.querySelectorAll('.btn-download-action');
 
-    // 1. FILTRADO DE CATEGORÍAS (Tus filtros de Novedades, Cambios y Bugs)
+    // 1. FILTRADO DE CATEGORÍAS (Novedades, Cambios y Bugs)
     filterButtons.forEach(button => {
         button.addEventListener('click', () => {
             filterButtons.forEach(btn => btn.classList.remove('active'));
@@ -38,33 +38,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 2. DETECTOR DE RELEASE EN GITHUB (Verificación automática por enlace)
     async function verificarReleasesEnGithub() {
-        // Recorremos todos los botones del devlog
         for (const btn of downloadButtons) {
             const textSpan = btn.querySelector('span');
             const icon = btn.querySelector('i');
             const targetUrl = btn.getAttribute('data-target-url');
 
-            // Si el botón no tiene un enlace configurado, lo dejamos en espera
             if (!targetUrl || targetUrl === "#") {
                 configurarBotonEnEspera(btn, textSpan, icon);
                 continue;
             }
 
             try {
-                // Hacemos una petición rápida (HEAD) para verificar si el enlace existe en GitHub
-                // Usamos 'no-cors' o un fetch estándar. Al tratarse de GitHub público, podemos validar su estado:
+                // Hacemos una petición HEAD (más rápida y ligera que un GET) para validar si el enlace de la release existe
                 const response = await fetch(targetUrl, { method: 'HEAD' });
 
                 if (response.ok) {
-                    // Si el estado es 200-299: El archivo o tag EXISTE en GitHub
                     configurarBotonDisponible(btn, textSpan, icon, targetUrl);
                 } else {
-                    // Si devuelve 404 u otro error: La versión aún NO ha sido publicada
                     configurarBotonEnEspera(btn, textSpan, icon);
                 }
             } catch (error) {
-                // Si da un error de red o CORS debido al entorno estricto del webview,
-                // aplicamos un plan de respaldo: Intentamos con un fetch tipo GET normal
+                // Plan de respaldo: Intentamos con fetch tipo GET por si las restricciones del entorno bloquean HEAD
                 try {
                     const responseGet = await fetch(targetUrl);
                     if (responseGet.status === 404) {
@@ -73,24 +67,20 @@ document.addEventListener('DOMContentLoaded', () => {
                         configurarBotonDisponible(btn, textSpan, icon, targetUrl);
                     }
                 } catch(e) {
-                    // Si las políticas de seguridad del navegador bloquean la validación externa en vivo,
-                    // por seguridad dejamos el botón disponible para que el usuario pueda clicarlo.
+                    // Si hay un bloqueo estricto de CORS en el Webview local, por seguridad permitimos el clic
                     configurarBotonDisponible(btn, textSpan, icon, targetUrl);
                 }
             }
         }
     }
 
-    // Funciones auxiliares para cambiar los estilos dinámicamente según tus clases CSS:
-    
     function configurarBotonDisponible(btn, textSpan, icon, url) {
-        btn.className = "btn-download-action available"; // Aplica tu estilo verde
+        btn.className = "btn-download-action available"; 
         textSpan.innerText = "Descargar";
         icon.className = "fa-solid fa-download";
         
         btn.onclick = (e) => {
             e.preventDefault();
-            // Abre el enlace en el navegador externo del usuario
             if (typeof require !== 'undefined') {
                 const { shell } = require('electron');
                 shell.openExternal(url);
@@ -101,15 +91,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function configurarBotonEnEspera(btn, textSpan, icon) {
-        btn.className = "btn-download-action waiting-release"; // Aplica tu estilo gris apagado
+        btn.className = "btn-download-action waiting-release"; 
         textSpan.innerText = "En espera";
         icon.className = "fa-solid fa-clock";
         
         btn.onclick = (e) => {
-            e.preventDefault(); // Deshabilita el clic para que no haga nada
+            e.preventDefault(); // Deshabilita cualquier acción de clic
         };
     }
 
-    // Ejecutar la comprobación automática de enlaces al cargar la página
     verificarReleasesEnGithub();
 });
