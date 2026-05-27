@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const versionBlocks = document.querySelectorAll('.version-block');
     const downloadButtons = document.querySelectorAll('.btn-download-action');
 
-    // 1. FILTRADO DE CONTENIDO (MANTENIDO Y REFORZADO)
+    // 1. FILTRADO DE CATEGORÍAS (Tus filtros de Novedades, Cambios y Bugs)
     filterButtons.forEach(button => {
         button.addEventListener('click', () => {
             filterButtons.forEach(btn => btn.classList.remove('active'));
@@ -36,98 +36,80 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // 2. SISTEMA AUTOMÁTICO DE BOTONES (VERIFICADOR DE JAVA Y LANZAMIENTO)
-    async function inicializarBotonesDescarga() {
-        let javaInstalado = false;
-        let versionActualLauncher = "0.0.1-beta.2"; // Fallback por defecto
-
-        // Intentamos comunicarnos con el entorno de Electron de forma segura
-        if (window.process && window.process.type === 'renderer' || (typeof require !== 'undefined')) {
-            try {
-                const { ipcRenderer } = require('electron');
-                // Solicitamos datos reales al core del launcher
-                versionActualLauncher = await ipcRenderer.invoke('get-launcher-version');
-                
-                // Para saber si Java existe, evaluamos el estado del buscador interno
-                // Si el launcher nos envía un flag o si podemos comprobarlo de forma dinámica:
-                const profilesData = await ipcRenderer.invoke('get-profiles');
-                // Si el launcher está abierto y no ha saltado error crítico, asumimos validación
-                javaInstalado = true; 
-            } catch (e) {
-                console.log("No se pudo mapear la API de Electron en su totalidad, usando entorno simulado.");
-                javaInstalado = true; // Simulación local para pruebas en navegador convencional
-            }
-        } else {
-            // Si lo abres en un navegador normal para maquetar, simulará que Java está correcto
-            javaInstalado = true;
-        }
-
-        // Procesar cada botón en base a las condiciones solicitadas
-        downloadButtons.forEach(btn => {
-            const block = btn.closest('.version-block');
-            const versionDelBloque = block.getAttribute('data-version');
+    // 2. DETECTOR DE RELEASE EN GITHUB (Verificación automática por enlace)
+    async function verificarReleasesEnGithub() {
+        // Recorremos todos los botones del devlog
+        for (const btn of downloadButtons) {
             const textSpan = btn.querySelector('span');
             const icon = btn.querySelector('i');
+            const targetUrl = btn.getAttribute('data-target-url');
 
-            if (!javaInstalado) {
-                // Estado 1: Falta Java
-                btn.className = "btn-download-action waiting-java";
-                textSpan.innerText = "Falta Java 25";
-                icon.className = "fa-solid fa-triangle-exclamation";
-                btn.onclick = (e) => {
-                    e.preventDefault();
-                    alert("Por favor, instala Java 25 desde la advertencia del menú principal antes de efectuar descargas.");
-                };
-            } else {
-                // Comparamos las versiones para saber si el bloque ya salió o está en espera
-                const comparacion = compararVersiones(versionDelBloque, versionActualLauncher);
+            // Si el botón no tiene un enlace configurado, lo dejamos en espera
+            if (!targetUrl || targetUrl === "#") {
+                configurarBotonEnEspera(btn, textSpan, icon);
+                continue;
+            }
 
-                if (comparacion > 0) {
-                    // Estado 2: Versión más nueva que la actual de la app (Aún no ha salido)
-                    btn.className = "btn-download-action waiting-release";
-                    textSpan.innerText = "En espera";
-                    icon.className = "fa-solid fa-clock";
-                    btn.onclick = (e) => {
-                        e.preventDefault();
-                    };
+            try {
+                // Hacemos una petición rápida (HEAD) para verificar si el enlace existe en GitHub
+                // Usamos 'no-cors' o un fetch estándar. Al tratarse de GitHub público, podemos validar su estado:
+                const response = await fetch(targetUrl, { method: 'HEAD' });
+
+                if (response.ok) {
+                    // Si el estado es 200-299: El archivo o tag EXISTE en GitHub
+                    configurarBotonDisponible(btn, textSpan, icon, targetUrl);
                 } else {
-                    // Estado 3: La versión ya está disponible para descargar
-                    btn.className = "btn-download-action available";
-                    textSpan.innerText = "Descargar";
-                    icon.className = "fa-solid fa-download";
-                    
-                    btn.onclick = (e) => {
-                        e.preventDefault();
-                        const url = btn.getAttribute('data-target-url');
-                        if (url && url !== "#") {
-                            if (typeof require !== 'undefined') {
-                                const { shell } = require('electron');
-                                shell.openExternal(url);
-                            } else {
-                                window.open(url, '_blank');
-                            }
-                        }
-                    };
+                    // Si devuelve 404 u otro error: La versión aún NO ha sido publicada
+                    configurarBotonEnEspera(btn, textSpan, icon);
+                }
+            } catch (error) {
+                // Si da un error de red o CORS debido al entorno estricto del webview,
+                // aplicamos un plan de respaldo: Intentamos con un fetch tipo GET normal
+                try {
+                    const responseGet = await fetch(targetUrl);
+                    if (responseGet.status === 404) {
+                        configurarBotonEnEspera(btn, textSpan, icon);
+                    } else {
+                        configurarBotonDisponible(btn, textSpan, icon, targetUrl);
+                    }
+                } catch(e) {
+                    // Si las políticas de seguridad del navegador bloquean la validación externa en vivo,
+                    // por seguridad dejamos el botón disponible para que el usuario pueda clicarlo.
+                    configurarBotonDisponible(btn, textSpan, icon, targetUrl);
                 }
             }
-        });
-    }
-
-    // Función auxiliar para comparar versiones semánticas (SemVer simple)
-    function compararVersiones(v1, v2) {
-        const limpiar = v => v.replace(/[^0-9.]/g, '').split('.').map(Number);
-        const parts1 = limpiar(v1);
-        const parts2 = limpiar(v2);
-        
-        for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
-            const p1 = parts1[i] || 0;
-            const p2 = parts2[i] || 0;
-            if (p1 > p2) return 1;
-            if (p1 < p2) return -1;
         }
-        return 0;
     }
 
-    // Ejecutar comprobación al cargar
-    inicializarBotonesDescarga();
+    // Funciones auxiliares para cambiar los estilos dinámicamente según tus clases CSS:
+    
+    function configurarBotonDisponible(btn, textSpan, icon, url) {
+        btn.className = "btn-download-action available"; // Aplica tu estilo verde
+        textSpan.innerText = "Descargar";
+        icon.className = "fa-solid fa-download";
+        
+        btn.onclick = (e) => {
+            e.preventDefault();
+            // Abre el enlace en el navegador externo del usuario
+            if (typeof require !== 'undefined') {
+                const { shell } = require('electron');
+                shell.openExternal(url);
+            } else {
+                window.open(url, '_blank');
+            }
+        };
+    }
+
+    function configurarBotonEnEspera(btn, textSpan, icon) {
+        btn.className = "btn-download-action waiting-release"; // Aplica tu estilo gris apagado
+        textSpan.innerText = "En espera";
+        icon.className = "fa-solid fa-clock";
+        
+        btn.onclick = (e) => {
+            e.preventDefault(); // Deshabilita el clic para que no haga nada
+        };
+    }
+
+    // Ejecutar la comprobación automática de enlaces al cargar la página
+    verificarReleasesEnGithub();
 });
