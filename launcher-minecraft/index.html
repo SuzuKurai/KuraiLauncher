@@ -149,7 +149,7 @@
         .ram-slider-container { display: flex; flex-direction: column; gap: 8px; background: #1a1a24; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.02); }
         .ram-labels { display: flex; justify-content: space-between; align-items: center; }
         .ram-value { font-family: monospace; font-size: 13px; color: #5865f2; font-weight: bold; background: rgba(88, 101, 242, 0.1); padding: 2px 8px; border-radius: 5px; }
-        .slider-input { -webkit-appearance: none; width: 100%; height: 6px; background: #252533; border-radius: 5px; outline: none; cursor: pointer; }
+        .slider-input { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; background: #252533; border-radius: 5px; outline: none; cursor: pointer; }
         .slider-input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 5px; background: #5865f2; cursor: pointer; transition: 0.1s; }
         .slider-input::-webkit-slider-thumb:hover { transform: scale(1.15); filter: brightness(1.1); }
 
@@ -296,14 +296,14 @@
     <div id="java-popup-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center;">
         <div style="background: #16161e; border: 2px solid #ff4a4a; padding: 35px; border-radius: 16px; width: 480px; text-align: center; color: #ffffff; box-shadow: 0px 15px 40px rgba(0,0,0,0.6);">
             <div style="font-size: 44px; margin-bottom: 15px;">⚠️</div>
-            <h2 style="margin: 0 0 12px 0; font-size: 24px; color: #ff4a4a; font-weight: 800; letter-spacing: 0.5px;">Error de Ejecución de Java</h2>
+            <h2 style="margin: 0 0 12px 0; font-size: 24px; color: #ff4a4a; font-weight: 800; letter-spacing: 0.5px;">Falta Java 25 en el Equipo</h2>
             <p style="font-size: 14px; color: #b3b3b3; line-height: 1.6; margin-bottom: 28px;">
-                Minecraft se detuvo porque el launcher está llamando a un entorno de ejecución antiguo de tu sistema. Las versiones modernas requieren <strong>Java 21 o Java 25</strong>. Asegúrate de instalar el JDK correspondiente.
+                No hemos detectado una instalación de <strong>Java 25 (JDK 25)</strong> en tu sistema. Las versiones modernas de Minecraft requieren este componente para arrancar correctamente. Por favor, instálalo usando los siguientes enlaces oficiales.
             </p>
             <div style="display: flex; gap: 12px; justify-content: center;">
                 <a href="https://www.oracle.com/java/technologies/downloads/#java21" target="_blank" style="background: #2b2b3d; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 13px; border: 1px solid rgba(255,255,255,0.05); transition: 0.2s;">JDK 21</a>
-                <a href="https://www.oracle.com/java/technologies/downloads/#java25" target="_blank" style="background: #ff4a4a; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 13px;">Descargar JDK 25</a>
-                <button onclick="document.getElementById('java-popup-overlay').style.display = 'none'" style="background: #1a1a24; color: #b3b3b3; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px;">Cerrar</button>
+                <a href="https://www.oracle.com/java/technologies/downloads/#java25" target="_blank" style="background: #ff4a4a; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 13px;">Descargar JDK 25 (Recomendado)</a>
+                <button onclick="document.getElementById('java-popup-overlay').style.display = 'none'" style="background: #1a1a24; color: #b3b3b3; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px;">Omitir / Cerrar</button>
             </div>
         </div>
     </div>
@@ -349,14 +349,12 @@
             ramDisplay.innerText = `${val} GB (${val * 1024} MB)`;
         });
 
-        // FUNCIÓN AÑADIDA PARA CONTROLAR EL INTEGRADO DE LA RAM DE FORMA DINÁMICA
         async function detectarYConfigurarRam() {
             try {
                 const maxRamSistema = await ipcRenderer.invoke('get-system-ram');
                 ramSlider.max = maxRamSistema;
                 ramMaxLabel.innerText = `Máx: ${maxRamSistema} GB`;
                 
-                // Si por algún error el valor cargado supera la RAM del sistema, lo reajustamos al 50%
                 if (parseInt(ramSlider.value) > maxRamSistema) {
                     ramSlider.value = Math.floor(maxRamSistema / 2) || 2;
                     ramDisplay.innerText = `${ramSlider.value} GB (${ramSlider.value * 1024} MB)`;
@@ -574,13 +572,14 @@
 
         ipcRenderer.on('data-updated', (event, data) => renderAll(data));
         ipcRenderer.on('status-msg', (event, msg) => document.getElementById('status').innerText = msg);
+        
+        // Muestra el pop-up tanto si falla en el arranque como si se dispara al inicio
         ipcRenderer.on('java-missing-error', () => document.getElementById('java-popup-overlay').style.display = 'flex');
         
         ipcRenderer.on('progress', (event, data) => {
             document.getElementById('status').innerText = `Progreso: ${data.task} (${data.type})`;
         });
 
-        // ESCUCHADOR DE ACTUALIZACIONES DISPONIBLES
         ipcRenderer.on('update-available', (event, versions) => {
             document.getElementById('update-popup-text').innerHTML = `Tu versión actual es la <strong>${versions.current}</strong>.<br>La nueva versión <strong>${versions.latest}</strong> ya está disponible para descargar.`;
             document.getElementById('update-popup-overlay').style.display = 'flex';
@@ -591,12 +590,10 @@
             };
         });
 
-        // Pintar la etiqueta de versión en el Navbar superior
         ipcRenderer.invoke('get-launcher-version').then(v => {
             document.getElementById('launcher-tag-version').innerText = `v${v}`;
         });
 
-        // Inicializar perfiles y ejecutar la detección automática de RAM del sistema al abrir el launcher
         detectarYConfigurarRam().then(() => {
             ipcRenderer.invoke('get-profiles').then(data => renderAll(data));
         });

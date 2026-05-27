@@ -1,14 +1,13 @@
 const { app, BrowserWindow, ipcMain, dialog, net, nativeImage, shell } = require('electron'); 
 const path = require('path');
 const fs = require('fs');
-const os = require('os'); // <-- Módulo nativo añadido para detectar la RAM
+const os = require('os'); 
 const { Client, Authenticator } = require('minecraft-launcher-core');
 const profilesManager = require('./profiles-manager');
 const launcher = new Client();
 
 // CONSTANTES DE VERSIÓN DEL LAUNCHER
 const LAUNCHER_VERSION = '0.0.1-beta.3';
-// Cambia esto por la URL real de tu repositorio donde alojes el JSON de control de versión
 const UPDATE_CHECK_URL = 'https://raw.githubusercontent.com/SuzuKurai/KuraiLauncher/refs/heads/main/launcher-minecraft/version.json';
 
 const rutaRoaming = app.getPath('appData'); 
@@ -23,6 +22,39 @@ let mainWindow;
 let consoleWindow = null; 
 
 const ICONO_URL = 'https://raw.githubusercontent.com/SuzuKurai/KuraiLauncher/refs/heads/main/launcher-minecraft/media/KuraiLauncher.png';
+
+// RUTAS ESTÁNDAR DONDE SE INSTALA JAVA 25 EN WINDOWS
+const RUTAS_JAVA_25 = [
+    "C:\\Program Files\\Java\\jdk-25\\bin\\javaw.exe",
+    "C:\\Program Files\\Java\\jre-25\\bin\\javaw.exe",
+    "C:\\Program Files\\Eclipse Foundation\\jdk-25-hotspot\\bin\\javaw.exe",
+    "C:\\Program Files\\Eclipse Adoptium\\jdk-25-hotspot\\bin\\javaw.exe",
+    "C:\\Program Files (x86)\\Java\\jdk-25\\bin\\javaw.exe"
+];
+
+// Función auxiliar para escanear si Java 25 existe en el sistema
+function obtenerRutaJava25() {
+    // 1. Probar las rutas fijas conocidas
+    for (const ruta of RUTAS_JAVA_25) {
+        if (fs.existsSync(ruta)) return ruta;
+    }
+
+    // 2. Probar escaneo dinámico en la carpeta base de Java por si varía el nombre del JDK
+    const baseJavaDir = "C:\\Program Files\\Java";
+    if (fs.existsSync(baseJavaDir)) {
+        try {
+            const carpetas = fs.readdirSync(baseJavaDir);
+            const carpetaJdk25 = carpetas.find(f => f.toLowerCase().includes('jdk-25') || f.toLowerCase().includes('25'));
+            if (carpetaJdk25) {
+                const rutaDetectada = path.join(baseJavaDir, carpetaJdk25, 'bin', 'javaw.exe');
+                if (fs.existsSync(rutaDetectada)) return rutaDetectada;
+            }
+        } catch (err) {}
+    }
+
+    // Si no encuentra nada seguro, retorna null
+    return null;
+}
 
 async function createWindow() {
     let appIcon = null;
@@ -51,10 +83,22 @@ async function createWindow() {
     mainWindow.setMenuBarVisibility(false); 
     mainWindow.loadFile('index.html');
 
-    // Comprobar actualizaciones tras cargar la interfaz
+    // Comprobaciones automáticas al terminar de cargar la interfaz
     mainWindow.webContents.on('did-finish-load', () => {
         checkLauncherUpdates();
+        verificarJavaAlInicio(); // <-- NUEVA VERIFICACIÓN DE JAVA AUTOMÁTICA
     });
+}
+
+// NUEVA FUNCIÓN: Revisa si tiene Java 25 y si no, avisa al HTML
+function verificarJavaAlInicio() {
+    const javaPath = obtenerRutaJava25();
+    if (!javaPath) {
+        console.log("[JAVA CHECK] No se detectó Java 25 en el sistema.");
+        mainWindow.webContents.send('java-missing-error');
+    } else {
+        console.log(`[JAVA CHECK] Java 25 detectado correctamente en: ${javaPath}`);
+    }
 }
 
 function createConsoleWindow() {
@@ -86,7 +130,6 @@ function createConsoleWindow() {
 
 app.whenReady().then(createWindow);
 
-// FUNCIÓN PARA VERIFICAR SI HAY ACTUALIZACIONES EN LA WEB
 function checkLauncherUpdates() {
     const request = net.request(UPDATE_CHECK_URL);
     request.on('response', (response) => {
@@ -95,7 +138,6 @@ function checkLauncherUpdates() {
         response.on('end', () => {
             try {
                 const data = JSON.parse(body);
-                // Si la versión remota es diferente o superior a la local
                 if (data.version && data.version !== LAUNCHER_VERSION) {
                     mainWindow.webContents.send('update-available', {
                         current: LAUNCHER_VERSION,
@@ -131,12 +173,10 @@ function fetchMojangVersions() {
                 }
             });
         });
-
         request.on('error', (err) => {
             console.error("Error de red conectando con Mojang:", err);
             resolve([]);
         });
-
         request.end();
     });
 }
@@ -157,10 +197,8 @@ function getSanitizedData() {
     return data;
 }
 
-// CANAL IPC PARA DETECTAR LA RAM MÁXIMA DEL SISTEMA REAL
 ipcMain.handle('get-system-ram', () => {
     const totalBytes = os.totalmem();
-    // Convierte bytes a Gigabytes (1 GB = 1024 * 1024 * 1024 bytes) redondeando hacia abajo
     return Math.floor(totalBytes / (1024 * 1024 * 1024));
 });
 
@@ -284,34 +322,12 @@ ipcMain.on('launch-game', async (event) => {
         .replace(/beta\/alpha:/i, '')
         .trim();
 
-    let javaPathManual = undefined;
-    const posiblesRutasJava = [
-        "C:\\Program Files\\Java\\jdk-25\\bin\\javaw.exe",
-        "C:\\Program Files\\Java\\jre-25\\bin\\javaw.exe",
-        "C:\\Program Files\\Eclipse Foundation\\jdk-25-hotspot\\bin\\javaw.exe",
-        "C:\\Program Files\\Eclipse Adoptium\\jdk-25-hotspot\\bin\\javaw.exe",
-        "C:\\Program Files (x86)\\Java\\jdk-25\\bin\\javaw.exe"
-    ];
-
-    for (const ruta of posiblesRutasJava) {
-        if (fs.existsSync(ruta)) { javaPathManual = ruta; break; }
-    }
+    // Utilizamos el buscador unificado de Java 25
+    let javaPathManual = obtenerRutaJava25();
 
     if (!javaPathManual) {
-        const baseJavaDir = "C:\\Program Files\\Java";
-        if (fs.existsSync(baseJavaDir)) {
-            try {
-                const carpetas = fs.readdirSync(baseJavaDir);
-                const carpetaJdk25 = carpetas.find(f => f.toLowerCase().includes('jdk-25') || f.toLowerCase().includes('25'));
-                if (carpetaJdk25) {
-                    const rutaDetectada = path.join(baseJavaDir, carpetaJdk25, 'bin', 'javaw.exe');
-                    if (fs.existsSync(rutaDetectada)) javaPathManual = rutaDetectada;
-                }
-            } catch (err) {}
-        }
+        javaPathManual = "javaw"; // Respaldo global por si acaso
     }
-
-    if (!javaPathManual) javaPathManual = "javaw"; 
 
     let customJvmArgs = [];
     if(globalSettings.jvmArgs && globalSettings.jvmArgs.trim() !== "") {
@@ -334,8 +350,7 @@ ipcMain.on('launch-game', async (event) => {
         version: { number: cleanVersion, type: "release" },
         memory: { max: maxRamMb, min: minRamMb },
         customArgs: customJvmArgs, 
-        overrides: { checkStrict: false },
-        customflags: ["-Xss1M"]
+        overrides: { checkStrict: false }
     };
 
     launcher.removeAllListeners('debug');
