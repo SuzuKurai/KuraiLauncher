@@ -114,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function configurarBotonEnEspera(btn, textSpan, icon) {
         btn.className = "btn-download-action waiting-release"; 
-        textSpan.innerText = "En espera";
+        textSpan.innerText = "En desarrollo";
         icon.className = "fa-solid fa-clock";
         
         btn.onclick = (e) => {
