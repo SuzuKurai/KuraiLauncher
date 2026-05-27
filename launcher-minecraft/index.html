@@ -210,15 +210,15 @@
 
             <div class="panel-overlay" id="panel-add-profile">
                 <div class="panel-header">
-                    <h3 id="panel-profile-title">Crear Perfil</h3>
+                    <h3 id="panel-profile-title">Crear Instancia</h3>
                     <button class="btn-close-panel" onclick="closeProfilePanel()">&times;</button>
                 </div>
                 <div class="panel-scrollable-content">
                     <input type="hidden" id="prof-editing-id" value=""/>
                     
                     <div class="form-group">
-                        <label>Nombre del Perfil</label>
-                        <input type="text" class="form-control" id="prof-name" placeholder="Ej: Mi Mundo 1.21"/>
+                        <label>Nombre de la instancia</label>
+                        <input type="text" class="form-control" id="prof-name" placeholder="Ponle un nombre a la instancia"/>
                     </div>
 
                     <div class="form-group">
@@ -290,6 +290,18 @@
                 <button class="btn-submit" id="save-settings-btn">Guardar Cambios</button>
             </div>
 
+        </div>
+    </div>
+
+    <!-- POP-UP DE ADVERTENCIA PARA CAMPOS VACÍOS -->
+    <div id="error-profile-popup-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10001; align-items: center; justify-content: center;">
+        <div style="background: #16161e; border: 2px solid #ffaa00; padding: 30px; border-radius: 16px; width: 400px; text-align: center; color: #ffffff; box-shadow: 0px 15px 40px rgba(0,0,0,0.6);">
+            <div style="font-size: 40px; margin-bottom: 10px;">✏️</div>
+            <h2 style="margin: 0 0 10px 0; font-size: 20px; color: #ffaa00; font-weight: 800; letter-spacing: 0.5px;">Instancia Incompleta</h2>
+            <p style="font-size: 13px; color: #b3b3b3; line-height: 1.6; margin-bottom: 22px;">
+                ¡Ups! Necesitas asignarle un <strong>Nombre</strong> a la instancia y seleccionar una <strong>Versión</strong> válida de la lista antes de poder guardarlo.
+            </p>
+            <button onclick="document.getElementById('error-profile-popup-overlay').style.display = 'none'" style="background: #ffaa00; color: #111116; border: none; padding: 12px 30px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px; transition: 0.2s; width: 100%;">Entendido</button>
         </div>
     </div>
 
@@ -455,12 +467,20 @@
         document.getElementById('open-settings-btn').addEventListener('click', () => togglePanel('panel-settings', true));
 
         document.getElementById('save-profile-btn').addEventListener('click', () => {
-            const name = document.getElementById('prof-name').value.trim();
-            const version = document.getElementById('prof-version-select').value;
-            const editingId = document.getElementById('prof-editing-id').value;
+            const nameInput = document.getElementById('prof-name');
+            const versionSelect = document.getElementById('prof-version-select');
+            const editingIdInput = document.getElementById('prof-editing-id');
             
-            if(!name || !version) {
-                alert('Rellena el nombre y elige una versión válida.');
+            const name = nameInput.value.trim();
+            const version = versionSelect.value;
+            const editingId = editingIdInput.value;
+            
+            if (!name || !version) {
+                // 🛠️ Mostramos nuestro pop-up estilizado en vez del alert nativo
+                document.getElementById('error-profile-popup-overlay').style.display = 'flex';
+                
+                // Cerramos limpiamente el panel de perfil para evitar bloqueos
+                closeProfilePanel();
                 return;
             }
 

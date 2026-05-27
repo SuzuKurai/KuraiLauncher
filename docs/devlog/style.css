@@ -14,7 +14,7 @@
     /* Categorías */
     --color-add: #2ecc71;
     --color-bug: #e74c3c;
-    --color-fix: #f1c40f;
+    --color-change: #f1c40f;
 }
 
 body {
@@ -179,7 +179,7 @@ body {
 /* Estilos de las líneas según categoría */
 .type-add .change-icon { background: rgba(46,204,113,0.15); color: var(--color-add); }
 .type-bug .change-icon { background: rgba(231,76,60,0.15); color: var(--color-bug); }
-.type-fix .change-icon { background: rgba(241,196,15,0.15); color: var(--color-fix); }
+.type-change .change-icon { background: rgba(241,196,15,0.15); color: var(--color-change); }
 
 /* FOOTER */
 .changelog-footer {

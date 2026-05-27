@@ -17,13 +17,40 @@
             <div class="filter-bar">
                 <button class="filter-btn active" data-filter="all">Todos los cambios</button>
                 <button class="filter-btn" data-filter="add"><i class="fa-solid fa-plus-circle"></i> Novedades</button>
-                <button class="filter-btn" data-filter="fix"><i class="fa-solid fa-wrench"></i> Arreglos</button>
+                <button class="filter-btn" data-filter="change"><i class="fa-solid fa-wrench"></i> Cambios</button>
                 <button class="filter-btn" data-filter="bug"><i class="fa-solid fa-bug-slash"></i> Bugs</button>
             </div>
         </div>
     </header>
 
     <main class="changelog-container">
+
+        <section class="version-block" data-version="0.0.1-beta.3">
+            <div class="version-sidebar">
+                <div class="version-tag">v0.0.1-beta.3</div>
+                <time class="version-date">27 de Mayo, 2026</time>
+                <span class="badge badge-minor">Experimental</span>
+            </div>
+                        <div class="version-content">
+                <h2>Correciones de Java</h2>
+                <p class="version-summary">Dado que en la versión anterior había problemas con la detección y el manejo de la instalación de Java, se han implementado correcciones para mejorar esta funcionalidad.</p>
+                
+                <ul class="change-list">
+                    <li class="change-item type-change">
+                        <span class="change-icon"><i class="fa-solid fa-wrench"></i></span>
+                        <div class="change-text"><strong>Mejora en la detección de Java:</strong> Ahora el launcher al abrir buscará si existe una instancia de Java. Si esta existe, mandará un pop-up para proceder con su descarga.</div>
+                    </li>
+                    <li class="change-item type-bug">
+                        <span class="change-icon"><i class="fa-solid fa-bug-slash"></i></span>
+                        <div class="change-text"><strong>Arreglo en los perfiles:</strong> Ahora estos se llaman "instancias". Además, se arregló un bug que dejaba el launcher congelado si al crear una instancia el nombre estaba vacío.</div>  
+                    </li>
+                    <li class="change-item type-bug">
+                        <span class="change-icon"><i class="fa-solid fa-bug-slash"></i></span>
+                        <div class="change-text"><strong>Corrección de bugs pequeños:</strong> Se han corregido pequeños problemas en la funcionalidad del launcher respecto a Java.</div>
+                    </li>
+                </ul>
+            </div>
+        </section>
 
         <section class="version-block" data-version="0.0.1-beta.2">
             <div class="version-sidebar">
