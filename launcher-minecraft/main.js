@@ -6,8 +6,27 @@ const { Client, Authenticator } = require('minecraft-launcher-core');
 const profilesManager = require('./profiles-manager');
 const launcher = new Client();
 
+// --- CONFIGURACIÓN CENTRALIZADA DE LOGS ---
+const logsDir = path.join(app.getPath('appData'), '.minecraft', '.KuraiLauncher', 'logs');
+if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir, { recursive: true });
+
+function saveLogToFile(text) {
+    const data = getSanitizedData(); 
+    // Solo guardamos si el usuario marcó la opción en la UI
+    if (data.settings && data.settings.saveLogs === true) {
+        const now = new Date();
+        const logFileName = `${now.getFullYear()}.${now.getMonth()+1}.${now.getDate()}-${now.getHours()}${now.getMinutes()}${now.getSeconds()}.txt`;
+        const logFilePath = path.join(logsDir, logFileName);
+        
+        fs.appendFile(logFilePath, text + '\n', (err) => {
+            if (err) console.error("Error al escribir log:", err);
+        });
+    }
+}
+// ------------------------------------------
+
 // CONSTANTES DE VERSIÓN DEL LAUNCHER
-const LAUNCHER_VERSION = '0.0.1-beta.3';
+const LAUNCHER_VERSION = '0.0.1-beta.4';
 const UPDATE_CHECK_URL = 'https://raw.githubusercontent.com/SuzuKurai/KuraiLauncher/refs/heads/main/launcher-minecraft/version.json';
 
 const rutaRoaming = app.getPath('appData'); 
@@ -32,14 +51,10 @@ const RUTAS_JAVA_25 = [
     "C:\\Program Files (x86)\\Java\\jdk-25\\bin\\javaw.exe"
 ];
 
-// Función auxiliar para escanear si Java 25 existe en el sistema
 function obtenerRutaJava25() {
-    // 1. Probar las rutas fijas conocidas
     for (const ruta of RUTAS_JAVA_25) {
         if (fs.existsSync(ruta)) return ruta;
     }
-
-    // 2. Probar escaneo dinámico en la carpeta base de Java por si varía el nombre del JDK
     const baseJavaDir = "C:\\Program Files\\Java";
     if (fs.existsSync(baseJavaDir)) {
         try {
@@ -51,8 +66,6 @@ function obtenerRutaJava25() {
             }
         } catch (err) {}
     }
-
-    // Si no encuentra nada seguro, retorna null
     return null;
 }
 
@@ -83,14 +96,12 @@ async function createWindow() {
     mainWindow.setMenuBarVisibility(false); 
     mainWindow.loadFile('index.html');
 
-    // Comprobaciones automáticas al terminar de cargar la interfaz
     mainWindow.webContents.on('did-finish-load', () => {
         checkLauncherUpdates();
-        verificarJavaAlInicio(); // <-- NUEVA VERIFICACIÓN DE JAVA AUTOMÁTICA
+        verificarJavaAlInicio(); 
     });
 }
 
-// NUEVA FUNCIÓN: Revisa si tiene Java 25 y si no, avisa al HTML
 function verificarJavaAlInicio() {
     const javaPath = obtenerRutaJava25();
     if (!javaPath) {
@@ -255,15 +266,15 @@ ipcMain.on('select-profile', (event, id) => {
 
 ipcMain.on('save-settings', (event, newSettings) => {
     try {
-        if (typeof profilesManager.saveSettings === 'function') {
-            profilesManager.saveSettings(newSettings);
-        } else {
-            const data = getSanitizedData();
-            data.settings = newSettings;
-            if (profilesManager.save) profilesManager.save(data);
+        const data = getSanitizedData();
+        data.settings = { ...data.settings, ...newSettings }; // Mezclamos correctamente
+        if (typeof profilesManager.save === 'function') {
+            profilesManager.save(data);
         }
-    } catch(e){}
-    mainWindow.webContents.send('data-updated', getSanitizedData());
+    } catch(e){
+        console.error("Error al guardar ajustes:", e);
+    }
+    if (mainWindow) mainWindow.webContents.send('data-updated', getSanitizedData());
 });
 
 ipcMain.on('save-account', (event, username) => {
@@ -284,6 +295,7 @@ ipcMain.on('delete-account', (event, username) => {
 
 ipcMain.on('launch-game', async (event) => {
     const data = getSanitizedData();
+    const globalSettings = data.settings || {}; // CORREGIDO: Declarado una sola vez
     const currentProfile = data.list.find(p => p.id === data.selectedProfile);
 
     if (!currentProfile) {
@@ -294,7 +306,6 @@ ipcMain.on('launch-game', async (event) => {
     const activeUser = data.selectedAccount || "KuraiUser";
     mainWindow.webContents.send('status-msg', `Iniciando Minecraft versión ${currentProfile.version || "Desconocida"}...`);
 
-    const globalSettings = data.settings || {};
     const defaultRoot = path.join(app.getPath('appData'), '.minecraft');
     let finalRoot = defaultRoot;
     if (globalSettings.gamePath && globalSettings.gamePath.trim() !== "") {
@@ -322,11 +333,9 @@ ipcMain.on('launch-game', async (event) => {
         .replace(/beta\/alpha:/i, '')
         .trim();
 
-    // Utilizamos el buscador unificado de Java 25
     let javaPathManual = obtenerRutaJava25();
-
     if (!javaPathManual) {
-        javaPathManual = "javaw"; // Respaldo global por si acaso
+        javaPathManual = "javaw"; 
     }
 
     let customJvmArgs = [];
@@ -362,10 +371,15 @@ ipcMain.on('launch-game', async (event) => {
         if (consoleWindow) consoleWindow.webContents.send('console-tick-log', { level, text });
     };
 
-    launcher.on('debug', (e) => { sendLogTick('debug', `[DEBUG] ${e}`); });
+    launcher.on('debug', (e) => { 
+        sendLogTick('debug', `[DEBUG] ${e}`); 
+        saveLogToFile(`[DEBUG] ${e}`); 
+    });
 
     launcher.on('data', (e) => {
         sendLogTick('info', `[INFO] ${e}`);
+        saveLogToFile(`[INFO] ${e}`); 
+        
         if (e.includes("UnsupportedClassVersionError") || e.includes("class file version 69.0") || e.includes("LinkageError occurred")) {
             if (mainWindow) {
                 mainWindow.webContents.send('status-msg', 'Error: Versión de Java incompatible detectada.');
@@ -376,6 +390,7 @@ ipcMain.on('launch-game', async (event) => {
 
     launcher.on('error', (e) => {
         sendLogTick('error', `[ERROR] ${e.message || e}`);
+        saveLogToFile(`[ERROR] ${e.message || e}`); 
         if(mainWindow) mainWindow.webContents.send('status-msg', `Error al lanzar: ${e.message || e}`);
     });
     

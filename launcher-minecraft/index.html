@@ -6,7 +6,6 @@
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #111116; color: white; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         
-        /* 1. BARRA SUPERIOR (NAVBAR PRINCIPAL MODERNIZADA) */
         .navbar { 
             height: 60px; 
             background: rgba(20, 20, 27, 0.75); 
@@ -31,10 +30,8 @@
             -webkit-text-fill-color: transparent;
         }
         
-        /* CONTENEDOR PRINCIPAL DOCK-BASED */
         .main-container { display: flex; flex: 1; height: calc(100vh - 60px); overflow: hidden; position: relative; }
         
-        /* SIDEBAR (PANEL IZQUIERDO DE PERFILES) */
         .sidebar { 
             width: 280px; 
             background: #14141b; 
@@ -77,7 +74,6 @@
         .btn-action-profile:hover { color: white; background: rgba(255,255,255,0.05); }
         .btn-action-profile.delete:hover { color: #ff5c5c; background: rgba(255,92,92,0.1); }
 
-        /* SECCIÓN DE CUENTAS EN SIDEBAR */
         .account-box { background: #1a1a24; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; border: 1px solid rgba(255,255,255,0.02); }
         .account-selector { background: #252533; border: none; color: white; padding: 10px; border-radius: 8px; width: 100%; font-size: 13px; outline: none; cursor: pointer; font-weight: 600; }
         
@@ -90,13 +86,9 @@
         .btn-delete-account { background: #2a2a3a; border: none; color: #b5b5c5; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .btn-delete-account:hover { background: #3a1e1e; color: #ff5c5c; }
 
-        /* VIEWPORT PRINCIPAL */
         .viewport { flex: 1; background: #0e0e13; display: flex; flex-direction: column; position: relative; }
-        
-        /* CONTENEDOR INTEGRADO PARA EL DEVLOG WEB */
         .devlog-container { flex: 1; width: 100%; height: 100%; border: none; background: #0e0e13; }
 
-        /* DOCK DE LANZAMIENTO (BARRA INFERIOR DE JUEGO) */
         .launch-dock { 
             height: 90px; background: #14141b; border-top: 1px solid rgba(255,255,255,0.03); 
             display: flex; align-items: center; padding: 0 40px; justify-content: space-between; z-index: 5;
@@ -117,7 +109,6 @@
         .btn-dock-icon { background: #1a1a24; border: 1px solid rgba(255,255,255,0.02); color: #a5a5b5; width: 44px; height: 44px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; transition: 0.2s; }
         .btn-dock-icon:hover { background: #222230; color: white; border-color: rgba(255,255,255,0.08); }
 
-        /* CAPAS MODALES DESLIZANTES / OVERLAYS */
         .panel-overlay { 
             position: absolute; top: 0; right: -452px; width: 430px; height: 100%; 
             background: #14141b; border-left: 1px solid rgba(255,255,255,0.03); 
@@ -141,7 +132,6 @@
         .form-control { background: #1a1a24; border: 1px solid rgba(255,255,255,0.04); color: white; padding: 10px 14px; border-radius: 8px; font-size: 13px; outline: none; box-sizing: border-box; width: 100%; }
         .form-control:focus { border-color: #5865f2; }
         
-        /* FILTROS DE VERSIONES */
         .version-filters { display: flex; flex-wrap: wrap; gap: 12px; background: #1a1a24; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.02); }
         .filter-checkbox-label { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #e0e0e8; cursor: pointer; user-select: none; }
         .filter-checkbox-label input { accent-color: #5865f2; cursor: pointer; }
@@ -283,8 +273,12 @@
                     </div>
                     
                     <div class="settings-section-title">Desarrollo</div>
+                    <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="global-save-logs" style="cursor: pointer;">
+                        <label for="global-save-logs" style="margin:0;">Guardar logs en archivos .txt</label>
+                    </div>
                     <div class="form-group">
-                        <button class="btn-secondary" id="open-console-btn">Abrir Ventana de Consola (Live Ticks) ⚙️</button>
+                        <button class="btn-secondary" id="open-console-btn">Abrir consola</button>
                     </div>
                 </div>
                 <button class="btn-submit" id="save-settings-btn">Guardar Cambios</button>
@@ -293,7 +287,6 @@
         </div>
     </div>
 
-    <!-- POP-UP DE ADVERTENCIA PARA CAMPOS VACÍOS -->
     <div id="error-profile-popup-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10001; align-items: center; justify-content: center;">
         <div style="background: #16161e; border: 2px solid #ffaa00; padding: 30px; border-radius: 16px; width: 400px; text-align: center; color: #ffffff; box-shadow: 0px 15px 40px rgba(0,0,0,0.6);">
             <div style="font-size: 40px; margin-bottom: 10px;">✏️</div>
@@ -476,10 +469,7 @@
             const editingId = editingIdInput.value;
             
             if (!name || !version) {
-                // 🛠️ Mostramos nuestro pop-up estilizado en vez del alert nativo
                 document.getElementById('error-profile-popup-overlay').style.display = 'flex';
-                
-                // Cerramos limpiamente el panel de perfil para evitar bloqueos
                 closeProfilePanel();
                 return;
             }
@@ -496,19 +486,25 @@
             closeProfilePanel();
         });
 
+        // Corregido: Obtenemos el valor de la RAM directamente desde el slider ya que no hay 'ram-input' texto
         document.getElementById('save-settings-btn').addEventListener('click', () => {
-            const ramGb = ramSlider.value;
+            const saveLogs = document.getElementById('global-save-logs').checked;
+            const ramGb = parseInt(document.getElementById('global-ram-slider').value); 
             const customPath = document.getElementById('global-game-path').value.trim();
             const behavior = document.getElementById('global-launcher-behavior').value;
             const jvmArgs = document.getElementById('global-jvm-args').value.trim();
 
+            const finalMaxMemory = (ramGb && ramGb > 0) ? `${ramGb}G` : '4G';
+
             ipcRenderer.send('save-settings', { 
-                maxMemory: `${ramGb}G`, 
+                maxMemory: finalMaxMemory, 
                 minMemory: '2G',
                 gamePath: customPath,
                 launcherBehavior: behavior,
-                jvmArgs: jvmArgs
+                jvmArgs: jvmArgs,
+                saveLogs: saveLogs
             });
+            
             togglePanel('panel-settings', false);
         });
 
@@ -585,6 +581,11 @@
                 if(data.settings.gamePath) document.getElementById('global-game-path').value = data.settings.gamePath;
                 if(data.settings.launcherBehavior) document.getElementById('global-launcher-behavior').value = data.settings.launcherBehavior;
                 if(data.settings.jvmArgs) document.getElementById('global-jvm-args').value = data.settings.jvmArgs;
+                if(data.settings.saveLogs !== undefined) {
+                    document.getElementById('global-save-logs').checked = data.settings.saveLogs;
+                } else {
+                    document.getElementById('global-save-logs').checked = false;
+                }
             }
         }
 
@@ -593,7 +594,6 @@
         ipcRenderer.on('data-updated', (event, data) => renderAll(data));
         ipcRenderer.on('status-msg', (event, msg) => document.getElementById('status').innerText = msg);
         
-        // Muestra el pop-up tanto si falla en el arranque como si se dispara al inicio
         ipcRenderer.on('java-missing-error', () => document.getElementById('java-popup-overlay').style.display = 'flex');
         
         ipcRenderer.on('progress', (event, data) => {

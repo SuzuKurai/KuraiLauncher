@@ -46,7 +46,10 @@
 </head>
 <body>
 
-    <div class="console-header">Consola (Live)</div>
+    <div class="console-header">
+    Consola (Live)
+    <button id="copy-btn" style="float:right; cursor:pointer; background:#252533; border:none; color:#a5a5b5; padding:2px 8px; border-radius:4px; font-size:10px;">Copiar Log</button>
+</div>
     <div id="console-feed"></div>
 
     <script>
@@ -63,6 +66,16 @@
 
             // Fuerza el scroll automático inmediato al fondo en cada tick
             feedContainer.scrollTop = feedContainer.scrollHeight;
+        });
+
+        document.getElementById('copy-btn').addEventListener('click', () => {
+            const text = Array.from(document.querySelectorAll('.tick-line'))
+                            .map(el => el.innerText).join('\n');
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.getElementById('copy-btn');
+                btn.innerText = "¡Copiado!";
+                setTimeout(() => btn.innerText = "Copiar Log", 2000);
+            });
         });
     </script>
 </body>
