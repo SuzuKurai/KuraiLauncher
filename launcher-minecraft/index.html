@@ -74,17 +74,37 @@
         .btn-action-profile:hover { color: white; background: rgba(255,255,255,0.05); }
         .btn-action-profile.delete:hover { color: #ff5c5c; background: rgba(255,92,92,0.1); }
 
-        .account-box { background: #1a1a24; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; border: 1px solid rgba(255,255,255,0.02); }
-        .account-selector { background: #252533; border: none; color: white; padding: 10px; border-radius: 8px; width: 100%; font-size: 13px; outline: none; cursor: pointer; font-weight: 600; }
+        /* --- NUEVO SISTEMA DE CUENTAS (DISEÑO INTEGRADO) --- */
+        .account-widget { 
+            background: #1a1a24; border: 1px solid rgba(255,255,255,0.02); padding: 12px; 
+            border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 12px; 
+            transition: 0.2s; margin-top: 5px;
+        }
+        .account-widget:hover { background: #222230; border-color: rgba(255,255,255,0.06); }
         
-        .account-actions { display: flex; gap: 6px; align-items: center; }
-        .input-account { flex: 1; background: #252533; border: 1px solid rgba(255,255,255,0.02); color: white; padding: 8px 12px; border-radius: 8px; font-size: 12px; outline: none; min-width: 0; }
-        .input-account:focus { border-color: #5865f2; }
+        .account-avatar { 
+            width: 36px; height: 36px; background: linear-gradient(135deg, #5865f2, #404eed); 
+            border-radius: 10px; display: flex; align-items: center; justify-content: center; 
+            font-weight: 800; color: white; font-size: 15px; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .account-widget-info { flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+        .account-widget-name { font-size: 13px; font-weight: 600; color: #e0e0e8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .account-widget-status { font-size: 11px; color: #5865f2; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
         
-        .btn-account { background: #5865f2; border: none; color: white; width: 32px; height: 32px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; flex-shrink: 0; }
-        .btn-account:hover { background: #4752c4; transform: scale(1.05); }
-        .btn-delete-account { background: #2a2a3a; border: none; color: #b5b5c5; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .btn-delete-account:hover { background: #3a1e1e; color: #ff5c5c; }
+        .account-inline-form { display: flex; gap: 8px; margin-bottom: 15px; }
+        .account-list-container { display: flex; flex-direction: column; gap: 8px; }
+        
+        .account-item-card { 
+            background: #1a1a24; border: 1px solid rgba(255,255,255,0.02); padding: 10px 14px; 
+            border-radius: 10px; display: flex; justify-content: space-between; align-items: center; 
+            transition: 0.2s; cursor: pointer;
+        }
+        .account-item-card:hover { background: #222230; border-color: rgba(255,255,255,0.05); }
+        .account-item-card.active { background: linear-gradient(135deg, #2b2b3d, #1f1f2e); border-color: rgba(88, 101, 242, 0.25); }
+        
+        .account-item-click-area { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+        .account-item-badge { font-size: 10px; background: rgba(88, 101, 242, 0.15); color: #8a9eff; padding: 2px 8px; border-radius: 20px; font-weight: 700; }
+        /* ---------------------------------------------------- */
 
         .viewport { flex: 1; background: #0e0e13; display: flex; flex-direction: column; position: relative; }
         .devlog-container { flex: 1; width: 100%; height: 100%; border: none; background: #0e0e13; }
@@ -168,16 +188,18 @@
             
             <div class="profile-list" id="profiles-container"></div>
 
-            <div class="sidebar-header" style="margin-top: 15px; margin-bottom: 10px;">
-                <h3>Cuenta Activa</h3>
+            <div class="sidebar-header" style="margin-top: 15px; margin-bottom: 5px;">
+                <h3>Cuenta Seleccionada</h3>
             </div>
-            <div class="account-box">
-                <select class="account-selector" id="account-dropdown"></select>
-                <div class="account-actions">
-                    <input type="text" class="input-account" id="new-account-input" placeholder="Nuevo usuario..."/>
-                    <button class="btn-account" id="add-account-btn" title="Añadir Cuenta">+</button>
-                    <button class="btn-delete-account" id="delete-account-btn" title="Eliminar cuenta seleccionada">🗑️</button>
+            
+            <!-- TARJETA DE CUENTA ACTIVA EN LA SIDEBAR -->
+            <div class="account-widget" id="open-accounts-btn" title="Gestionar cuentas de usuario">
+                <div class="account-avatar" id="active-account-avatar">-</div>
+                <div class="account-widget-info">
+                    <span class="account-widget-name" id="active-account-name">Cargando...</span>
+                    <span class="account-widget-status">En línea</span>
                 </div>
+                <span style="font-size: 12px; color: #4a4a5a; margin-right: 4px;">⚙️</span>
             </div>
         </div>
 
@@ -195,6 +217,26 @@
                 
                 <div class="dock-right-actions">
                     <button class="btn-dock-icon" id="open-settings-btn" title="Ajustes del Launcher">🔧</button>
+                </div>
+            </div>
+
+            <!-- NUEVO PANEL LATERAL DE GESTIÓN DE CUENTAS -->
+            <div class="panel-overlay" id="panel-accounts">
+                <div class="panel-header">
+                    <h3>Gestión de Usuarios</h3>
+                    <button class="btn-close-panel" onclick="togglePanel('panel-accounts', false)">&times;</button>
+                </div>
+                <div class="panel-scrollable-content">
+                    <div class="settings-section-title">Añadir Nuevo Perfil</div>
+                    <div class="account-inline-form">
+                        <input type="text" class="form-control" id="new-account-input" placeholder="Nombre de usuario..."/>
+                        <button class="btn-submit" id="add-account-btn" style="margin-top: 0; padding: 0 20px;">Añadir</button>
+                    </div>
+                    
+                    <div class="settings-section-title">Cuentas Guardadas</div>
+                    <div class="account-list-container" id="accounts-list-container">
+                        <!-- Las cuentas renderizadas aparecerán dinámicamente aquí -->
+                    </div>
                 </div>
             </div>
 
@@ -458,6 +500,9 @@
         });
         
         document.getElementById('open-settings-btn').addEventListener('click', () => togglePanel('panel-settings', true));
+        
+        // LISTENERS PARA EL NUEVO PANEL DE CUENTAS
+        document.getElementById('open-accounts-btn').addEventListener('click', () => togglePanel('panel-accounts', true));
 
         document.getElementById('save-profile-btn').addEventListener('click', () => {
             const nameInput = document.getElementById('prof-name');
@@ -486,7 +531,6 @@
             closeProfilePanel();
         });
 
-        // Corregido: Obtenemos el valor de la RAM directamente desde el slider ya que no hay 'ram-input' texto
         document.getElementById('save-settings-btn').addEventListener('click', () => {
             const saveLogs = document.getElementById('global-save-logs').checked;
             const ramGb = parseInt(document.getElementById('global-ram-slider').value); 
@@ -516,17 +560,6 @@
             input.value = '';
         });
 
-        document.getElementById('account-dropdown').addEventListener('change', (e) => {
-            ipcRenderer.send('select-account', e.target.value);
-        });
-
-        document.getElementById('delete-account-btn').addEventListener('click', () => {
-            const dropdown = document.getElementById('account-dropdown');
-            if(dropdown.value) {
-                ipcRenderer.send('delete-account', dropdown.value);
-            }
-        });
-
         function renderAll(data) {
             currentProfilesCache = data.list || [];
             const container = document.getElementById('profiles-container');
@@ -553,21 +586,56 @@
                 container.innerHTML = '<div style="font-size:12px; color:#525266; text-align:center; padding:20px;">No hay perfiles creados</div>';
             }
 
-            const accDropdown = document.getElementById('account-dropdown');
-            accDropdown.innerHTML = '';
+            // REDISEÑO RENDER DE CUENTAS: Actualizar el widget de la barra lateral y la lista del panel
+            const activeNameEl = document.getElementById('active-account-name');
+            const activeAvatarEl = document.getElementById('active-account-avatar');
+            const accountsListContainer = document.getElementById('accounts-list-container');
+            
+            accountsListContainer.innerHTML = '';
+            
+            // Determinar la cuenta activa real
+            let currentActiveAccount = data.selectedAccount;
+            if(!currentActiveAccount && data.accounts && data.accounts.length > 0) {
+                currentActiveAccount = data.accounts[0];
+            } else if(!currentActiveAccount) {
+                currentActiveAccount = "KuraiUser";
+            }
+
+            // Actualizar la barra lateral
+            activeNameEl.innerText = currentActiveAccount;
+            activeAvatarEl.innerText = currentActiveAccount.charAt(0).toUpperCase();
+
+            // Renderizar la lista del panel lateral de cuentas
             if (data.accounts && data.accounts.length > 0) {
                 data.accounts.forEach(acc => {
-                    const opt = document.createElement('option');
-                    opt.value = acc;
-                    opt.innerText = acc;
-                    if(data.selectedAccount === acc) opt.selected = true;
-                    accDropdown.appendChild(opt);
+                    const isSelected = (acc === currentActiveAccount);
+                    const card = document.createElement('div');
+                    card.className = `account-item-card ${isSelected ? 'active' : ''}`;
+                    
+                    card.innerHTML = `
+                        <div class="account-item-click-area" onclick="ipcRenderer.send('select-account', '${acc}')">
+                            <div class="account-avatar" style="width: 28px; height: 28px; font-size: 12px; background: ${isSelected ? 'linear-gradient(135deg, #5865f2, #404eed)' : '#252533'}">
+                                ${acc.charAt(0).toUpperCase()}
+                            </div>
+                            <span class="account-widget-name" style="font-size: 13px;">${acc}</span>
+                            ${isSelected ? '<span class="account-item-badge">Activo</span>' : ''}
+                        </div>
+                        <button class="btn-action-profile delete" onclick="ipcRenderer.send('delete-account', '${acc}')" title="Eliminar cuenta" style="margin-left: 10px;">🗑️</button>
+                    `;
+                    accountsListContainer.appendChild(card);
                 });
             } else {
-                const opt = document.createElement('option');
-                opt.value = "KuraiUser";
-                opt.innerText = "KuraiUser (Invitado)";
-                accDropdown.appendChild(opt);
+                // Estado por defecto (Invitado)
+                const card = document.createElement('div');
+                card.className = 'account-item-card active';
+                card.innerHTML = `
+                    <div class="account-item-click-area">
+                        <div class="account-avatar" style="width: 28px; height: 28px; font-size: 12px;">K</div>
+                        <span class="account-widget-name" style="font-size: 13px;">KuraiUser</span>
+                        <span class="account-item-badge" style="background: rgba(255,170,0,0.15); color: #ffaa00;">Invitado</span>
+                    </div>
+                `;
+                accountsListContainer.appendChild(card);
             }
 
             if(data.settings) {
