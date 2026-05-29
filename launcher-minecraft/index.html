@@ -183,7 +183,7 @@
         
         <div class="sidebar">
             <div class="sidebar-header">
-                <h3>Mis Instancias</h3>
+                <h3>Mis Perfiles</h3>
                 <button class="btn-add-profile" id="open-add-profile-btn">+</button>
             </div>
             
@@ -210,7 +210,7 @@
             <div class="launch-dock">
                 <div class="status-container">
                     <div class="status-title">Estado del Sistema</div>
-                    <div class="status-text" id="status">Listo para jugar. Selecciona una instancia.</div>
+                    <div class="status-text" id="status">Listo para jugar. Selecciona un perfil.</div>
                 </div>
                 
                 <button class="btn-launch" id="launch-btn">JUGAR</button>
@@ -227,7 +227,7 @@
                     <button class="btn-close-panel" onclick="togglePanel('panel-accounts', false)">&times;</button>
                 </div>
                 <div class="panel-scrollable-content">
-                    <div class="settings-section-title">Añadir Nueva Instancia</div>
+                    <div class="settings-section-title">Añadir Nuevo Perfil</div>
                     <div class="account-inline-form">
                         <input type="text" class="form-control" id="new-account-input" placeholder="Nombre de usuario..."/>
                         <button class="btn-submit" id="add-account-btn" style="margin-top: 0; padding: 0 20px;">Añadir</button>
@@ -273,7 +273,7 @@
                         <select class="select-custom" id="prof-version-select" size="10"></select>
                     </div>
                 </div>
-                <button class="btn-submit" id="save-profile-btn">Guardar Instancia</button>
+                <button class="btn-submit" id="save-profile-btn">Guardar Perfil</button>
             </div>
 
             <div class="panel-overlay" id="panel-settings">
@@ -381,24 +381,10 @@
         let currentSkinTargetUsername = ""; // Rastrea a qué usuario se le va a cambiar la skin
 
         function togglePanel(id, open) {
-        // Lista de todos los paneles laterales para gestionar la exclusividad
-        const allPanels = ['panel-accounts', 'panel-add-profile', 'panel-settings'];
-
-        if (open) {
-            // Al abrir un panel, cerramos todos los demás paneles primero
-            allPanels.forEach(panelId => {
-                const panelElement = document.getElementById(panelId);
-                if (panelId !== id) {
-                    panelElement.classList.remove('open');
-                }
-            });
-            // Abrimos el panel solicitado
-            document.getElementById(id).classList.add('open');
-        } else {
-            // Si simplemente queremos cerrar un panel específico
-            document.getElementById(id).classList.remove('open');
+            const el = document.getElementById(id);
+            if(open) el.classList.add('open');
+            else el.classList.remove('open');
         }
-    }
 
         function closeProfilePanel() {
             togglePanel('panel-add-profile', false);
@@ -478,7 +464,7 @@
         }
 
         document.getElementById('open-add-profile-btn').addEventListener('click', async () => {
-            document.getElementById('panel-profile-title').innerText = "Crear Instancia";
+            document.getElementById('panel-profile-title').innerText = "Crear Perfil";
             document.getElementById('prof-editing-id').value = "";
             document.getElementById('prof-name').value = "";
             togglePanel('panel-add-profile', true);
@@ -494,7 +480,7 @@
             const profile = currentProfilesCache.find(p => p.id === profileId);
             if (!profile) return;
 
-            document.getElementById('panel-profile-title').innerText = "Editar Instancia";
+            document.getElementById('panel-profile-title').innerText = "Editar Perfil";
             document.getElementById('prof-editing-id').value = profile.id;
             document.getElementById('prof-name').value = profile.name;
             
@@ -638,14 +624,14 @@
                             <span class="profile-version">Minecraft ${p.version}</span>
                         </div>
                         <div class="profile-actions-buttons">
-                            <button class="btn-action-profile" onclick="openEditProfileMode('${p.id}')" title="Editar Instancia">🔧</button>
-                            <button class="btn-action-profile delete" onclick="ipcRenderer.send('delete-profile', '${p.id}')" title="Eliminar Instancia">🗑️</button>
+                            <button class="btn-action-profile" onclick="openEditProfileMode('${p.id}')" title="Editar Perfil">🔧</button>
+                            <button class="btn-action-profile delete" onclick="ipcRenderer.send('delete-profile', '${p.id}')" title="Eliminar Perfil">🗑️</button>
                         </div>
                     `;
                     container.appendChild(card);
                 });
             } else {
-                container.innerHTML = '<div style="font-size:12px; color:#525266; text-align:center; padding:20px;">No hay instancias creadas</div>';
+                container.innerHTML = '<div style="font-size:12px; color:#525266; text-align:center; padding:20px;">No hay perfiles creados</div>';
             }
 
             // GESTIÓN Y RENDERIZADO DE CUENTAS CON SKIN
