@@ -74,7 +74,7 @@
         .btn-action-profile:hover { color: white; background: rgba(255,255,255,0.05); }
         .btn-action-profile.delete:hover { color: #ff5c5c; background: rgba(255,92,92,0.1); }
 
-        /* --- NUEVO SISTEMA DE CUENTAS (DISEÑO INTEGRADO) --- */
+        /* --- SISTEMA DE CUENTAS REDISEÑADO CON COMPATIBILIDAD PARA SKINS --- */
         .account-widget { 
             background: #1a1a24; border: 1px solid rgba(255,255,255,0.02); padding: 12px; 
             border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 12px; 
@@ -86,6 +86,7 @@
             width: 36px; height: 36px; background: linear-gradient(135deg, #5865f2, #404eed); 
             border-radius: 10px; display: flex; align-items: center; justify-content: center; 
             font-weight: 800; color: white; font-size: 15px; text-transform: uppercase; letter-spacing: 0.5px;
+            background-position: center; background-size: cover; image-rendering: pixelated;
         }
         .account-widget-info { flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
         .account-widget-name { font-size: 13px; font-weight: 600; color: #e0e0e8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -104,7 +105,7 @@
         
         .account-item-click-area { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
         .account-item-badge { font-size: 10px; background: rgba(88, 101, 242, 0.15); color: #8a9eff; padding: 2px 8px; border-radius: 20px; font-weight: 700; }
-        /* ---------------------------------------------------- */
+        /* -------------------------------------------------------------------- */
 
         .viewport { flex: 1; background: #0e0e13; display: flex; flex-direction: column; position: relative; }
         .devlog-container { flex: 1; width: 100%; height: 100%; border: none; background: #0e0e13; }
@@ -192,7 +193,6 @@
                 <h3>Cuenta Seleccionada</h3>
             </div>
             
-            <!-- TARJETA DE CUENTA ACTIVA EN LA SIDEBAR -->
             <div class="account-widget" id="open-accounts-btn" title="Gestionar cuentas de usuario">
                 <div class="account-avatar" id="active-account-avatar">-</div>
                 <div class="account-widget-info">
@@ -220,7 +220,7 @@
                 </div>
             </div>
 
-            <!-- NUEVO PANEL LATERAL DE GESTIÓN DE CUENTAS -->
+            <!-- PANEL LATERAL DE GESTIÓN DE CUENTAS -->
             <div class="panel-overlay" id="panel-accounts">
                 <div class="panel-header">
                     <h3>Gestión de Usuarios</h3>
@@ -235,7 +235,7 @@
                     
                     <div class="settings-section-title">Cuentas Guardadas</div>
                     <div class="account-list-container" id="accounts-list-container">
-                        <!-- Las cuentas renderizadas aparecerán dinámicamente aquí -->
+                        <!-- Las cuentas se renderizarán dinámicamente aquí -->
                     </div>
                 </div>
             </div>
@@ -329,6 +329,9 @@
         </div>
     </div>
 
+    <!-- INPUT INVISIBLE PARA SUBIR LA SKIN -->
+    <input type="file" id="skin-file-input" accept="image/png" style="display: none;" />
+
     <div id="error-profile-popup-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10001; align-items: center; justify-content: center;">
         <div style="background: #16161e; border: 2px solid #ffaa00; padding: 30px; border-radius: 16px; width: 400px; text-align: center; color: #ffffff; box-shadow: 0px 15px 40px rgba(0,0,0,0.6);">
             <div style="font-size: 40px; margin-bottom: 10px;">✏️</div>
@@ -374,6 +377,8 @@
 
         let rawMojangVersions = []; 
         let currentProfilesCache = [];
+        let lastLauncherData = null; // Almacenará en caché el último estado recibido de las cuentas
+        let currentSkinTargetUsername = ""; // Rastrea a qué usuario se le va a cambiar la skin
 
         function togglePanel(id, open) {
             const el = document.getElementById(id);
@@ -500,8 +505,6 @@
         });
         
         document.getElementById('open-settings-btn').addEventListener('click', () => togglePanel('panel-settings', true));
-        
-        // LISTENERS PARA EL NUEVO PANEL DE CUENTAS
         document.getElementById('open-accounts-btn').addEventListener('click', () => togglePanel('panel-accounts', true));
 
         document.getElementById('save-profile-btn').addEventListener('click', () => {
@@ -560,7 +563,52 @@
             input.value = '';
         });
 
+        /* --- LOGICA EXCLUSIVA PARA EL PROCESAMIENTO DE IMAGENES/SKINS --- */
+        function triggerSkinUpload(username) {
+            currentSkinTargetUsername = username;
+            document.getElementById('skin-file-input').click();
+        }
+
+        /* --- BUSCA ESTA SECCIÓN EN EL SCRIPT DE TU INDEX.HTML --- */
+        document.getElementById('skin-file-input').addEventListener('change', (e) => {
+            if(e.target.files && e.target.files[0]) {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        if ((img.width === 64 && img.height === 32) || (img.width === 64 && img.height === 64)) {
+                            const canvas = document.createElement('canvas');
+                            canvas.width = 8; canvas.height = 8;
+                            const ctx = canvas.getContext('2d');
+                            ctx.imageSmoothingEnabled = false;
+                            
+                            ctx.drawImage(img, 8, 8, 8, 8, 0, 0, 8, 8);
+                            ctx.drawImage(img, 40, 8, 8, 8, 0, 0, 8, 8);
+                            
+                            const headBase64 = canvas.toDataURL('image/png');
+                            
+                            // ¡EL CAMBIO AQUÍ! Guardamos ambos por separado
+                            localStorage.setItem('avatar_' + currentSkinTargetUsername, headBase64);
+                            localStorage.setItem('skin_' + currentSkinTargetUsername, event.target.result); // Full Skin
+                        } else {
+                            // Si es una foto de perfil común, se usa la misma para todo
+                            localStorage.setItem('avatar_' + currentSkinTargetUsername, event.target.result);
+                            localStorage.setItem('skin_' + currentSkinTargetUsername, event.target.result);
+                        }
+                        
+                        if(lastLauncherData) renderAll(lastLauncherData);
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        /* ----------------------------------------------------------------- */
+
         function renderAll(data) {
+            lastLauncherData = data; // Guardamos en caché local para recargas rápidas
             currentProfilesCache = data.list || [];
             const container = document.getElementById('profiles-container');
             container.innerHTML = '';
@@ -586,14 +634,13 @@
                 container.innerHTML = '<div style="font-size:12px; color:#525266; text-align:center; padding:20px;">No hay perfiles creados</div>';
             }
 
-            // REDISEÑO RENDER DE CUENTAS: Actualizar el widget de la barra lateral y la lista del panel
+            // GESTIÓN Y RENDERIZADO DE CUENTAS CON SKIN
             const activeNameEl = document.getElementById('active-account-name');
             const activeAvatarEl = document.getElementById('active-account-avatar');
             const accountsListContainer = document.getElementById('accounts-list-container');
             
             accountsListContainer.innerHTML = '';
             
-            // Determinar la cuenta activa real
             let currentActiveAccount = data.selectedAccount;
             if(!currentActiveAccount && data.accounts && data.accounts.length > 0) {
                 currentActiveAccount = data.accounts[0];
@@ -601,36 +648,59 @@
                 currentActiveAccount = "KuraiUser";
             }
 
-            // Actualizar la barra lateral
+            // --- ¡CORRECCIÓN AQUÍ! Usamos 'avatar_' para pintar la carita en el Widget Lateral ---
+            const activeStoredAvatar = localStorage.getItem('avatar_' + currentActiveAccount);
             activeNameEl.innerText = currentActiveAccount;
-            activeAvatarEl.innerText = currentActiveAccount.charAt(0).toUpperCase();
+            if (activeStoredAvatar) {
+                activeAvatarEl.innerText = '';
+                activeAvatarEl.style.backgroundImage = `url(${activeStoredAvatar})`;
+            } else {
+                activeAvatarEl.style.backgroundImage = 'none';
+                activeAvatarEl.innerText = currentActiveAccount.charAt(0).toUpperCase();
+            }
 
-            // Renderizar la lista del panel lateral de cuentas
+            // Renderizado de las tarjetas del Panel de Usuarios
             if (data.accounts && data.accounts.length > 0) {
                 data.accounts.forEach(acc => {
                     const isSelected = (acc === currentActiveAccount);
+                    // --- ¡CORRECCIÓN AQUÍ! Usamos 'avatar_' en las miniaturas de la lista ---
+                    const accountAvatar = localStorage.getItem('avatar_' + acc);
+                    
+                    let avatarStyle = '';
+                    let avatarContent = '';
+                    
+                    if(accountAvatar) {
+                        avatarStyle = `background-image: url(${accountAvatar});`;
+                    } else {
+                        avatarContent = acc.charAt(0).toUpperCase();
+                        avatarStyle = `background: ${isSelected ? 'linear-gradient(135deg, #5865f2, #404eed)' : '#252533'};`;
+                    }
+
                     const card = document.createElement('div');
                     card.className = `account-item-card ${isSelected ? 'active' : ''}`;
                     
                     card.innerHTML = `
                         <div class="account-item-click-area" onclick="ipcRenderer.send('select-account', '${acc}')">
-                            <div class="account-avatar" style="width: 28px; height: 28px; font-size: 12px; background: ${isSelected ? 'linear-gradient(135deg, #5865f2, #404eed)' : '#252533'}">
-                                ${acc.charAt(0).toUpperCase()}
+                            <div class="account-avatar" style="width: 28px; height: 28px; font-size: 11px; ${avatarStyle}">
+                                ${avatarContent}
                             </div>
                             <span class="account-widget-name" style="font-size: 13px;">${acc}</span>
                             ${isSelected ? '<span class="account-item-badge">Activo</span>' : ''}
                         </div>
-                        <button class="btn-action-profile delete" onclick="ipcRenderer.send('delete-account', '${acc}')" title="Eliminar cuenta" style="margin-left: 10px;">🗑️</button>
+                        <div style="display: flex; gap: 4px;">
+                            <button class="btn-action-profile" onclick="event.stopPropagation(); triggerSkinUpload('${acc}')" title="Subir Skin/Avatar (PNG)">🖼️</button>
+                            <!-- Eliminación limpia de skin y avatar en el botón de abajo -->
+                            <button class="btn-action-profile delete" onclick="event.stopPropagation(); localStorage.removeItem('skin_${acc}'); localStorage.removeItem('avatar_${acc}'); ipcRenderer.send('delete-account', '${acc}')" title="Eliminar cuenta">🗑️</button>
+                        </div>
                     `;
                     accountsListContainer.appendChild(card);
                 });
             } else {
-                // Estado por defecto (Invitado)
                 const card = document.createElement('div');
                 card.className = 'account-item-card active';
                 card.innerHTML = `
                     <div class="account-item-click-area">
-                        <div class="account-avatar" style="width: 28px; height: 28px; font-size: 12px;">K</div>
+                        <div class="account-avatar" style="width: 28px; height: 28px; font-size: 11px;">K</div>
                         <span class="account-widget-name" style="font-size: 13px;">KuraiUser</span>
                         <span class="account-item-badge" style="background: rgba(255,170,0,0.15); color: #ffaa00;">Invitado</span>
                     </div>
@@ -657,7 +727,12 @@
             }
         }
 
-        document.getElementById('launch-btn').addEventListener('click', () => ipcRenderer.send('launch-game'));
+        document.getElementById('launch-btn').addEventListener('click', () => {
+            const activeUser = lastLauncherData?.selectedAccount || "KuraiUser";
+            const fullSkinData = localStorage.getItem('skin_' + activeUser) || "";
+            
+            ipcRenderer.send('launch-game', fullSkinData);
+        });
 
         ipcRenderer.on('data-updated', (event, data) => renderAll(data));
         ipcRenderer.on('status-msg', (event, msg) => document.getElementById('status').innerText = msg);

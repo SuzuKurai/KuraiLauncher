@@ -12,7 +12,6 @@ if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir, { recursive: true });
 
 function saveLogToFile(text) {
     const data = getSanitizedData(); 
-    // Solo guardamos si el usuario marcó la opción en la UI
     if (data.settings && data.settings.saveLogs === true) {
         const now = new Date();
         const logFileName = `${now.getFullYear()}.${now.getMonth()+1}.${now.getDate()}-${now.getHours()}${now.getMinutes()}${now.getSeconds()}.txt`;
@@ -23,7 +22,6 @@ function saveLogToFile(text) {
         });
     }
 }
-// ------------------------------------------
 
 // CONSTANTES DE VERSIÓN DEL LAUNCHER
 const LAUNCHER_VERSION = '0.0.1-beta.4';
@@ -42,7 +40,6 @@ let consoleWindow = null;
 
 const ICONO_URL = 'https://raw.githubusercontent.com/SuzuKurai/KuraiLauncher/refs/heads/main/launcher-minecraft/media/KuraiLauncher.png';
 
-// RUTAS ESTÁNDAR DONDE SE INSTALA JAVA 25 EN WINDOWS
 const RUTAS_JAVA_25 = [
     "C:\\Program Files\\Java\\jdk-25\\bin\\javaw.exe",
     "C:\\Program Files\\Java\\jre-25\\bin\\javaw.exe",
@@ -105,10 +102,7 @@ async function createWindow() {
 function verificarJavaAlInicio() {
     const javaPath = obtenerRutaJava25();
     if (!javaPath) {
-        console.log("[JAVA CHECK] No se detectó Java 25 en el sistema.");
         mainWindow.webContents.send('java-missing-error');
-    } else {
-        console.log(`[JAVA CHECK] Java 25 detectado correctamente en: ${javaPath}`);
     }
 }
 
@@ -119,24 +113,15 @@ function createConsoleWindow() {
     }
 
     consoleWindow = new BrowserWindow({
-        width: 750,
-        height: 480,
-        minWidth: 500,
-        minHeight: 300,
+        width: 750, height: 480, minWidth: 500, minHeight: 300,
         title: "Consola de Depuración - Kurai Launcher",
         backgroundColor: "#0a0a0f",
-        webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false
-        }
+        webPreferences: { nodeIntegration: true, contextIsolation: false }
     });
 
     consoleWindow.setMenuBarVisibility(false);
     consoleWindow.loadFile('console.html');
-
-    consoleWindow.on('closed', () => {
-        consoleWindow = null; 
-    });
+    consoleWindow.on('closed', () => { consoleWindow = null; });
 }
 
 app.whenReady().then(createWindow);
@@ -151,18 +136,11 @@ function checkLauncherUpdates() {
                 const data = JSON.parse(body);
                 if (data.version && data.version !== LAUNCHER_VERSION) {
                     mainWindow.webContents.send('update-available', {
-                        current: LAUNCHER_VERSION,
-                        latest: data.version,
-                        url: data.url || 'https://github.com/'
+                        current: LAUNCHER_VERSION, latest: data.version, url: data.url || 'https://github.com/'
                     });
                 }
-            } catch (e) {
-                console.error("Error leyendo JSON de actualización remota:", e);
-            }
+            } catch (e) {}
         });
-    });
-    request.on('error', (err) => {
-        console.error("No se pudo conectar con el servidor de actualizaciones:", err);
     });
     request.end();
 }
@@ -170,7 +148,6 @@ function checkLauncherUpdates() {
 function fetchMojangVersions() {
     return new Promise((resolve) => {
         const request = net.request('https://piston-meta.mojang.com/mc/game/version_manifest_v2.json');
-        
         request.on('response', (response) => {
             let body = '';
             response.on('data', (chunk) => { body += chunk; });
@@ -178,16 +155,10 @@ function fetchMojangVersions() {
                 try {
                     const data = JSON.parse(body);
                     resolve(data.versions || []);
-                } catch (e) {
-                    console.error("Error al procesar JSON de Mojang:", e);
-                    resolve([]);
-                }
+                } catch (e) { resolve([]); }
             });
         });
-        request.on('error', (err) => {
-            console.error("Error de red conectando con Mojang:", err);
-            resolve([]);
-        });
+        request.on('error', () => resolve([]));
         request.end();
     });
 }
@@ -196,12 +167,8 @@ function getSanitizedData() {
     let data = { list: [], selectedProfile: "", accounts: [], selectedAccount: "", settings: {} };
     try {
         const managerData = profilesManager.getAll();
-        if (managerData && typeof managerData === 'object') {
-            data = { ...data, ...managerData };
-        }
-    } catch (e) {
-        console.error("[MANAGER] Error al obtener datos:", e);
-    }
+        if (managerData && typeof managerData === 'object') data = { ...data, ...managerData };
+    } catch (e) {}
     data.list = Array.isArray(data.list) ? data.list : [];
     data.accounts = Array.isArray(data.accounts) ? data.accounts.filter(acc => typeof acc === 'string') : [];
     data.settings = data.settings && typeof data.settings === 'object' ? data.settings : {};
@@ -209,48 +176,25 @@ function getSanitizedData() {
 }
 
 ipcMain.handle('get-system-ram', () => {
-    const totalBytes = os.totalmem();
-    return Math.floor(totalBytes / (1024 * 1024 * 1024));
+    return Math.floor(os.totalmem() / (1024 * 1024 * 1024));
 });
 
-ipcMain.handle('get-mojang-versions', async () => {
-    return await fetchMojangVersions();
-});
-
-ipcMain.handle('get-profiles', () => {
-    return getSanitizedData();
-});
-
-ipcMain.handle('get-launcher-version', () => {
-    return LAUNCHER_VERSION;
-});
-
-ipcMain.on('open-external-console', () => {
-    createConsoleWindow();
-});
-
-ipcMain.on('open-url', (event, url) => {
-    shell.openExternal(url); 
-});
+ipcMain.handle('get-mojang-versions', async () => { return await fetchMojangVersions(); });
+ipcMain.handle('get-profiles', () => { return getSanitizedData(); });
+ipcMain.handle('get-launcher-version', () => { return LAUNCHER_VERSION; });
+ipcMain.on('open-external-console', () => { createConsoleWindow(); });
+ipcMain.on('open-url', (event, url) => { shell.openExternal(url); });
 
 ipcMain.on('save-profile', (event, perfilEntrante) => {
     try { 
-        let data = profilesManager.getAll();
-        if (!data) data = { list: [], selectedProfile: "", accounts: [], selectedAccount: "", settings: {} };
+        let data = profilesManager.getAll() || { list: [], selectedProfile: "", accounts: [], selectedAccount: "", settings: {} };
         if (!data.list) data.list = [];
-        
-        const indexExistente = data.list.findIndex(p => p.id === perfilEntrante.id);
-        if (indexExistente !== -1) {
-            data.list[indexExistente] = { ...data.list[indexExistente], ...perfilEntrante };
-        } else {
-            data.list.push(perfilEntrante);
-        }
-
+        const idx = data.list.findIndex(p => p.id === perfilEntrante.id);
+        if (idx !== -1) data.list[idx] = { ...data.list[idx], ...perfilEntrante };
+        else data.list.push(perfilEntrante);
         if (!data.selectedProfile) data.selectedProfile = perfilEntrante.id;
         profilesManager.save(data); 
-    } catch(e){
-        console.error("Error al guardar perfil:", e);
-    }
+    } catch(e){}
     mainWindow.webContents.send('data-updated', getSanitizedData());
 });
 
@@ -267,35 +211,79 @@ ipcMain.on('select-profile', (event, id) => {
 ipcMain.on('save-settings', (event, newSettings) => {
     try {
         const data = getSanitizedData();
-        data.settings = { ...data.settings, ...newSettings }; // Mezclamos correctamente
-        if (typeof profilesManager.save === 'function') {
-            profilesManager.save(data);
-        }
-    } catch(e){
-        console.error("Error al guardar ajustes:", e);
-    }
+        data.settings = { ...data.settings, ...newSettings };
+        profilesManager.save(data);
+    } catch(e){}
     if (mainWindow) mainWindow.webContents.send('data-updated', getSanitizedData());
 });
 
 ipcMain.on('save-account', (event, username) => {
     if (!username || typeof username !== 'string' || username.trim() === "") return;
-    try { if (typeof profilesManager.saveAccount === 'function') profilesManager.saveAccount(username.trim()); } catch (e) {}
+    try { profilesManager.saveAccount(username.trim()); } catch (e) {}
     mainWindow.webContents.send('data-updated', getSanitizedData());
 });
 
 ipcMain.on('select-account', (event, username) => {
-    try { if (typeof profilesManager.selectAccount === 'function') profilesManager.selectAccount(username); } catch(e){}
+    try { profilesManager.selectAccount(username); } catch(e){}
     mainWindow.webContents.send('data-updated', getSanitizedData());
 });
 
 ipcMain.on('delete-account', (event, username) => {
-    try { if (typeof profilesManager.deleteAccount === 'function') profilesManager.deleteAccount(username); } catch(e){}
+    try { profilesManager.deleteAccount(username); } catch(e){}
     mainWindow.webContents.send('data-updated', getSanitizedData());
 });
 
-ipcMain.on('launch-game', async (event) => {
+// =========================================================================
+// FUNCIÓN AUXILIAR: ASISTENTE DE CONFIGURACIÓN DE CUSTOM SKIN LOADER
+// =========================================================================
+function setupCustomSkinLoader(minecraftRoot, username, base64Data) {
+    try {
+        // Rutas donde las variantes del mod buscan la configuración global (.minecraft o dentro de /config)
+        const configDirRoot = path.join(minecraftRoot, 'CustomSkinLoader');
+        const configDirModern = path.join(minecraftRoot, 'config', 'CustomSkinLoader');
+        
+        const configContent = JSON.stringify({
+            version: 14,
+            loadlist: [
+                {
+                    name: "KuraiLocal",
+                    type: "LocalSkin",
+                    root: ".KuraiLauncher" // Buscará texturas en .minecraft/.KuraiLauncher/skins/
+                },
+                {
+                    name: "Mojang",
+                    type: "MojangAPI" // Si no hay local, descarga de la base oficial de Minecraft
+                }
+            ]
+        }, null, 4);
+
+        if (!fs.existsSync(configDirRoot)) fs.mkdirSync(configDirRoot, { recursive: true });
+        if (!fs.existsSync(configDirModern)) fs.mkdirSync(configDirModern, { recursive: true });
+
+        fs.writeFileSync(path.join(configDirRoot, 'CustomSkinLoader.json'), configContent, 'utf8');
+        fs.writeFileSync(path.join(configDirModern, 'CustomSkinLoader.json'), configContent, 'utf8');
+
+        // Estructurar directorio de skins locales del Launcher
+        const skinsDir = path.join(minecraftRoot, '.KuraiLauncher', 'skins');
+        if (!fs.existsSync(skinsDir)) fs.mkdirSync(skinsDir, { recursive: true });
+
+        const targetSkinPath = path.join(skinsDir, `${username}.png`);
+
+        if (base64Data) {
+            fs.writeFileSync(targetSkinPath, Buffer.from(base64Data, 'base64'));
+            console.log(`[SKIN SYSTEM] Skin local asociada con éxito para el usuario: ${username}`);
+        } else {
+            if (fs.existsSync(targetSkinPath)) fs.unlinkSync(targetSkinPath);
+        }
+    } catch (error) {
+        console.error("[SKIN SYSTEM] Error gestionando Custom Skin Loader:", error);
+    }
+}
+
+// --- EVENTO DE LANZAMIENTO INTEGRAL (SISTEMA CUSTOM SKIN LOADER) ---
+ipcMain.on('launch-game', async (event, fullSkinBase64) => {
     const data = getSanitizedData();
-    const globalSettings = data.settings || {}; // CORREGIDO: Declarado una sola vez
+    const globalSettings = data.settings || {}; 
     const currentProfile = data.list.find(p => p.id === data.selectedProfile);
 
     if (!currentProfile) {
@@ -314,8 +302,24 @@ ipcMain.on('launch-game', async (event) => {
         finalRoot = currentProfile.path;
     }
 
-    const rawMax = globalSettings.maxMemory || "4G";
-    const rawMin = globalSettings.minMemory || "2G";
+    // Procesamiento seguro de la cadena Base64 entrante
+    let base64Data = typeof fullSkinBase64 === 'string' ? fullSkinBase64.trim() : '';
+    let esValido = false;
+
+    if (base64Data) {
+        if (base64Data.includes(';base64,')) {
+            base64Data = base64Data.split(';base64,')[1];
+        }
+        if (base64Data.length > 0) {
+            esValido = true;
+        }
+    }
+
+    let cleanVersion = (currentProfile.version || "1.21").toString()
+        .replace(/release:/i, '').replace(/snapshot:/i, '').replace(/beta\/alpha:/i, '').trim();
+
+    // Invocar módulo inteligente de Custom Skin Loader
+    setupCustomSkinLoader(finalRoot, activeUser, esValido ? base64Data : null);
 
     const parseRamToMb = (ramString) => {
         let num = parseInt(ramString, 10);
@@ -324,19 +328,10 @@ ipcMain.on('launch-game', async (event) => {
         return num;
     };
 
-    const maxRamMb = `${parseRamToMb(rawMax)}M`;
-    const minRamMb = `${parseRamToMb(rawMin)}M`;
+    const maxRamMb = `${parseRamToMb(globalSettings.maxMemory || "4G")}M`;
+    const minRamMb = `${parseRamToMb(globalSettings.minMemory || "2G")}M`;
 
-    let cleanVersion = (currentProfile.version || "1.21").toString()
-        .replace(/release:/i, '')
-        .replace(/snapshot:/i, '')
-        .replace(/beta\/alpha:/i, '')
-        .trim();
-
-    let javaPathManual = obtenerRutaJava25();
-    if (!javaPathManual) {
-        javaPathManual = "javaw"; 
-    }
+    let javaPathManual = obtenerRutaJava25() || "javaw"; 
 
     let customJvmArgs = [];
     if(globalSettings.jvmArgs && globalSettings.jvmArgs.trim() !== "") {
@@ -345,13 +340,9 @@ ipcMain.on('launch-game', async (event) => {
 
     let opts = {
         authorization: {
-            access_token: "00000000000000000000000000000000", 
-            client_token: "00000000000000000000000000000000",
-            accessToken: "00000000000000000000000000000000", 
-            clientToken: "00000000000000000000000000000000",
-            uuid: "00000000-0000-0000-0000-000000000000",      
-            name: activeUser,                                  
-            user_properties: "{}",
+            access_token: "00000000000000000000000000000000", client_token: "00000000000000000000000000000000",
+            accessToken: "00000000000000000000000000000000", clientToken: "00000000000000000000000000000000",
+            uuid: "00000000-0000-0000-0000-000000000000", name: activeUser, user_properties: "{}",
             meta: { type: "mojang", demo: false }
         },
         root: finalRoot,
@@ -371,26 +362,19 @@ ipcMain.on('launch-game', async (event) => {
         if (consoleWindow) consoleWindow.webContents.send('console-tick-log', { level, text });
     };
 
-    launcher.on('debug', (e) => { 
-        sendLogTick('debug', `[DEBUG] ${e}`); 
-        saveLogToFile(`[DEBUG] ${e}`); 
-    });
-
+    launcher.on('debug', (e) => { sendLogTick('debug', `[DEBUG] ${e}`); saveLogToFile(`[DEBUG] ${e}`); });
     launcher.on('data', (e) => {
-        sendLogTick('info', `[INFO] ${e}`);
-        saveLogToFile(`[INFO] ${e}`); 
-        
+        sendLogTick('info', `[INFO] ${e}`); saveLogToFile(`[INFO] ${e}`); 
         if (e.includes("UnsupportedClassVersionError") || e.includes("class file version 69.0") || e.includes("LinkageError occurred")) {
             if (mainWindow) {
-                mainWindow.webContents.send('status-msg', 'Error: Versión de Java incompatible detectada.');
+                mainWindow.webContents.send('status-msg', 'Error: Versión de Java incompatible.');
                 mainWindow.webContents.send('java-missing-error');
             }
         }
     });
 
     launcher.on('error', (e) => {
-        sendLogTick('error', `[ERROR] ${e.message || e}`);
-        saveLogToFile(`[ERROR] ${e.message || e}`); 
+        sendLogTick('error', `[ERROR] ${e.message || e}`); saveLogToFile(`[ERROR] ${e.message || e}`); 
         if(mainWindow) mainWindow.webContents.send('status-msg', `Error al lanzar: ${e.message || e}`);
     });
     
@@ -398,10 +382,7 @@ ipcMain.on('launch-game', async (event) => {
 
     launcher.launch(opts).then(() => {
         const behavior = globalSettings.launcherBehavior || "hide";
-        if (behavior === "hide" && mainWindow) {
-            mainWindow.minimize();
-        } else if (behavior === "close") {
-            app.quit();
-        }
+        if (behavior === "hide" && mainWindow) mainWindow.minimize();
+        else if (behavior === "close") app.quit();
     });
 });
