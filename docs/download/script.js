@@ -13,9 +13,28 @@ document.addEventListener('DOMContentLoaded', () => {
     async function cargarReleasesDesdeGitHub() {
         try {
             const response = await fetch(API_URL);
-            
+
+            let data;
+            try {
+                data = await response.json();
+            } catch (e) {
+                data = null;
+            }
+
             if (!response.ok) {
-                throw new Error("No se pudo obtener respuesta de la API de GitHub.");
+
+                const rateLimit =
+                    response.status === 403 &&
+                    (
+                        response.headers.get("X-RateLimit-Remaining") === "0" ||
+                        data?.message?.toLowerCase().includes("rate limit")
+                    );
+
+                if (rateLimit) {
+                    throw new Error("RATE_LIMIT");
+                }
+
+                throw new Error("API_ERROR");
             }
 
             const data = await response.json();
@@ -37,9 +56,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error("Error cargando descargas:", error);
+
+            const isRateLimit = error.message === "RATE_LIMIT";
+
             heroContainer.innerHTML = `
-                <div class="skeleton-loader" style="border-color: var(--color-bug); color: var(--color-bug);">
-                    <i class="fa-solid fa-triangle-exclamation"></i> Error al conectar con GitHub. Por favor, inténtalo más tarde.
+                <div class="skeleton-loader"
+                    style="border-color: var(--color-bug); color: var(--color-bug); display:flex; flex-direction:column; gap:12px;">
+
+                    <div>
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        ${isRateLimit
+                            ? "Límite de GitHub API alcanzado. Inténtalo más tarde."
+                            : "Error al conectar con GitHub. Por favor, inténtalo más tarde."}
+                    </div>
+
+                    <a href="https://github.com/${GITHUB_USER}/${GITHUB_REPO}/releases"
+                    target="_blank"
+                    class="btn-download-action available"
+                    style="margin-top:10px;">
+                        <i class="fa-brands fa-github"></i>
+                        Ver releases en GitHub
+                    </a>
+
                 </div>
             `;
         }
