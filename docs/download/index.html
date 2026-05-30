@@ -2,45 +2,102 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Kurai Launcher - Descargas</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kurai Launcher - Centro de Descargas</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 
+    <!-- Header Corporativo -->
     <header class="changelog-header">
-        <h1>DESCARGAS</h1>
-        <p>Descarga la versión oficial de Kurai Launcher.</p>
+        <div class="header-container">
+            <span class="dl-top-tag">RELEASES DE PRODUCCIÓN</span>
+            <h1>CONSIGUE KURAI LAUNCHER</h1>
+            <p>Disponible de forma nativa para sistemas de escritorio de 64 bits. Elige tu sabor.</p>
+        </div>
     </header>
 
-    <main class="changelog-container" id="downloads-container">
+    <main class="changelog-container">
         
-        <div id="latest-spotlight"></div>
+        <!-- SECCIÓN HERO: LATEST VERSION (Inyectado dinámicamente) -->
+        <h2 class="section-title"><i class="fa-solid fa-star text-gold"></i> Versión Recomendada</h2>
+        <div id="latest-hero-container">
+            <!-- El script de script.js construirá este panel de forma inteligente aquí -->
+            <div class="skeleton-loader">Cargando la última versión del ecosistema Kurai...</div>
+        </div>
 
-        <h2 style="margin-top: 50px;">Versiones Anteriores</h2>
+        <!-- SECCIÓN HISTÓRICA: TABLA COMPACTA PROFESIONAL -->
+        <h2 class="section-title" style="margin-top: 50px;"><i class="fa-solid fa-clock-rotate-left"></i> Archivo de Versiones Anteriores</h2>
         
-        <section class="version-block" data-version="0.0.1-beta.4">
-            <div class="version-sidebar">
-                <div class="version-tag">v0.0.1-beta.4</div>
-                <span class="badge badge-minor">Beta</span>
-            </div>
-            <div class="version-content">
-                <h2>v0.0.1-beta.4</h2>
-                <a href="#" class="btn-download-action available">Descargar (.exe)</a>
-            </div>
-        </section>
+        <!-- Barra de Filtros Integrada -->
+        <div class="filter-bar" style="justify-content: flex-start; margin-bottom: 20px;">
+            <button class="filter-btn active" data-filter="all">Todas</button>
+            <button class="filter-btn" data-filter="release"><i class="fa-solid fa-box"></i> Estables (Releases)</button>
+            <button class="filter-btn" data-filter="beta"><i class="fa-solid fa-flask"></i> Betas / Exp</button>
+        </div>
 
-        <section class="version-block" data-version="0.0.1-beta.3">
-            <div class="version-sidebar">
-                <div class="version-tag">v0.0.1-beta.3</div>
-                <span class="badge badge-minor">Beta</span>
-            </div>
-            <div class="version-content">
-                <h2>v0.0.1-beta.3</h2>
-                <a href="#" class="btn-download-action available">Descargar (.exe)</a>
-            </div>
-        </section>
+        <div class="table-responsive">
+            <table class="dl-table">
+                <thead>
+                    <tr>
+                        <th>Versión</th>
+                        <th>Tipo</th>
+                        <th>Fecha de Lanzamiento</th>
+                        <th>Compilaciones Disponibles</th>
+                    </tr>
+                </thead>
+                <tbody id="versions-table-body">
+                    
+                    <!-- Fila v0.0.1-beta.4 -->
+                    <tr class="version-row type-beta" data-version="0.0.1-beta.4" data-date="2026-05-28" data-url="https://github.com/SuzuKurai/KuraiLauncher/releases/tag/v0.0.1-beta.4">
+                        <td><strong>v0.0.1-beta.4</strong></td>
+                        <td><span class="badge badge-minor">Beta</span></td>
+                        <td>28 de Mayo, 2026[cite: 1]</td>
+                        <td>
+                            <div class="dl-group">
+                                <a href="#" class="dl-inline-link action-setup"><i class="fa-solid fa-cube"></i> Installer</a>
+                                <a href="#" class="dl-inline-link action-portable"><i class="fa-solid fa-folder-minus"></i> Portable</a>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Fila v0.0.1-beta.3[cite: 1] -->
+                    <tr class="version-row type-beta" data-version="0.0.1-beta.3" data-date="2026-05-27" data-url="https://github.com/SuzuKurai/KuraiLauncher/releases/tag/v0.0.1-beta.3">
+                        <td><strong>v0.0.1-beta.3</strong>[cite: 1]</td>
+                        <td><span class="badge badge-minor">Beta</span></td>
+                        <td>27 de Mayo, 2026[cite: 1]</td>
+                        <td>
+                            <div class="dl-group">
+                                <a href="#" class="dl-inline-link action-setup"><i class="fa-solid fa-cube"></i> Installer</a>
+                                <a href="#" class="dl-inline-link action-portable"><i class="fa-solid fa-folder-minus"></i> Portable</a>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Fila de Ejemplo para ver cómo reacciona una Release Estable -->
+                    <tr class="version-row type-release" data-version="0.0.1" data-date="2026-05-20" data-url="https://github.com/SuzuKurai/KuraiLauncher/releases/tag/v0.0.1">
+                        <td><strong>v0.0.1 (Gold)</strong></td>
+                        <td><span class="badge badge-major">Release</span></td>
+                        <td>20 de Mayo, 2026</td>
+                        <td>
+                            <div class="dl-group">
+                                <a href="#" class="dl-inline-link action-setup"><i class="fa-solid fa-cube"></i> Installer</a>
+                                <a href="#" class="dl-inline-link action-portable"><i class="fa-solid fa-folder-minus"></i> Portable</a>
+                            </div>
+                        </td>
+                    </tr>
+
+                </tbody>
+            </table>
+        </div>
+
     </main>
 
-    <script src="downloads.js"></script>
+    <footer class="changelog-footer">
+        <p>&copy; 2026 Kurai Launcher. Desarrollado de forma abierta vía Electron.</p>
+    </footer>
+
+    <script src="script.js"></script>
 </body>
 </html>

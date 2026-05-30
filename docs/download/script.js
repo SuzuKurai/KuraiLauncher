@@ -1,37 +1,114 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const blocks = Array.from(document.querySelectorAll('.version-block'));
-    const spotlight = document.getElementById('latest-spotlight');
+    
+    // --- LÓGICA DE CONTROLADORES DE FILTRO DE LA TABLA ---
+    const tableFilters = document.querySelectorAll('.filter-bar .filter-btn');
+    const tableRows = document.querySelectorAll('.version-row');
 
-    // Función para comparar versiones tipo "0.0.1-beta.4"
-    const parseVersion = (v) => {
-        return v.replace(/[^0-9.]/g, '').split('.').map(Number);
-    };
+    tableFilters.forEach(button => {
+        button.addEventListener('click', () => {
+            tableFilters.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
 
-    // 1. Identificar la mayor versión
-    blocks.sort((a, b) => {
-        const vA = parseVersion(a.getAttribute('data-version'));
-        const vB = parseVersion(b.getAttribute('data-version'));
-        for(let i=0; i<3; i++) {
-            if(vA[i] > vB[i]) return -1;
-            if(vA[i] < vB[i]) return 1;
-        }
-        return 0;
+            const filterValue = button.getAttribute('data-filter');
+
+            tableRows.forEach(row => {
+                if (filterValue === 'all') {
+                    row.style.display = 'table-row';
+                } else {
+                    if (row.classList.contains(`type-${filterValue}`)) {
+                        row.style.display = 'table-row';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                }
+            });
+        });
     });
 
-    // 2. Marcar la versión top como "Latest" y moverla al spotlight
-    const latest = blocks[0];
-    latest.classList.add('card-latest');
-    
-    const badge = document.createElement('div');
-    badge.className = 'latest-badge';
-    badge.innerText = 'Latest Release';
-    
-    latest.querySelector('.version-sidebar').prepend(badge);
-    
-    // Clonar al spotlight superior
-    const clone = latest.cloneNode(true);
-    spotlight.appendChild(clone);
-    
-    // Opcional: Eliminar la duplicada de la lista inferior
-    // latest.style.display = 'none'; 
+    // --- MOTOR DE DETECCION DINÁMICA DE LATEST RELEASES ---
+    function generarHeroDestacado() {
+        const rows = Array.from(document.querySelectorAll('.version-row'));
+        const heroContainer = document.getElementById('latest-hero-container');
+        
+        if (!heroContainer || rows.length === 0) return;
+
+        // Función matemática para segmentar strings de versionado semántico (Semantic Versioning)
+        const parseSemVer = (versionStr) => {
+            const clean = versionStr.toLowerCase().replace('v', '');
+            const parts = clean.split('-'); // Divide la compilación base del modificador alpha/beta
+            const numbers = parts[0].split('.').map(Number); // Genera array numérico [0, 0, 1]
+            
+            // Si tiene un tag beta (ej: beta.4), extraemos el sub-indexador de ciclo
+            let betaWeight = 9999; // Las versiones finales estables tienen prioridad máxima sobre betas
+            if (parts[1] && parts[1].includes('beta')) {
+                const subBeta = parts[1].split('.');
+                betaWeight = subBeta[1] ? Number(subBeta[1]) : 0;
+            }
+            return { numbers, betaWeight, isBeta: !!parts[1] };
+        };
+
+        // Ordenamiento dinámico de la matriz de datos de mayor a menor
+        rows.sort((rowA, rowB) => {
+            const dataA = parseSemVer(rowA.getAttribute('data-version'));
+            const dataB = parseSemVer(rowB.getAttribute('data-version'));
+
+            for (let i = 0; i < Math.max(dataA.numbers.length, dataB.numbers.length); i++) {
+                const numA = dataA.numbers[i] || 0;
+                const numB = dataB.numbers[i] || 0;
+                if (numA !== numB) return numB - numA;
+            }
+            // Si el Core numérico es igual, desempata el sub-indexador beta
+            return dataB.betaWeight - dataA.betaWeight;
+        });
+
+        // Extraemos la versión más reciente del sistema
+        const latestRow = rows[0];
+        const vTag = latestRow.getAttribute('data-version');
+        const vUrl = latestRow.getAttribute('data-url');
+        const infoVersion = parseSemVer(vTag);
+        
+        const badgeTexto = infoVersion.isBeta ? "LATEST BETA" : "LATEST STABLE";
+
+        // Construcción del Layout Estructural del Hero Automático
+        heroContainer.innerHTML = `
+            <div class="hero-download-card">
+                <div class="hero-meta">
+                    <h3>${vTag} <span class="hero-tag-badge">${badgeTexto}</span></h3>
+                    <p class="hero-description">
+                        Experimenta el rendimiento optimizado de la compilación más reciente de Kurai. 
+                        Incluye soporte completo de instancias independientes, depuración dinámica en consola separada y asignador inteligente de memoria RAM.
+                    </p>
+                    <div class="hero-specs">
+                        <span><i class="fa-solid fa-microchip"></i> Arquitectura: <strong>x64 bits</strong></span>
+                        <span><i class="fa-solid fa-code-branch"></i> Entorno: <strong>Electron</strong></span>
+                        <span><i class="fa-solid fa-box-open"></i> Formato base: <strong>Setup.exe</strong></span>
+                    </div>
+                </div>
+                <div class="hero-action-zone">
+                    <a href="${vUrl}/KuraiLauncher_Setup.exe" class="btn-download-action available" style="margin-top:0;">
+                        <i class="fa-solid fa-download"></i> <span>Descargar instalador (.exe)</span>
+                    </a>
+                    <a href="${vUrl}/KuraiLauncher_Portable.zip" class="btn-download-action waiting-java" style="margin-top:0; color: var(--text-muted); border-color:#444;">
+                        <i class="fa-solid fa-box-archive"></i> Versión Portable (.zip)
+                    </a>
+                </div>
+            </div>
+        `;
+
+        // Interceptores de descarga nativos de Electron / Navegadores de escritorio convencionales[cite: 2]
+        heroContainer.querySelectorAll('.btn-download-action.available').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (typeof require !== 'undefined') {
+                    const { shell } = require('electron');[cite: 2]
+                    shell.openExternal(vUrl);[cite: 2]
+                } else {
+                    window.open(vUrl, '_blank');[cite: 2]
+                }
+            });
+        });
+    }
+
+    // Ejecución inicial del parser
+    generarHeroDestacado();
 });
