@@ -309,3 +309,185 @@
     .hero-download-card { grid-template-columns: 1fr; }
     .hero-action-zone { border-left: none; padding-left: 0; padding-top: 20px; border-top: 1px solid #2e2e3e; }
 }
+
+/* --- EXTENSIONES PROFESIONALES DE DESCARGA (INTEGRACIÓN FIEL A KURAI) --- */
+
+.dl-top-tag {
+    font-size: 0.8rem;
+    letter-spacing: 3px;
+    color: var(--mc-green);
+    font-weight: 800;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.section-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-left: 3px solid var(--mc-green);
+    padding-left: 12px;
+    color: var(--text-main);
+}
+
+.text-gold { 
+    color: var(--color-change); 
+}
+
+/* Contenedor Hero adaptado a las variables y sombras nativas */
+.hero-download-card {
+    background: linear-gradient(135deg, var(--bg-sidebar) 0%, var(--bg-card) 100%);
+    border: 1px solid #2a2a38;
+    border-radius: 8px; /* Mismo radio de tus .version-block */
+    padding: 35px;
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 30px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2); /* Misma sombra de .version-block */
+}
+
+.hero-meta h3 {
+    font-size: 2rem;
+    margin: 0 0 10px 0;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    color: var(--text-main);
+}
+
+/* Badge adaptado visualmente a tus estilos .badge-minor/.badge-major */
+.hero-tag-badge {
+    background: rgba(241, 196, 15, 0.15);
+    color: var(--color-change);
+    border: 1px solid var(--color-change);
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 12px;
+    text-transform: uppercase;
+}
+
+.hero-description {
+    color: var(--text-muted);
+    font-size: 1.02rem;
+    max-width: 620px;
+    margin-bottom: 25px;
+}
+
+/* Especificaciones con fondo oscuro integrado de tu paleta */
+.hero-specs {
+    display: flex;
+    gap: 20px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    background: rgba(0, 0, 0, 0.2);
+    padding: 12px 20px;
+    border-radius: 8px;
+    width: fit-content;
+}
+
+.hero-specs span strong { 
+    color: var(--text-main); 
+}
+
+/* Zona lateral del Hero con separador nativo */
+.hero-action-zone {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 12px;
+    border-left: 1px solid #2a2a38;
+    padding-left: 30px;
+}
+
+/* --- TABLA DE COMPILACIONES HISTÓRICAS --- */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid #2a2a38;
+}
+
+.dl-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--bg-card);
+    text-align: left;
+    font-size: 0.95rem;
+}
+
+.dl-table th {
+    background: var(--bg-sidebar);
+    padding: 16px 20px;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.dl-table td {
+    padding: 16px 20px;
+    border-bottom: 1px solid #2a2a38;
+    vertical-align: middle;
+    color: var(--text-main);
+}
+
+.dl-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.01);
+}
+
+.dl-group {
+    display: flex;
+    gap: 8px;
+}
+
+/* Enlaces secundarios de la tabla acoplados a tus fondos */
+.dl-inline-link {
+    background: var(--bg-sidebar);
+    border: 1px solid #2a2a38;
+    color: var(--text-main);
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.dl-inline-link:hover {
+    background: var(--mc-green);
+    border-color: var(--mc-green);
+    color: white;
+}
+
+/* Esqueleto de carga con el mismo tono de borde de tus cajas */
+.skeleton-loader {
+    padding: 50px;
+    text-align: center;
+    background: var(--bg-card);
+    border-radius: 12px;
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    border: 1px dashed #2a2a38;
+}
+
+/* Ajustes Responsive */
+@media (max-width: 900px) {
+    .hero-download-card { 
+        grid-template-columns: 1fr; 
+    }
+    .hero-action-zone { 
+        border-left: none; 
+        padding-left: 0; 
+        padding-top: 20px; 
+        border-top: 1px solid #2a2a38; 
+    }
+}
