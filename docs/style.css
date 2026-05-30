@@ -255,7 +255,9 @@ body {
     }
 }
 
-/* --- EXTENSIONES DE DISEÑO PARA LA PÁGINA PRINCIPAL --- */
+/* =========================================================================
+   EXTENSIONES DE DISEÑO COMPLEMENTARIAS (FIEL A STYLE_2.CSS Y KURAI THEME)
+   ========================================================================= */
 
 .header-buttons {
     margin-top: 25px;
@@ -277,7 +279,7 @@ body {
     color: var(--color-change); 
 }
 
-/* Panel Hero de Descarga Automática */
+/* Panel Hero de Descarga Automática (Fiel a style_2.css) */
 .hero-download-card {
     background: linear-gradient(135deg, var(--bg-sidebar) 0%, var(--bg-card) 100%);
     border: 1px solid #2a2a38;
@@ -338,6 +340,19 @@ body {
     gap: 12px;
     border-left: 1px solid #2a2a38;
     padding-left: 30px;
+}
+
+/* Botón secundario para el ejecutable Portable (Evita estilos inline en JS) */
+.btn-download-secondary {
+    background: var(--bg-sidebar);
+    color: var(--text-main);
+    border: 1px solid #2a2a38;
+    transition: all 0.2s ease;
+}
+
+.btn-download-secondary:hover {
+    background: var(--bg-card);
+    border-color: var(--text-muted);
 }
 
 /* Modificadores de bloques genéricos */
@@ -417,6 +432,75 @@ body {
     color: var(--text-muted);
     font-size: 1rem;
     border: 1px dashed #2a2a38;
+}
+
+.skeleton-loader.error-state {
+    border-color: #ff4a4a;
+    color: #ff4a4a;
+}
+
+/* --- TABLA DE COMPILACIONES HISTÓRICAS --- */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid #2a2a38;
+    margin-top: 15px;
+}
+
+.dl-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--bg-card);
+    text-align: left;
+    font-size: 0.95rem;
+}
+
+.dl-table th {
+    background: var(--bg-sidebar);
+    padding: 16px 20px;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.dl-table td {
+    padding: 16px 20px;
+    border-bottom: 1px solid #2a2a38;
+    vertical-align: middle;
+    color: var(--text-main);
+}
+
+.dl-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.01);
+}
+
+.dl-group {
+    display: flex;
+    gap: 8px;
+}
+
+.dl-inline-link {
+    background: var(--bg-sidebar);
+    border: 1px solid #2a2a38;
+    color: var(--text-main);
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.dl-inline-link:hover {
+    background: var(--mc-green);
+    border-color: var(--mc-green);
+    color: white;
 }
 
 /* Adaptabilidad para pantallas móviles */
