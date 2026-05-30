@@ -100,10 +100,10 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
                 if (typeof require !== 'undefined') {
-                    const { shell } = require('electron');[cite: 2]
-                    shell.openExternal(vUrl);[cite: 2]
+                    const { shell } = require('electron');
+                    shell.openExternal(vUrl);
                 } else {
-                    window.open(vUrl, '_blank');[cite: 2]
+                    window.open(vUrl, '_blank');
                 }
             });
         });
