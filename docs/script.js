@@ -55,7 +55,13 @@ document.addEventListener('DOMContentLoaded', () => {
         async function cargarLatestRelease() {
             try {
                 const response = await fetch(API_URL);
-                if (!response.ok) throw new Error("Error consultando la API de GitHub");
+
+                if (!response.ok) {
+                    if (response.status === 403) {
+                        throw new Error("RATE_LIMIT");
+                    }
+                    throw new Error("API_ERROR");
+                }
 
                 const releases = await response.json();
 
@@ -69,10 +75,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderizarHeroDestacado(latestRelease);
 
             } catch (error) {
-                console.error("Error cargando la versión de GitHub:", error);
+                console.error("Error cargando GitHub:", error);
+
+                let mensaje = "";
+                let boton = "";
+
+                if (error.message === "RATE_LIMIT") {
+                    mensaje = "Límite de peticiones alcanzado en GitHub API. Inténtalo más tarde.";
+                } else {
+                    mensaje = "No se pudo conectar con GitHub. Por favor, inténtalo más tarde.";
+                }
+
+                boton = `
+                    <a href="https://github.com/${GITHUB_USER}/${GITHUB_REPO}/releases"
+                    target="_blank"
+                    class="btn-download-action available"
+                    style="margin-top:10px;">
+                        <i class="fa-brands fa-github"></i>
+                        Ver releases en GitHub
+                    </a>
+                `;
+
                 heroContainer.innerHTML = `
-                    <div class="skeleton-loader" style="border-color: var(--color-bug); color: var(--color-bug);">
-                        <i class="fa-solid fa-triangle-exclamation"></i> No se pudo sincronizar la última versión. Revisa tu conexión.
+                    <div class="skeleton-loader"
+                        style="border-color: var(--color-bug); color: var(--color-bug); display:flex; flex-direction:column; gap:12px;">
+                        <div>${mensaje}</div>
+                        ${boton}
                     </div>
                 `;
             }
