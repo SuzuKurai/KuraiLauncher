@@ -56,20 +56,27 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const response = await fetch(API_URL);
 
-                const data = await response.json().catch(() => null);
-
-                if (!response.ok) {
-                    const isRateLimit =
-                        response.status === 403 &&
-                        (response.headers.get("X-RateLimit-Remaining") === "0" ||
-                        data?.message?.toLowerCase().includes("rate limit"));
-
-                    if (isRateLimit) {
-                        throw new Error("RATE_LIMIT");
+                    let data;
+                    try {
+                        data = await response.json();
+                    } catch (e) {
+                        data = null;
                     }
 
-                    throw new Error("API_ERROR");
-                }
+                    if (!response.ok) {
+                        const rateLimit =
+                            response.status === 403 &&
+                            (
+                                response.headers.get("X-RateLimit-Remaining") === "0" ||
+                                data?.message?.toLowerCase().includes("rate limit")
+                            );
+
+                        if (rateLimit) {
+                            throw new Error("RATE_LIMIT");
+                        }
+
+                        throw new Error("API_ERROR");
+                    }
 
                 const releases = await response.json();
 
@@ -83,41 +90,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderizarHeroDestacado(latestRelease);
 
             } catch (error) {
-                console.error("Error GitHub API:", error);
+                console.error("Error cargando descargas:", error);
 
                 const isRateLimit = error.message === "RATE_LIMIT";
 
                 heroContainer.innerHTML = "";
 
-                const wrapper = document.createElement("div");
-                wrapper.className = "skeleton-loader";
-                wrapper.style.cssText = `
-                    border-color: var(--color-bug);
-                    color: var(--color-bug);
-                    display: flex;
-                    flex-direction: column;
-                    gap: 12px;
+                heroContainer.innerHTML = `
+                    <div class="skeleton-loader"
+                        style="border-color: var(--color-bug); color: var(--color-bug); display:flex; flex-direction:column; gap:12px;">
+
+                        <div>
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            ${isRateLimit
+                                ? "Límite de GitHub API alcanzado. Inténtalo más tarde."
+                                : "No se pudo conectar con GitHub. Inténtalo más tarde."}
+                        </div>
+
+                        <a href="https://github.com/${GITHUB_USER}/${GITHUB_REPO}/releases"
+                        target="_blank"
+                        class="btn-download-action available"
+                        style="margin-top:10px;">
+                            <i class="fa-brands fa-github"></i>
+                            Ver releases en GitHub
+                        </a>
+
+                    </div>
                 `;
-
-                const text = document.createElement("div");
-                text.textContent = isRateLimit
-                    ? "Límite de GitHub API alcanzado. Inténtalo más tarde."
-                    : "No se pudo conectar con GitHub. Inténtalo más tarde.";
-
-                const button = document.createElement("a");
-                button.href = `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/releases`;
-                button.target = "_blank";
-                button.className = "btn-download-action available";
-                button.style.marginTop = "10px";
-
-                button.innerHTML = `
-                    <i class="fa-brands fa-github"></i>
-                    Ver releases en GitHub
-                `;
-
-                wrapper.appendChild(text);
-                wrapper.appendChild(button);
-                heroContainer.appendChild(wrapper);
             }
         }
 
