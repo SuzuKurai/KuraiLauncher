@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kurai Launcher - Inicio</title>
+    <!-- Usamos el mismo archivo CSS que tenías en el Devlog -->
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <header class="changelog-header">
+        <div class="header-container">
+            <h1>KURAI LAUNCHER</h1>
+            <p>El launcher de Minecraft diseñado para ser moderno, rápido y personalizable.</p>
+            <div style="margin-top: 20px;">
+                <a href="changelog.html" class="filter-btn" style="text-decoration: none;">Ver Historial de Cambios</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="changelog-container">
+        
+        <!-- ¿Qué es Kurai? -->
+        <section class="version-block" style="padding: 30px; display: block;">
+            <h2>¿Qué es Kurai Launcher?</h2>
+            <p style="color: var(--text-muted);">
+                Kurai Launcher es un gestor de Minecraft creado con tecnología Electron, diseñado para ofrecer una experiencia limpia y libre de complicaciones. Nuestro objetivo es brindarte control total sobre tus partidas: desde la gestión sencilla de instancias hasta la asignación de memoria RAM optimizada, todo bajo una interfaz moderna.
+            </p>
+        </section>
+
+        <!-- Características clave -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 35px;">
+            <div class="version-block" style="flex-direction: column; padding: 20px; margin-bottom: 0;">
+                <h3><i class="fa-solid fa-gamepad" style="color: var(--mc-green);"></i> Gestión de Instancias</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Organiza tus versiones de Minecraft de forma independiente. Crea perfiles distintos con configuraciones únicas para cada uno.</p>
+            </div>
+            <div class="version-block" style="flex-direction: column; padding: 20px; margin-bottom: 0;">
+                <h3><i class="fa-solid fa-memory" style="color: var(--mc-green);"></i> Optimización</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Detección automática de memoria RAM y configuración personalizada para que el juego corra sin tirones.</p>
+            </div>
+            <div class="version-block" style="flex-direction: column; padding: 20px; margin-bottom: 0;">
+                <h3><i class="fa-solid fa-user-gear" style="color: var(--mc-green);"></i> Cuentas No Premium</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Gestión sencilla de nombres de usuario para entrar a servidores offline rápidamente.</p>
+            </div>
+        </div>
+
+        <!-- Sección de enlaces -->
+        <section class="version-block" style="padding: 30px; display: block;">
+            <h2>Enlaces de Interés</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Accede a nuestra documentación, repositorios y recursos aquí:</p>
+            
+            <ul style="list-style: none; padding: 0;">
+                <li style="margin-bottom: 10px;">
+                    <a href="#" class="btn-download-action" style="max-width: 300px; text-decoration: none;">
+                        <i class="fa-brands fa-github"></i> Repositorio de GitHub
+                    </a>
+                </li>
+                <li style="margin-bottom: 10px;">
+                    <a href="#" class="btn-download-action" style="max-width: 300px; text-decoration: none; background: #5865f2;">
+                        <i class="fa-brands fa-discord"></i> Servidor de Discord
+                    </a>
+                </li>
+                <!-- Aquí puedes ir agregando tus nuevos enlaces poco a poco -->
+            </ul>
+        </section>
+
+    </main>
+
+    <footer class="changelog-footer">
+        <p>&copy; 2026 Kurai Launcher. Desarrollado con tecnología Electron.</p>
+    </footer>
+
+</body>
+</html>
