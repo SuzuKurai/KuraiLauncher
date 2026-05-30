@@ -19,6 +19,7 @@
 
     <main class="changelog-container">
         
+        <!-- SECCIÓN HERO: LATEST VERSION -->
         <h2 class="section-title"><i class="fa-solid fa-star text-gold"></i> Versión Recomendada</h2>
         <div id="latest-hero-container">
             <div class="skeleton-loader">
@@ -26,9 +27,11 @@
             </div>
         </div>
 
-        <h2 class="section-title" style="margin-top: 50px;"><i class="fa-solid fa-clock-rotate-left"></i> Archivo de Versiones Anteriores</h2>
+        <!-- SECCIÓN HISTÓRICA -->
+        <h2 class="section-title section-title-archive"><i class="fa-solid fa-clock-rotate-left"></i> Archivo de Versiones Anteriores</h2>
         
-        <div class="filter-bar" style="justify-content: flex-start; margin-bottom: 20px;">
+        <!-- Barra de Filtros limpia -->
+        <div class="filter-bar filter-bar-downloads">
             <button class="filter-btn active" data-filter="all">Todas</button>
             <button class="filter-btn" data-filter="release"><i class="fa-solid fa-box"></i> Estables (Releases)</button>
             <button class="filter-btn" data-filter="beta"><i class="fa-solid fa-flask"></i> Betas / Exp</button>
@@ -45,7 +48,8 @@
                     </tr>
                 </thead>
                 <tbody id="versions-table-body">
-                    </tbody>
+                    <!-- Inyección dinámica limpia -->
+                </tbody>
             </table>
         </div>
 
