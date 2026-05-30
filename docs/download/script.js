@@ -1,114 +1,161 @@
 document.addEventListener('DOMContentLoaded', () => {
     
-    // --- LÓGICA DE CONTROLADORES DE FILTRO DE LA TABLA ---
-    const tableFilters = document.querySelectorAll('.filter-bar .filter-btn');
-    const tableRows = document.querySelectorAll('.version-row');
+    // Configuración de tu repositorio en GitHub
+    const GITHUB_USER = "SuzuKurai";
+    const GITHUB_REPO = "KuraiLauncher";
+    const API_URL = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/releases`;
 
-    tableFilters.forEach(button => {
-        button.addEventListener('click', () => {
-            tableFilters.forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
+    const heroContainer = document.getElementById('latest-hero-container');
+    const tableBody = document.getElementById('versions-table-body');
+    const filterButtons = document.querySelectorAll('.filter-bar .filter-btn');
 
-            const filterValue = button.getAttribute('data-filter');
-
-            tableRows.forEach(row => {
-                if (filterValue === 'all') {
-                    row.style.display = 'table-row';
-                } else {
-                    if (row.classList.contains(`type-${filterValue}`)) {
-                        row.style.display = 'table-row';
-                    } else {
-                        row.style.display = 'none';
-                    }
-                }
-            });
-        });
-    });
-
-    // --- MOTOR DE DETECCION DINÁMICA DE LATEST RELEASES ---
-    function generarHeroDestacado() {
-        const rows = Array.from(document.querySelectorAll('.version-row'));
-        const heroContainer = document.getElementById('latest-hero-container');
-        
-        if (!heroContainer || rows.length === 0) return;
-
-        // Función matemática para segmentar strings de versionado semántico (Semantic Versioning)
-        const parseSemVer = (versionStr) => {
-            const clean = versionStr.toLowerCase().replace('v', '');
-            const parts = clean.split('-'); // Divide la compilación base del modificador alpha/beta
-            const numbers = parts[0].split('.').map(Number); // Genera array numérico [0, 0, 1]
+    // Inicializador del sistema dinámico
+    async function cargarReleasesDesdeGitHub() {
+        try {
+            const response = await fetch(API_URL);
             
-            // Si tiene un tag beta (ej: beta.4), extraemos el sub-indexador de ciclo
-            let betaWeight = 9999; // Las versiones finales estables tienen prioridad máxima sobre betas
-            if (parts[1] && parts[1].includes('beta')) {
-                const subBeta = parts[1].split('.');
-                betaWeight = subBeta[1] ? Number(subBeta[1]) : 0;
+            if (!response.ok) {
+                throw new Error("No se pudo obtener respuesta de la API de GitHub.");
             }
-            return { numbers, betaWeight, isBeta: !!parts[1] };
-        };
 
-        // Ordenamiento dinámico de la matriz de datos de mayor a menor
-        rows.sort((rowA, rowB) => {
-            const dataA = parseSemVer(rowA.getAttribute('data-version'));
-            const dataB = parseSemVer(rowB.getAttribute('data-version'));
+            const data = await response.json();
 
-            for (let i = 0; i < Math.max(dataA.numbers.length, dataB.numbers.length); i++) {
-                const numA = dataA.numbers[i] || 0;
-                const numB = dataB.numbers[i] || 0;
-                if (numA !== numB) return numB - numA;
+            if (data.length === 0) {
+                heroContainer.innerHTML = `<div class="skeleton-loader">No se han encontrado releases públicas en el repositorio.</div>`;
+                return;
             }
-            // Si el Core numérico es igual, desempata el sub-indexador beta
-            return dataB.betaWeight - dataA.betaWeight;
+
+            // 1. GENERAR EL HERO SPOTLIGHT (Primera posición devuelta por GitHub siempre es la más reciente)
+            const latestRelease = data[0];
+            renderHero(latestRelease);
+
+            // 2. GENERAR LA TABLA HISTÓRICA COMPLETA
+            renderTabla(data);
+
+            // 3. ACTIVAR LOS FILTROS DINÁMICOS
+            inicializarFiltros();
+
+        } catch (error) {
+            console.error("Error cargando descargas:", error);
+            heroContainer.innerHTML = `
+                <div class="skeleton-loader" style="border-color: var(--color-bug); color: var(--color-bug);">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Error al conectar con GitHub. Por favor, inténtalo más tarde.
+                </div>
+            `;
+        }
+    }
+
+    // Renderizador del Panel Superior Destacado
+    function renderHero(release) {
+        // Comprobar si en GitHub marcaste "This is a pre-release"
+        const isBeta = release.prerelease;
+        const badgeTexto = isBeta ? "LATEST BETA" : "LATEST STABLE";
+        
+        // Formatear fecha de manera elegante
+        const fecha = new Date(release.published_at).toLocaleDateString('es-ES', {
+            day: 'numeric', month: 'long', year: 'numeric'
         });
 
-        // Extraemos la versión más reciente del sistema
-        const latestRow = rows[0];
-        const vTag = latestRow.getAttribute('data-version');
-        const vUrl = latestRow.getAttribute('data-url');
-        const infoVersion = parseSemVer(vTag);
-        
-        const badgeTexto = infoVersion.isBeta ? "LATEST BETA" : "LATEST STABLE";
+        // Buscador inteligente de instaladores dentro de tus Assets de GitHub
+        // Si no encuentra los archivos específicos listados, redirigirá a la release general de GitHub
+        const setupAsset = release.assets.find(asset => asset.name.toLowerCase().includes('setup'));
+        const portableAsset = release.assets.find(asset => asset.name.toLowerCase().includes('portable'));
 
-        // Construcción del Layout Estructural del Hero Automático
+        const setupUrl = setupAsset ? setupAsset.browser_download_url : release.html_url;
+        const portableUrl = portableAsset ? portableAsset.browser_download_url : release.html_url;
+
         heroContainer.innerHTML = `
             <div class="hero-download-card">
                 <div class="hero-meta">
-                    <h3>${vTag} <span class="hero-tag-badge">${badgeTexto}</span></h3>
+                    <h3>${release.name || release.tag_name} <span class="hero-tag-badge">${badgeTexto}</span></h3>
                     <p class="hero-description">
-                        Experimenta el rendimiento optimizado de la compilación más reciente de Kurai. 
-                        Incluye soporte completo de instancias independientes, depuración dinámica en consola separada y asignador inteligente de memoria RAM.
+                        ${release.body ? marcarTextoComoLimpio(release.body) : "Nueva versión publicada de Kurai Launcher. Revisa el Devlog para ver la lista completa de cambios."}
                     </p>
                     <div class="hero-specs">
+                        <span><i class="fa-solid fa-calendar-days"></i> Publicado: <strong>${fecha}</strong></span>
                         <span><i class="fa-solid fa-microchip"></i> Arquitectura: <strong>x64 bits</strong></span>
                         <span><i class="fa-solid fa-code-branch"></i> Entorno: <strong>Electron</strong></span>
-                        <span><i class="fa-solid fa-box-open"></i> Formato base: <strong>Setup.exe</strong></span>
                     </div>
                 </div>
                 <div class="hero-action-zone">
-                    <a href="${vUrl}/KuraiLauncher_Setup.exe" class="btn-download-action available" style="margin-top:0;">
-                        <i class="fa-solid fa-download"></i> <span>Descargar instalador (.exe)</span>
+                    <a href="${setupUrl}" class="btn-download-action available" style="margin-top:0;">
+                        <i class="fa-solid fa-download"></i> <span>Descargar (.exe)</span>
                     </a>
-                    <a href="${vUrl}/KuraiLauncher_Portable.zip" class="btn-download-action waiting-java" style="margin-top:0; color: var(--text-muted); border-color:#444;">
-                        <i class="fa-solid fa-box-archive"></i> Versión Portable (.zip)
+                    <a href="${portableUrl}" class="btn-download-action" style="margin-top:0; background: #252532; color: var(--text-main); border: 1px solid #3d3d52;">
+                        <i class="fa-solid fa-box-archive"></i> Versión Portable
                     </a>
                 </div>
             </div>
         `;
+    }
 
-        // Interceptores de descarga nativos de Electron / Navegadores de escritorio convencionales[cite: 2]
-        heroContainer.querySelectorAll('.btn-download-action.available').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                if (typeof require !== 'undefined') {
-                    const { shell } = require('electron');
-                    shell.openExternal(vUrl);
-                } else {
-                    window.open(vUrl, '_blank');
-                }
+    // Renderizador de las filas de la tabla
+    function renderTabla(releases) {
+        tableBody.innerHTML = ""; // Limpiar esqueleto
+
+        releases.forEach(release => {
+            const isBeta = release.prerelease;
+            const claseTipo = isBeta ? "type-beta" : "type-release";
+            const badgeClase = isBeta ? "badge-minor" : "badge-major";
+            const badgeTexto = isBeta ? "Beta" : "Release";
+
+            const fecha = new Date(release.published_at).toLocaleDateString('es-ES', {
+                day: 'numeric', month: 'long', year: 'numeric'
+            });
+
+            // Enlaces directos a los archivos compilados
+            const setupAsset = release.assets.find(asset => asset.name.toLowerCase().includes('setup'));
+            const setupUrl = setupAsset ? setupAsset.browser_download_url : release.html_url;
+
+            tableBody.innerHTML += `
+                <tr class="version-row ${claseTipo}">
+                    <td><strong>${release.tag_name}</strong></td>
+                    <td><span class="badge ${badgeClase}">${badgeTexto}</span></td>
+                    <td>${fecha}</td>
+                    <td>
+                        <div class="dl-group">
+                            <a href="${setupUrl}" class="dl-inline-link"><i class="fa-solid fa-cube"></i> Obtener archivo</a>
+                            <a href="${release.html_url}" target="_blank" class="dl-inline-link" style="background:transparent; border-color:#444;"><i class="fa-solid fa-up-right-from-square"></i> Ver en GitHub</a>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    // Inicializador del sistema de pestañas de filtrado superior
+    function inicializarFiltros() {
+        filterButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+
+                const filterValue = button.getAttribute('data-filter');
+                const tableRows = document.querySelectorAll('.version-row');
+
+                tableRows.forEach(row => {
+                    if (filterValue === 'all') {
+                        row.style.display = 'table-row';
+                    } else {
+                        if (row.classList.contains(`type-${filterValue}`)) {
+                            row.style.display = 'table-row';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    }
+                });
             });
         });
     }
 
-    // Ejecución inicial del parser
-    generarHeroDestacado();
+    // Utilidad básica para limpiar descripciones en formato markdown plano del Hero
+    function marcarTextoComoLimpio(textoMarkdown) {
+        if(textoMarkdown.length > 220) {
+            return textoMarkdown.substring(0, 217) + "...";
+        }
+        return textoMarkdown;
+    }
+
+    // Lanzamiento inicial del motor
+    cargarReleasesDesdeGitHub();
 });

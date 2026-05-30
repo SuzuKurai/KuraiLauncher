@@ -161,3 +161,151 @@
     .hero-download-card { grid-template-columns: 1fr; }
     .hero-action-zone { border-left: none; padding-left: 0; padding-top: 20px; border-top: 1px solid #2e2e3e; }
 }
+
+/* --- ADAPTACIONES PREMIUM PARA LA API --- */
+
+.dl-top-tag {
+    font-size: 0.8rem;
+    letter-spacing: 3px;
+    color: var(--mc-green);
+    font-weight: 800;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.section-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-left: 3px solid var(--mc-green);
+    padding-left: 12px;
+}
+
+.text-gold { color: #f1c40f; }
+
+/* Tarjeta Hero Principal */
+.hero-download-card {
+    background: radial-gradient(circle at top right, #1f1f2e 0%, var(--bg-card) 100%);
+    border: 1px solid #3b3b54;
+    border-radius: 12px;
+    padding: 35px;
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+}
+
+.hero-meta h3 {
+    font-size: 2rem;
+    margin: 0 0 10px 0;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.hero-tag-badge {
+    background: linear-gradient(135deg, #f1c40f, #e67e22);
+    color: #121216;
+    font-size: 0.75rem;
+    font-weight: 900;
+    padding: 4px 10px;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+.hero-description {
+    color: var(--text-muted);
+    font-size: 1.02rem;
+    max-width: 620px;
+    margin-bottom: 25px;
+}
+
+.hero-specs {
+    display: flex;
+    gap: 20px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    background: rgba(0,0,0,0.2);
+    padding: 12px 20px;
+    border-radius: 8px;
+    width: fit-content;
+}
+.hero-specs span strong { color: var(--text-main); }
+
+.hero-action-zone {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 12px;
+    border-left: 1px solid #2e2e3e;
+    padding-left: 30px;
+}
+
+/* Tabla Estructurada */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid #2a2a38;
+}
+.dl-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--bg-card);
+    text-align: left;
+    font-size: 0.95rem;
+}
+.dl-table th {
+    background: var(--bg-sidebar);
+    padding: 16px 20px;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+}
+.dl-table td {
+    padding: 16px 20px;
+    border-bottom: 1px solid #2a2a38;
+    vertical-align: middle;
+}
+.dl-table tbody tr:hover { background: rgba(255,255,255,0.01); }
+
+.dl-group { display: flex; gap: 8px; }
+.dl-inline-link {
+    background: #252532;
+    border: 1px solid #3d3d52;
+    color: var(--text-main);
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+.dl-inline-link:hover {
+    background: var(--mc-green);
+    border-color: var(--mc-green);
+    color: white;
+}
+
+.skeleton-loader {
+    padding: 50px;
+    text-align: center;
+    background: var(--bg-card);
+    border-radius: 12px;
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    border: 1px dashed #444;
+}
+
+@media (max-width: 900px) {
+    .hero-download-card { grid-template-columns: 1fr; }
+    .hero-action-zone { border-left: none; padding-left: 0; padding-top: 20px; border-top: 1px solid #2e2e3e; }
+}
