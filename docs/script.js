@@ -56,10 +56,18 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const response = await fetch(API_URL);
 
+                const data = await response.json().catch(() => null);
+
                 if (!response.ok) {
-                    if (response.status === 403) {
+                    const isRateLimit =
+                        response.status === 403 &&
+                        (response.headers.get("X-RateLimit-Remaining") === "0" ||
+                        data?.message?.toLowerCase().includes("rate limit"));
+
+                    if (isRateLimit) {
                         throw new Error("RATE_LIMIT");
                     }
+
                     throw new Error("API_ERROR");
                 }
 
@@ -75,34 +83,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderizarHeroDestacado(latestRelease);
 
             } catch (error) {
-                console.error("Error cargando GitHub:", error);
+                console.error("Error GitHub API:", error);
 
-                let mensaje = "";
-                let boton = "";
+                const isRateLimit = error.message === "RATE_LIMIT";
 
-                if (error.message === "RATE_LIMIT") {
-                    mensaje = "Límite de peticiones alcanzado en GitHub API. Inténtalo más tarde.";
-                } else {
-                    mensaje = "No se pudo conectar con GitHub. Por favor, inténtalo más tarde.";
-                }
+                heroContainer.innerHTML = "";
 
-                boton = `
-                    <a href="https://github.com/${GITHUB_USER}/${GITHUB_REPO}/releases"
-                    target="_blank"
-                    class="btn-download-action available"
-                    style="margin-top:10px;">
-                        <i class="fa-brands fa-github"></i>
-                        Ver releases en GitHub
-                    </a>
+                const wrapper = document.createElement("div");
+                wrapper.className = "skeleton-loader";
+                wrapper.style.cssText = `
+                    border-color: var(--color-bug);
+                    color: var(--color-bug);
+                    display: flex;
+                    flex-direction: column;
+                    gap: 12px;
                 `;
 
-                heroContainer.innerHTML = `
-                    <div class="skeleton-loader"
-                        style="border-color: var(--color-bug); color: var(--color-bug); display:flex; flex-direction:column; gap:12px;">
-                        <div>${mensaje}</div>
-                        ${boton}
-                    </div>
+                const text = document.createElement("div");
+                text.textContent = isRateLimit
+                    ? "Límite de GitHub API alcanzado. Inténtalo más tarde."
+                    : "No se pudo conectar con GitHub. Inténtalo más tarde.";
+
+                const button = document.createElement("a");
+                button.href = `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/releases`;
+                button.target = "_blank";
+                button.className = "btn-download-action available";
+                button.style.marginTop = "10px";
+
+                button.innerHTML = `
+                    <i class="fa-brands fa-github"></i>
+                    Ver releases en GitHub
                 `;
+
+                wrapper.appendChild(text);
+                wrapper.appendChild(button);
+                heroContainer.appendChild(wrapper);
             }
         }
 
