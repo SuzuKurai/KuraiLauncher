@@ -1,126 +1,150 @@
 document.addEventListener('DOMContentLoaded', () => {
+    
+    // =========================================================================
+    // 1. SISTEMA NATIVO DE FILTRADO (Para la sección del Devlog / Historial)
+    // =========================================================================
     const filterButtons = document.querySelectorAll('.filter-btn');
     const changeItems = document.querySelectorAll('.change-item');
     const versionBlocks = document.querySelectorAll('.version-block');
-    const downloadButtons = document.querySelectorAll('.btn-download-action');
 
-    // 1. FILTRADO DE CATEGORÍAS (Novedades, Cambios y Bugs)
-    filterButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            filterButtons.forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
+    if (filterButtons.length > 0) {
+        filterButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
 
-            const filterValue = button.getAttribute('data-filter');
+                const filterValue = button.getAttribute('data-filter');
 
-            if (filterValue === 'all') {
-                changeItems.forEach(item => item.style.display = 'flex');
-                versionBlocks.forEach(block => block.style.display = 'flex');
-                return;
-            }
+                if (filterValue === 'all') {
+                    changeItems.forEach(item => item.style.display = 'flex');
+                    versionBlocks.forEach(block => block.style.display = 'flex');
+                    return;
+                }
 
-            versionBlocks.forEach(block => {
-                let hasVisibleChanges = false;
-                const itemsInBlock = block.querySelectorAll('.change-item');
+                versionBlocks.forEach(block => {
+                    let hasVisibleChanges = false;
+                    const itemsInBlock = block.querySelectorAll('.change-item');
 
-                itemsInBlock.forEach(item => {
-                    if (item.classList.contains(`type-${filterValue}`)) {
-                        item.style.display = 'flex';
-                        hasVisibleChanges = true;
-                    } else {
-                        item.style.display = 'none';
-                    }
+                    itemsInBlock.forEach(item => {
+                        if (item.classList.contains(`type-${filterValue}`)) {
+                            item.style.display = 'flex';
+                            hasVisibleChanges = true;
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
+
+                    block.style.display = hasVisibleChanges ? 'flex' : 'none';
                 });
-
-                block.style.display = hasVisibleChanges ? 'flex' : 'none';
             });
         });
-    });
+    }
 
-    // 2. DETECTOR DE RELEASES REALES EN GITHUB
-    async function verificarReleasesEnGithub() {
-        for (const btn of downloadButtons) {
-            const textSpan = btn.querySelector('span');
-            const icon = btn.querySelector('i');
-            const targetUrl = btn.getAttribute('data-target-url');
 
-            if (!targetUrl || targetUrl === "#") {
-                configurarBotonEnEspera(btn, textSpan, icon);
-                continue;
-            }
+    // =========================================================================
+    // 2. MOTOR DE AUTOMATIZACIÓN DE GITHUB API (Para el Hero de la Landing Page)
+    // =========================================================================
+    const GITHUB_USER = "SuzuKurai";
+    const GITHUB_REPO = "KuraiLauncher";
+    const API_URL = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/releases`;
 
-            // EXTRAER EL TAG DEL ENLACE (Ej: "v0.0.1-beta.3")
-            // Convertimos la URL interna de verificación a una consulta directa sobre los assets/archivos
-            // Si el tag tiene la estructura clásica, apuntamos al .exe que genera GitHub al compilar.
-            const parts = targetUrl.split('/tag/');
-            const tag = parts.length > 1 ? parts[1] : '';
-            
-            // Generamos un enlace de validación al ejecutable oficial que DEBE existir en los servidores de GitHub.
-            // Si la release no existe, el binario descarga dará un 404 rotundo e infalible.
-            const urlVerificacionBinario = `https://github.com/SuzuKurai/KuraiLauncher/releases/download/${tag}/KuraiLauncher_Setup.exe`;
+    const heroContainer = document.getElementById('latest-hero-container');
 
+    // Solo ejecutamos la petición si el contenedor del Hero existe en el HTML actual (Página de Inicio)
+    if (heroContainer) {
+        async function cargarLatestRelease() {
             try {
-                // Hacemos la consulta al servidor de descargas (da 404 real si la release o el archivo no existen)
-                const response = await fetch(urlVerificacionBinario, { method: 'HEAD' });
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error("Error consultando la API de GitHub");
 
-                if (response.status === 404) {
-                    configurarBotonEnEspera(btn, textSpan, icon);
-                } else {
-                    // Si responde cualquier otra cosa válida, la release está lista
-                    configurarBotonDisponible(btn, textSpan, icon, targetUrl);
+                const releases = await response.json();
+
+                if (releases.length === 0) {
+                    heroContainer.innerHTML = `<div class="skeleton-loader">No se han encontrado releases públicas en GitHub.</div>`;
+                    return;
                 }
+
+                // La posición [0] devuelta por la API de GitHub siempre corresponde al último lanzamiento subido
+                const latestRelease = releases[0];
+                renderizarHeroDestacado(latestRelease);
+
             } catch (error) {
-                // Plan de respaldo por si HEAD tiene restricciones en el entorno local
-                try {
-                    const responseGet = await fetch(urlVerificacionBinario);
-                    if (responseGet.status === 404) {
-                        configurarBotonEnEspera(btn, textSpan, icon);
-                    } else {
-                        configurarBotonDisponible(btn, textSpan, icon, targetUrl);
-                    }
-                } catch(e) {
-                    // Si hay un bloqueo estricto de CORS que impida leer los binarios, 
-                    // consultamos la API de GitHub para verificar el tag de manera segura sin salir de la web
-                    try {
-                        const apiResponse = await fetch(`https://api.github.com/repos/SuzuKurai/KuraiLauncher/releases/tags/${tag}`);
-                        if (apiResponse.ok) {
-                            configurarBotonDisponible(btn, textSpan, icon, targetUrl);
-                        } else {
-                            configurarBotonEnEspera(btn, textSpan, icon);
-                        }
-                    } catch(apiErr) {
-                        // En caso de fallo absoluto de red total, permitimos el clic por defecto
-                        configurarBotonDisponible(btn, textSpan, icon, targetUrl);
-                    }
-                }
+                console.error("Error cargando la versión de GitHub:", error);
+                heroContainer.innerHTML = `
+                    <div class="skeleton-loader" style="border-color: var(--color-bug); color: var(--color-bug);">
+                        <i class="fa-solid fa-triangle-exclamation"></i> No se pudo sincronizar la última versión. Revisa tu conexión.
+                    </div>
+                `;
             }
         }
-    }
 
-    function configurarBotonDisponible(btn, textSpan, icon, url) {
-        btn.className = "btn-download-action available"; 
-        textSpan.innerText = "Descargar";
-        icon.className = "fa-solid fa-download";
-        
-        btn.onclick = (e) => {
-            e.preventDefault();
-            if (typeof require !== 'undefined') {
-                const { shell } = require('electron');
-                shell.openExternal(url);
-            } else {
-                window.open(url, '_blank');
+        function renderizarHeroDestacado(release) {
+            // Evaluamos si marcaste la casilla "This is a pre-release" al publicarla en GitHub
+            const isBeta = release.prerelease;
+            const badgeTexto = isBeta ? "LATEST BETA" : "LATEST STABLE";
+
+            // Formateamos la fecha de publicación al español de forma elegante
+            const fechaPublicacion = new Date(release.published_at).toLocaleDateString('es-ES', {
+                day: 'numeric', month: 'long', year: 'numeric'
+            });
+
+            // Buscador inteligente dentro de los binarios adjuntos (Assets) que subes a GitHub
+            const setupAsset = release.assets.find(asset => asset.name.toLowerCase().includes('setup'));
+            const portableAsset = release.assets.find(asset => asset.name.toLowerCase().includes('portable'));
+
+            // Si aún no has subido ejecutables compilados, el botón redirige de manera segura a la release en GitHub
+            const setupUrl = setupAsset ? setupAsset.browser_download_url : release.html_url;
+            const portableUrl = portableAsset ? portableAsset.browser_download_url : release.html_url;
+
+            // Inyectamos la estructura respetando estrictamente tus clases css y variables de color nativas
+            heroContainer.innerHTML = `
+                <div class="hero-download-card">
+                    <div class="hero-meta">
+                        <h3>${release.name || release.tag_name} <span class="hero-tag-badge">${badgeTexto}</span></h3>
+                        <p class="hero-description">
+                            ${release.body ? acortarTextoMarkdown(release.body) : "Nueva versión de Kurai Launcher disponible para descargar. Revisa el Devlog para ver el historial completo de cambios."}
+                        </p>
+                        <div class="hero-specs">
+                            <span><i class="fa-solid fa-calendar-days"></i> Lanzamiento: <strong>${fechaPublicacion}</strong></span>
+                            <span><i class="fa-solid fa-microchip"></i> Arquitectura: <strong>x64 bits</strong></span>
+                            <span><i class="fa-solid fa-code-branch"></i> Entorno: <strong>Electron</strong></span>
+                        </div>
+                    </div>
+                    <div class="hero-action-zone">
+                        <a href="${setupUrl}" class="btn-download-action available" style="margin-top:0;">
+                            <i class="fa-solid fa-download"></i> <span>Descargar (.exe)</span>
+                        </a>
+                        <a href="${portableUrl}" class="btn-download-action btn-portable-fallback" style="margin-top:0; background-color: var(--bg-sidebar); color: var(--text-main); border: 1px solid #2a2a38;">
+                            <i class="fa-solid fa-box-archive"></i> Versión Portable
+                        </a>
+                    </div>
+                </div>
+            `;
+
+            // Vincular soporte nativo para entornos de ejecución de Electron o Navegadores de escritorio convencionales
+            const actionButtons = heroContainer.querySelectorAll('.btn-download-action');
+            actionButtons.forEach(btn => {
+                const targetUrl = btn.getAttribute('href');
+                btn.addEventListener('click', (e) => {
+                    if (typeof require !== 'undefined') {
+                        e.preventDefault();
+                        const { shell } = require('electron');
+                        shell.openExternal(targetUrl);
+                    }
+                    // Si se ejecuta en un navegador web común, el enlace href normal abrirá la descarga
+                });
+            });
+        }
+
+        // Limpiador básico para recortar textos excesivamente largos del patch-note en la tarjeta Hero
+        function acortarTextoMarkdown(texto) {
+            if (texto.length > 200) {
+                return texto.substring(0, 197) + "...";
             }
-        };
-    }
+            return texto;
+        }
 
-    function configurarBotonEnEspera(btn, textSpan, icon) {
-        btn.className = "btn-download-action waiting-release"; 
-        textSpan.innerText = "En desarrollo";
-        icon.className = "fa-solid fa-clock";
-        
-        btn.onclick = (e) => {
-            e.preventDefault();
-        };
+        // Ejecutar sincronización asíncrona
+        cargarLatestRelease();
     }
-
-    verificarReleasesEnGithub();
 });

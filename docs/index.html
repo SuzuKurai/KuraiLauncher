@@ -4,73 +4,85 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kurai Launcher - Inicio</title>
-    <!-- Usamos el mismo archivo CSS que tenías en el Devlog -->
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     
+    <!-- Encabezado Principal -->
     <header class="changelog-header">
         <div class="header-container">
             <h1>KURAI LAUNCHER</h1>
             <p>El launcher de Minecraft diseñado para ser moderno, rápido y personalizable.</p>
-            <div style="margin-top: 20px;">
-                <a href="./devlog/" class="filter-btn" style="text-decoration: none;">Ver Historial de Cambios</a>
+            <div class="header-buttons">
+                <a href="./devlog/" class="filter-btn active" style="text-decoration: none;">
+                    <i class="fa-solid fa-code-branch"></i> Ver Historial de Cambios
+                </a>
             </div>
         </div>
     </header>
 
     <main class="changelog-container">
         
-        <!-- ¿Qué es Kurai? -->
-        <section class="version-block" style="padding: 30px; display: block;">
-            <h2>¿Qué es Kurai Launcher?</h2>
-            <p style="color: var(--text-muted);">
-                <b>Kurai Launcher</b> es un gestor de Minecraft creado por <b>Suzu Kurai</b>, diseñado para ofrecer una experiencia limpia y libre de complicaciones. El objetivo es ofrecer un launcher cómodo capaz de gestionar de forma sencilla las distintas versiones de Minecraft, optimizar el rendimiento del juego y facilitar la gestión de cuentas, todo con una interfaz moderna y personalizable.
-            </p>
-        </section>
-
-        <!-- Características clave -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 35px;">
-            <div class="version-block" style="flex-direction: column; padding: 20px; margin-bottom: 0;">
-                <h3><i class="fa-solid fa-gamepad" style="color: var(--mc-green);"></i> Gestión de Instancias</h3>
-                <p style="color: var(--text-muted); font-size: 0.9rem;">Organiza tus versiones de Minecraft de forma independiente. Crea perfiles distintos con configuraciones únicas para cada uno.</p>
-            </div>
-            <div class="version-block" style="flex-direction: column; padding: 20px; margin-bottom: 0;">
-                <h3><i class="fa-solid fa-memory" style="color: var(--mc-green);"></i> Optimización</h3>
-                <p style="color: var(--text-muted); font-size: 0.9rem;">Detección automática de memoria RAM y configuración personalizada para que el juego corra sin tirones.</p>
-            </div>
-            <div class="version-block" style="flex-direction: column; padding: 20px; margin-bottom: 0;">
-                <h3><i class="fa-solid fa-user-gear" style="color: var(--mc-green);"></i> Cuentas No Premium</h3>
-                <p style="color: var(--text-muted); font-size: 0.9rem;">Gestión sencilla de nombres de usuario para entrar a servidores offline rápidamente.</p>
+        <!-- SECCIÓN HERO: DESCARGA AUTOMÁTICA (Inyectado por script.js) -->
+        <h2 class="section-title"><i class="fa-solid fa-star text-gold"></i> Versión Recomendada</h2>
+        <div id="latest-hero-container">
+            <div class="skeleton-loader">
+                <i class="fa-solid fa-circle-notch fa-spin"></i> Sincronizando con los servidores de GitHub...
             </div>
         </div>
 
-        <!-- Sección de enlaces -->
-        <section class="version-block" style="padding: 30px; display: block;">
-            <h2>Enlaces de Interés</h2>
-            <p style="color: var(--text-muted); margin-bottom: 20px;">Accede a nuestra documentación, repositorios y recursos aquí:</p>
-            
-            <ul style="list-style: none; padding: 0;">
-                <li style="margin-bottom: 10px;">
-                    <a href="#" class="btn-download-action" style="max-width: 300px; text-decoration: none;">
-                        <i class="fa-brands fa-github"></i> Repositorio de GitHub
+        <!-- ¿Qué es Kurai? -->
+        <section class="version-block main-about-block">
+            <div class="version-content">
+                <h2>¿Qué es Kurai Launcher?</h2>
+                <p class="version-summary" style="margin-bottom: 0;">
+                    <strong>Kurai Launcher</strong> es un gestor de Minecraft creado por <strong>Suzu Kurai</strong>, diseñado para ofrecer una experiencia limpia y libre de complicaciones[cite: 4]. El objetivo es ofrecer un entorno cómodo capaz de gestionar tus instancias, optimizar el rendimiento del juego y facilitar el acceso a tus partidas bajo una interfaz moderna[cite: 4].
+                </p>
+            </div>
+        </section>
+
+        <!-- Características clave (Grid Limpio) -->
+        <h2 class="section-title"><i class="fa-solid fa-wand-magic-sparkles"></i> Características Clave</h2>
+        <div class="features-grid">
+            <div class="version-block feature-card">
+                <h3><i class="fa-solid fa-gamepad feature-icon-green"></i> Gestión de Instancias</h3>
+                <p>Organiza tus versiones de Minecraft de forma independiente[cite: 4]. Crea perfiles distintos con configuraciones únicas para cada uno[cite: 4].</p>
+            </div>
+            <div class="version-block feature-card">
+                <h3><i class="fa-solid fa-memory feature-icon-green"></i> Optimización</h3>
+                <p>Detección automática de memoria RAM y configuración personalizada para que el juego corra sin tirones[cite: 4].</p>
+            </div>
+            <div class="version-block feature-card">
+                <h3><i class="fa-solid fa-user-gear feature-icon-green"></i> Cuentas No Premium</h3>
+                <p>Gestión sencilla de nombres de usuario para entrar a servidores offline rápidamente[cite: 4].</p>
+            </div>
+        </div>
+
+        <!-- Sección de enlaces de interés -->
+        <section class="version-block links-section">
+            <div class="version-content">
+                <h2>Enlaces de Interés</h2>
+                <p class="version-summary">Accede a nuestra documentación, repositorios oficiales y comunidades aquí[cite: 4]:</p>
+                
+                <div class="links-button-container">
+                    <a href="https://github.com/SuzuKurai/KuraiLauncher" target="_blank" class="btn-download-action available">
+                        <i class="fa-brands fa-github"></i> <span>Repositorio de GitHub</span>
                     </a>
-                </li>
-                <li style="margin-bottom: 10px;">
-                    <a href="#" class="btn-download-action" style="max-width: 300px; text-decoration: none; background: #5865f2;">
-                        <i class="fa-brands fa-discord"></i> Servidor de Discord
+                    <a href="#" class="btn-download-action social-discord">
+                        <i class="fa-brands fa-discord"></i> <span>Servidor de Discord</span>
                     </a>
-                </li>
-                <!-- Aquí puedes ir agregando tus nuevos enlaces poco a poco -->
-            </ul>
+                    <!-- Agrega más enlaces duplicando este bloque de botón si lo necesitas -->
+                </div>
+            </div>
         </section>
 
     </main>
 
     <footer class="changelog-footer">
-        <p>&copy; 2026 Kurai Launcher. Desarrollado con tecnología Electron.</p>
+        <p>&copy; 2026 Kurai Launcher. Desarrollado con tecnología Electron[cite: 4].</p>
     </footer>
 
+    <script src="script.js"></script>
 </body>
 </html>
