@@ -8,4 +8,4 @@
 *   **Código abierto:** Revisa en cualquier momento el código que estás ejecutando entrando en este repositorio.
 
 # 📞 Contacto y Soporte
-Si tienes dudas, sugerencias o encontraste algún error, puedes contactarnos a través de nuestro (Discord)[https://discord.gg/vzRnW6SWMv]
+Si tienes dudas, sugerencias o encontraste algún error, puedes contactarnos a través de nuestro [Discord](https://discord.gg/vzRnW6SWMv)
