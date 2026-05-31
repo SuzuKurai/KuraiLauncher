@@ -7,6 +7,10 @@ const msmc = require('msmc');
 const profilesManager = require('./profiles-manager');
 const launcher = new Client();
 
+// CONSTANTES DE VERSIÓN DEL LAUNCHER
+const LAUNCHER_VERSION = '1.0.0-beta.1'; // Cambia esto manualmente con cada lanzamiento, o implementa un sistema de versionado automático para mantenerlo siempre actualizado.
+const UPDATE_CHECK_URL = 'https://raw.githubusercontent.com/SuzuKurai/KuraiLauncher/refs/heads/main/launcher-minecraft/version.json';
+
 // --- CONFIGURACIÓN CENTRALIZADA DE LOGS ---
 const logsDir = path.join(app.getPath('appData'), '.minecraft', '.KuraiLauncher', 'logs');
 if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir, { recursive: true });
@@ -23,10 +27,6 @@ function saveLogToFile(text) {
         });
     }
 }
-
-// CONSTANTES DE VERSIÓN DEL LAUNCHER
-const LAUNCHER_VERSION = '0.0.1-beta.4';
-const UPDATE_CHECK_URL = 'https://raw.githubusercontent.com/SuzuKurai/KuraiLauncher/refs/heads/main/launcher-minecraft/version.json';
 
 const rutaRoaming = app.getPath('appData'); 
 const cacheKurai = path.join(rutaRoaming, '.minecraft', '.KuraiLauncher', 'cache');
