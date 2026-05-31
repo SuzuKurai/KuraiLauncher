@@ -773,13 +773,13 @@
                     
                     // Botones de Skins contextuales
                     const skinButtonHTML = isPremium
-                        ? `<button class="btn-action-profile" onclick="event.stopPropagation(); ipcRenderer.send('open-url', 'https://www.minecraft.net/msaprofile/mygames/editskin')" title="Cambiar Skin en la Web Oficial de Minecraft">🌐</button>`
-                        : `<button class="btn-action-profile" onclick="event.stopPropagation(); triggerSkinUpload('${accName}')" title="Subir Skin Local (PNG)">🖼️</button>`;
+                        ? `<button class="btn-action-profile" onclick="event.stopPropagation(); ipcRenderer.send('open-url', 'https://www.minecraft.net/msaprofile/mygames/editskin')" title="Cambiar Skin en la Web Oficial de Minecraft"><i class="fa fa-globe" aria-hidden="true"></i></button>`
+                        : `<button class="btn-action-profile" onclick="event.stopPropagation(); triggerSkinUpload('${accName}')" title="Subir Skin Local (PNG)"><i class="fa fa-upload" aria-hidden="true"></i></button>`;
 
                     const accionesHTML = `
                         <div style="display: flex; gap: 4px;">
                             ${skinButtonHTML}
-                            <button class="btn-action-profile delete btn-eliminar-cuenta" title="Eliminar cuenta">🗑️</button>
+                            <button class="btn-action-profile delete btn-eliminar-cuenta" title="Eliminar cuenta"><i class="fa fa-trash" aria-hidden="true"></i></button>
                         </div>
                     `;
 
