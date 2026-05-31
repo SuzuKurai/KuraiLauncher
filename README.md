@@ -7,5 +7,8 @@
 *   **Privacidad por Defecto:** No recopilamos tus datos de uso. Todo se procesa de manera local.
 *   **Código abierto:** Revisa en cualquier momento el código que estás ejecutando entrando en este repositorio.
 
-# 📞 Contacto y Soporte
+## 📞 Contacto y Soporte
 Si tienes dudas, sugerencias o encontraste algún error, puedes contactarnos a través de nuestro [Discord](https://discord.gg/vzRnW6SWMv)
+
+## 📜 Licencia
+Este proyecto está bajo la Licencia MIT. Esto significa que eres libre de usar, modificar y distribuir el software, siempre y cuando se incluya el aviso de derechos de autor original. Para más detalles, consulta el archivo LICENSE adjunto en este repositorio.
