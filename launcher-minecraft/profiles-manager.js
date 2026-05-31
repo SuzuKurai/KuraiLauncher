@@ -110,13 +110,29 @@ function selectAccount(username) {
     } catch (e) {}
 }
 
-function deleteAccount(username) {
+function deleteAccount(accountToDel) {
     try {
         const data = getAll();
-        data.accounts = data.accounts.filter(acc => acc !== username);
-        if (data.selectedAccount === username) data.selectedAccount = "";
+        
+        // Averiguamos el nombre de usuario de la cuenta que queremos borrar (sea string u objeto)
+        const nameToDel = typeof accountToDel === 'object' ? accountToDel.username : accountToDel;
+
+        // Filtramos comparando los nombres de usuario de forma limpia
+        data.accounts = data.accounts.filter(acc => {
+            const currentName = typeof acc === 'object' ? acc.username : acc;
+            return currentName !== nameToDel;
+        });
+
+        // Si la cuenta que borramos era la seleccionada actual, vaciamos la selección
+        const activeName = typeof data.selectedAccount === 'object' ? data.selectedAccount.username : data.selectedAccount;
+        if (activeName === nameToDel) {
+            data.selectedAccount = "";
+        }
+
         save(data);
-    } catch (e) {}
+    } catch (e) {
+        console.error("Error al borrar la cuenta en el backend:", e);
+    }
 }
 
 function saveSettings(newSettings) {

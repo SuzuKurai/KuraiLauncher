@@ -2,8 +2,9 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8"/>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://suzukurai.github.io; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://suzukurai.github.io; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data: https: https://minotar.net; font-src 'self' https://cdnjs.cloudflare.com; connect-src 'self' https:;">
     <title>Kurai Launcher</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #111116; color: white; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         
@@ -210,7 +211,7 @@
                     <span class="account-widget-name" id="active-account-name">Cargando...</span>
                     <span class="account-widget-status" id="active-account-premium-status">En línea</span>
                 </div>
-                <span style="font-size: 12px; color: #4a4a5a; margin-right: 4px;">⚙️</span>
+                <span style="font-size: 12px; color: #ffffff; margin-right: 4px;"><i class="fa fa-cog" aria-hidden="true"></i></span>
             </div>
         </div>
 
@@ -227,7 +228,7 @@
                 <button class="btn-launch" id="launch-btn">JUGAR</button>
                 
                 <div class="dock-right-actions">
-                    <button class="btn-dock-icon" id="open-settings-btn" title="Ajustes del Launcher">🔧</button>
+                    <button class="btn-dock-icon" id="open-settings-btn" title="Ajustes del Launcher"><i class="fa fa-wrench" aria-hidden="true"></i></button>
                 </div>
             </div>
 
@@ -239,7 +240,7 @@
                 <div class="panel-scrollable-content">
                     <div class="settings-section-title">Cuenta Oficial</div>
                     <button class="btn-submit" id="microsoft-login-btn" style="background: linear-gradient(135deg, #107c10, #0b5a0b); margin-top: 0; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 700; margin-bottom: 15px;">
-                        🎮 Iniciar Sesión con Microsoft
+                        <i class="fa fa-gamepad" aria-hidden="true"></i> Iniciar Sesión con Microsoft
                     </button>
 
                     <div class="settings-section-title">Añadir Nuevo Perfil No-Premium</div>
@@ -634,6 +635,10 @@
         function renderAll(data) {
             lastLauncherData = data; 
             currentProfilesCache = data.list || [];
+            
+            // ==========================================
+            // 1. RENDERIZADO DE PERFILES DE MINECRAFT
+            // ==========================================
             const container = document.getElementById('profiles-container');
             container.innerHTML = '';
 
@@ -648,8 +653,8 @@
                             <span class="profile-version">Minecraft ${p.version}</span>
                         </div>
                         <div class="profile-actions-buttons">
-                            <button class="btn-action-profile" onclick="openEditProfileMode('${p.id}')" title="Editar Perfil">🔧</button>
-                            <button class="btn-action-profile delete" onclick="ipcRenderer.send('delete-profile', '${p.id}')" title="Eliminar Perfil">🗑️</button>
+                            <button class="btn-action-profile" onclick="openEditProfileMode('${p.id}')" title="Editar Perfil"><i class="fa fa-wrench" aria-hidden="true"></i></button>
+                            <button class="btn-action-profile delete" onclick="ipcRenderer.send('delete-profile', '${p.id}')" title="Eliminar Perfil"><i class="fa fa-trash" aria-hidden="true"></i></button>
                         </div>
                     `;
                     container.appendChild(card);
@@ -658,14 +663,15 @@
                 container.innerHTML = '<div style="font-size:12px; color:#525266; text-align:center; padding:20px;">No hay perfiles creados</div>';
             }
 
+            // Captura de elementos de la interfaz para cuentas
             const activeNameEl = document.getElementById('active-account-name');
             const activeAvatarEl = document.getElementById('active-account-avatar');
             const activeStatusEl = document.getElementById('active-account-premium-status');
             const accountsListContainer = document.getElementById('accounts-list-container');
-            
-            accountsListContainer.innerHTML = '';
-            
-            // 1. Extraemos de forma segura el string del nombre seleccionado
+
+            // ==========================================
+            // 2. LOGICA DE DETECCIÓN DE LA CUENTA ACTIVA
+            // ==========================================
             let activeUsernameStr = "KuraiUser";
             if (data.selectedAccount) {
                 activeUsernameStr = (typeof data.selectedAccount === 'object') ? data.selectedAccount.username : data.selectedAccount;
@@ -674,54 +680,85 @@
                 activeUsernameStr = (typeof firstAccount === 'object') ? firstAccount.username : firstAccount;
             }
 
-            // 2. BUSCAMOS el objeto real dentro de la lista para saber si es Premium o no
+            // Buscamos el objeto de la cuenta actual en el array para verificar Premium
             const cuentaRealConDatos = data.accounts ? data.accounts.find(acc => {
                 const name = (typeof acc === 'object') ? acc.username : acc;
                 return name === activeUsernameStr;
             }) : null;
 
-            // 3. Ahora sí evaluamos correctamente basándonos en la cuenta guardada
             let activeIsPremium = false;
             if (cuentaRealConDatos && typeof cuentaRealConDatos === 'object') {
                 activeIsPremium = cuentaRealConDatos.isPremium || false;
             }
 
-            // Renderizar Widget de Cuenta Seleccionada en la Sidebar
-            const activeStoredAvatar = localStorage.getItem('avatar_' + activeUsernameStr);
-            activeNameEl.innerText = activeUsernameStr;
-            activeStatusEl.innerText = activeIsPremium ? "PREMIUM ✨" : "NO-PREMIUM";
-            activeStatusEl.style.color = activeIsPremium ? "#3b82f6" : "#5865f2";
-
-            if (activeStoredAvatar) {
-                activeAvatarEl.innerText = '';
-                activeAvatarEl.style.backgroundImage = `url(${activeStoredAvatar})`;
+            // ==========================================
+            // 3. ACTUALIZAR WIDGET DE CUENTA SELECCIONADA
+            // ==========================================
+            if (activeNameEl) activeNameEl.innerText = activeUsernameStr;
+            if (activeStatusEl) {
+            if (activeIsPremium) {
+                // Icono de una corona (o el que prefieras, ej: fa-shield-alt, fa-check-circle)
+                activeStatusEl.innerHTML = `<i class="fas fa-crown"></i> PREMIUM`;
+                activeStatusEl.style.color = "#f7ff0a";
             } else {
-                activeAvatarEl.style.backgroundImage = 'none';
-                activeAvatarEl.innerText = activeUsernameStr.charAt(0).toUpperCase();
+                // Icono de un usuario desconectado/offline o una cruz (ej: fa-user, fa-times-circle)
+                activeStatusEl.innerHTML = `<i class="fas fa-user"></i> NO-PREMIUM`;
+                activeStatusEl.style.color = "#5865f2";
             }
+        }
 
-            // Renderizado del Panel Lateral de Gestión de Usuarios
+            // Renderizado del avatar principal (Grande)
+            if (activeAvatarEl) {
+                if (activeIsPremium) {
+                    activeAvatarEl.innerHTML = `<img src="https://minotar.net/helm/${activeUsernameStr}/64.png" style="width: 100%; height: 100%; border-radius: 6px;" onerror="this.src='https://minotar.net/avatar/char/64.png'">`;
+                    activeAvatarEl.style.background = "transparent";
+                    activeAvatarEl.style.backgroundImage = "none";
+                } else if (localStorage.getItem(`avatar_${activeUsernameStr}`)) {
+                    const localAv = localStorage.getItem(`avatar_${activeUsernameStr}`);
+                    activeAvatarEl.innerHTML = "";
+                    activeAvatarEl.style.backgroundImage = `url(${localAv})`;
+                    activeAvatarEl.style.backgroundSize = "cover";
+                    activeAvatarEl.style.backgroundPosition = "center";
+                } else {
+                    const activeColor = localStorage.getItem(`avatar_color_${activeUsernameStr}`) || '#252533';
+                    activeAvatarEl.innerHTML = `<span style="font-size: 16px; font-weight: bold; display:flex; align-items:center; justify-content:center; width:100%; height:100%;">${activeUsernameStr.charAt(0).toUpperCase()}</span>`;
+                    activeAvatarEl.style.background = activeColor;
+                    activeAvatarEl.style.backgroundImage = "none";
+                }
+            }
+            
+            // Activa o desactiva el botón de jugar según si hay cuentas seleccionadas
+            const btnLaunch = document.getElementById('btn-launch');
+            if (btnLaunch) btnLaunch.disabled = !data.selectedAccount;
+
+            // ==========================================
+            // 4. RENDERIZADO DE LA LISTA DE CUENTAS EN EL PANEL
+            // ==========================================
+            accountsListContainer.innerHTML = ''; // Limpiamos el contenedor antes de rellenarlo
+
             if (data.accounts && data.accounts.length > 0) {
                 data.accounts.forEach(acc => {
-                    // Soporte para arreglos de strings o de objetos estructurados
                     const isAccountObj = (typeof acc === 'object');
                     const accName = isAccountObj ? acc.username : acc;
                     const isPremium = isAccountObj ? acc.isPremium : false;
-                    
                     const isSelected = (accName === activeUsernameStr);
                     const accountAvatar = localStorage.getItem('avatar_' + accName);
                     
                     let avatarStyle = '';
                     let avatarContent = '';
-                    
-                    if(accountAvatar) {
-                        avatarStyle = `background-image: url(${accountAvatar});`;
+
+                    // Configurar diseño de los mini avatares de la lista
+                    if (isPremium) {
+                        avatarContent = `<img src="https://minotar.net/helm/${accName}/32.png" alt="${accName}" style="width: 100%; height: 100%; border-radius: 4px; display: block;" onerror="this.src='https://minotar.net/avatar/char/32.png'">`;
+                        avatarStyle = `background: transparent; display: flex; align-items: center; justify-content: center;`;
+                    } else if (accountAvatar) {
+                        avatarStyle = `background-image: url(${accountAvatar}); background-size: cover; background-position: center;`;
                     } else {
                         avatarContent = accName.charAt(0).toUpperCase();
-                        avatarStyle = `background: ${isSelected ? 'linear-gradient(135deg, #5865f2, #404eed)' : '#252533'};`;
+                        avatarStyle = `background: ${isSelected ? 'linear-gradient(135deg, #5865f2, #404eed)' : '#252533'}; display: flex; align-items: center; justify-content: center; font-weight: bold;`;
                     }
 
-                    // Determinar qué etiqueta (Badge) inyectar
+                    // Crear etiquetas de estado (Badge)
                     let badgeHTML = '';
                     if (isSelected) {
                         badgeHTML = `<span class="account-item-badge badge-active">Activo</span>`;
@@ -734,6 +771,18 @@
                     const card = document.createElement('div');
                     card.className = `account-item-card ${isSelected ? 'active' : ''}`;
                     
+                    // Botones de Skins contextuales
+                    const skinButtonHTML = isPremium
+                        ? `<button class="btn-action-profile" onclick="event.stopPropagation(); ipcRenderer.send('open-url', 'https://www.minecraft.net/msaprofile/mygames/editskin')" title="Cambiar Skin en la Web Oficial de Minecraft">🌐</button>`
+                        : `<button class="btn-action-profile" onclick="event.stopPropagation(); triggerSkinUpload('${accName}')" title="Subir Skin Local (PNG)">🖼️</button>`;
+
+                    const accionesHTML = `
+                        <div style="display: flex; gap: 4px;">
+                            ${skinButtonHTML}
+                            <button class="btn-action-profile delete btn-eliminar-cuenta" title="Eliminar cuenta">🗑️</button>
+                        </div>
+                    `;
+
                     card.innerHTML = `
                         <div class="account-item-click-area" onclick="ipcRenderer.send('select-account', '${accName}')">
                             <div class="account-avatar" style="width: 28px; height: 28px; font-size: 11px; ${avatarStyle}">
@@ -744,41 +793,63 @@
                                 <div style="display: flex;">${badgeHTML}</div>
                             </div>
                         </div>
-                        <div style="display: flex; gap: 4px;">
-                            <button class="btn-action-profile" onclick="event.stopPropagation(); triggerSkinUpload('${accName}')" title="Subir Skin/Avatar (PNG)">🖼️</button>
-                            <button class="btn-action-profile delete" onclick="event.stopPropagation(); localStorage.removeItem('skin_${accName}'); localStorage.removeItem('avatar_${accName}'); ipcRenderer.send('delete-account', '${accName}')" title="Eliminar cuenta">🗑️</button>
-                        </div>
+                        ${accionesHTML}
                     `;
+
                     accountsListContainer.appendChild(card);
+
+                    // Asignación limpia y segura del evento eliminar mediante clase interna
+                    const botonBorrar = card.querySelector('.btn-eliminar-cuenta');
+                    if (botonBorrar) {
+                        botonBorrar.addEventListener('click', (event) => {
+                            event.stopPropagation(); 
+                            
+                            localStorage.removeItem(`skin_${accName}`);
+                            localStorage.removeItem(`avatar_${accName}`);
+                            
+                            // Enviamos el objeto de la cuenta completo 'acc' para compatibilidad del backend
+                            ipcRenderer.send('delete-account', acc); 
+                        });
+                    }
                 });
             } else {
+                // Estado inicial de invitado cuando el launcher está completamente vacío
                 const card = document.createElement('div');
                 card.className = 'account-item-card active';
                 card.innerHTML = `
                     <div class="account-item-click-area">
-                        <div class="account-avatar" style="width: 28px; height: 28px; font-size: 11px;">K</div>
-                        <span class="account-widget-name" style="font-size: 13px;">KuraiUser</span>
-                        <span class="account-item-badge badge-offline">Invitado</span>
+                        <div class="account-avatar" style="width: 28px; height: 28px; font-size: 11px; background: #252533; display: flex; align-items: center; justify-content: center; font-weight: bold;">K</div>
+                        <div style="display: flex; flex-direction: column; gap: 2px;">
+                            <span class="account-widget-name" style="font-size: 13px; margin: 0;">KuraiUser</span>
+                            <div style="display: flex;"><span class="account-item-badge badge-offline">Invitado</span></div>
+                        </div>
                     </div>
                 `;
                 accountsListContainer.appendChild(card);
             }
 
-            if(data.settings) {
-                if(data.settings.maxMemory) {
+            // ==========================================
+            // 5. AJUSTES GLOBALES DESDE LA CONFIGURACIÓN
+            // ==========================================
+            if (data.settings) {
+                if (data.settings.maxMemory) {
                     const num = parseInt(data.settings.maxMemory, 10);
-                    if(!isNaN(num)) {
+                    if (!isNaN(num) && typeof ramSlider !== 'undefined' && typeof ramDisplay !== 'undefined') {
                         ramSlider.value = num;
                         ramDisplay.innerText = `${num} GB (${num * 1024} MB)`;
                     }
                 }
-                if(data.settings.gamePath) document.getElementById('global-game-path').value = data.settings.gamePath;
-                if(data.settings.launcherBehavior) document.getElementById('global-launcher-behavior').value = data.settings.launcherBehavior;
-                if(data.settings.jvmArgs) document.getElementById('global-jvm-args').value = data.settings.jvmArgs;
-                if(data.settings.saveLogs !== undefined) {
+                if (data.settings.gamePath && document.getElementById('global-game-path')) {
+                    document.getElementById('global-game-path').value = data.settings.gamePath;
+                }
+                if (data.settings.launcherBehavior && document.getElementById('global-launcher-behavior')) {
+                    document.getElementById('global-launcher-behavior').value = data.settings.launcherBehavior;
+                }
+                if (data.settings.jvmArgs && document.getElementById('global-jvm-args')) {
+                    document.getElementById('global-jvm-args').value = data.settings.jvmArgs;
+                }
+                if (data.settings.saveLogs !== undefined && document.getElementById('global-save-logs')) {
                     document.getElementById('global-save-logs').checked = data.settings.saveLogs;
-                } else {
-                    document.getElementById('global-save-logs').checked = false;
                 }
             }
         }
