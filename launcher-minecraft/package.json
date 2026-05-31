@@ -37,7 +37,7 @@
       "shortcutName": "Kurai Launcher"
     },
     "portable": {
-      "artifactName": "${productName}_Portable_v${version}.${ext}",
+      "artifactName": "${productName}.Portable.v${version}.${ext}",
       "splashImage": null
     },
     "files": [
