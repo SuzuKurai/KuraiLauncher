@@ -110,14 +110,13 @@ document.addEventListener('DOMContentLoaded', () => {
         heroContainer.innerHTML = `
             <div class="hero-download-card">
                 <div class="hero-meta">
-                    <h3>${release.name || release.tag_name} <span class="hero-tag-badge">${badgeTexto}</span></h3>
+                    <h3>Kurai Launcher <span class="hero-tag-badge">${badgeTexto}</span></h3>
                     <p class="hero-description">
                         ${release.body ? marcarTextoComoLimpio(release.body) : "Nueva versión publicada de Kurai Launcher. Revisa el Devlog para ver la lista completa de cambios."}
                     </p>
                     <div class="hero-specs">
                         <span><i class="fa-solid fa-calendar-days"></i> Publicado: <strong>${fecha}</strong></span>
-                        <span><i class="fa-solid fa-microchip"></i> Arquitectura: <strong>x64 bits</strong></span>
-                        <span><i class="fa-solid fa-code-branch"></i> Entorno: <strong>Electron</strong></span>
+                        <span><i class="fa-solid fa-code-branch"></i> Versión: <strong>${release.tag_name}</strong></span>
                     </div>
                 </div>
                 <div class="hero-action-zone">
@@ -126,6 +125,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     </a>
                     <a href="${portableUrl}" class="btn-download-action" style="margin-top:0; background: #252532; color: var(--text-main); border: 1px solid #3d3d52;">
                         <i class="fa-solid fa-box-archive"></i> Versión Portable
+                    </a>
+                    <a href="${release.html_url}" target="_blank" class="btn-download-action" style="margin-top:0; background:transparent; border-color:#444; color: var(--text-main);">
+                        <i class="fa-solid fa-up-right-from-square"></i> Ver en GitHub
                     </a>
                 </div>
             </div>
