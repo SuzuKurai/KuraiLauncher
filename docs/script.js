@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    // =========================================================================
+// =========================================================================
     // 2. MOTOR DE AUTOMATIZACIÓN DE GITHUB API (Para el Hero de la Landing Page)
     // =========================================================================
     const GITHUB_USER = "SuzuKurai";
@@ -52,83 +52,77 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Solo ejecutamos la petición si el contenedor del Hero existe en el HTML actual (Página de Inicio)
     if (heroContainer) {
+        
         // Inicializador del sistema dinámico
-    async function cargarReleasesDesdeGitHub() {
-        try {
-            const response = await fetch(API_URL);
-            let data = null;
-
-            // Intentamos parsear el JSON de la respuesta (venga con error o con datos exitosos)
+        async function cargarLatestRelease() {
             try {
-                data = await response.json();
-            } catch (e) {
-                data = null;
-            }
+                const response = await fetch(API_URL);
+                let data = null;
 
-            // Si la respuesta NO fue exitosa (Status != 200-299)
-            if (!response.ok) {
-                const rateLimit =
-                    response.status === 403 &&
-                    (
-                        response.headers.get("X-RateLimit-Remaining") === "0" ||
-                        data?.message?.toLowerCase().includes("rate limit")
-                    );
-
-                if (rateLimit) {
-                    throw new Error("RATE_LIMIT");
+                // Intentamos parsear el JSON de la respuesta
+                try {
+                    data = await response.json();
+                } catch (e) {
+                    data = null;
                 }
 
-                throw new Error("API_ERROR");
-            }
+                // Si la respuesta NO fue exitosa (Status != 200-299)
+                if (!response.ok) {
+                    const rateLimit =
+                        response.status === 403 &&
+                        (
+                            response.headers.get("X-RateLimit-Remaining") === "0" ||
+                            data?.message?.toLowerCase().includes("rate limit")
+                        );
 
-            // ASIGNACIÓN CORRECTA: 'data' ya contiene el array de releases si response.ok es true
-            const releases = data; 
+                    if (rateLimit) {
+                        throw new Error("RATE_LIMIT");
+                    }
 
-            if (!releases || releases.length === 0) {
-                heroContainer.innerHTML = `<div class="skeleton-loader">No se han encontrado releases públicas en GitHub.</div>`;
-                return;
-            }
+                    throw new Error("API_ERROR");
+                }
 
-            // 1. GENERAR EL HERO SPOTLIGHT (Primera posición devuelta por GitHub siempre es la más reciente)
-            const latestRelease = releases[0];
-            renderHero(latestRelease);
+                const releases = data; 
 
-            // 2. GENERAR LA TABLA HISTÓRICA COMPLETA
-            renderTabla(releases);
+                if (!releases || releases.length === 0) {
+                    heroContainer.innerHTML = `<div class="skeleton-loader">No se han encontrado releases públicas en GitHub.</div>`;
+                    return;
+                }
 
-            // 3. ACTIVAR LOS FILTROS DINÁMICOS
-            inicializarFiltros();
+                // 1. GENERAR EL HERO SPOTLIGHT (Primera posición devuelta por GitHub siempre es la más reciente)
+                const latestRelease = releases[0];
+                renderizarHeroDestacado(latestRelease);
 
-        } catch (error) {
-            console.error("Error cargando descargas:", error);
+            } catch (error) {
+                console.error("Error cargando descargas:", error);
 
-            const isRateLimit = error.message === "RATE_LIMIT";
+                const isRateLimit = error.message === "RATE_LIMIT";
 
-            heroContainer.innerHTML = "";
+                heroContainer.innerHTML = "";
 
-            heroContainer.innerHTML = `
-                <div class="skeleton-loader"
-                    style="border-color: var(--color-bug); color: var(--color-bug); display:flex; flex-direction:column; gap:12px;">
+                heroContainer.innerHTML = `
+                    <div class="skeleton-loader"
+                        style="border-color: var(--color-bug); color: var(--color-bug); display:flex; flex-direction:column; gap:12px;">
 
-                    <div>
-                        <i class="fa-solid fa-triangle-exclamation"></i>
-                        ${isRateLimit
-                            ? "Límite de GitHub API alcanzado. Inténtalo más tarde."
-                            : "No se pudo conectar con GitHub. Inténtalo más tarde."}
+                        <div>
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            ${isRateLimit
+                                ? "Límite de GitHub API alcanzado. Inténtalo más tarde."
+                                : "No se pudo conectar con GitHub. Inténtalo más tarde."}
+                        </div>
+
+                        <a href="https://github.com/${GITHUB_USER}/${GITHUB_REPO}/releases"
+                        target="_blank"
+                        class="btn-download-action available"
+                        style="margin-top:10px;">
+                            <i class="fa-brands fa-github"></i>
+                            Ver releases en GitHub
+                        </a>
+
                     </div>
-
-                    <a href="https://github.com/${GITHUB_USER}/${GITHUB_REPO}/releases"
-                    target="_blank"
-                    class="btn-download-action available"
-                    style="margin-top:10px;">
-                        <i class="fa-brands fa-github"></i>
-                        Ver releases en GitHub
-                    </a>
-
-                </div>
-            `;
+                `;
+            }
         }
-    }
 
         function renderizarHeroDestacado(release) {
             // Evaluamos si marcaste la casilla "This is a pre-release" al publicarla en GitHub
@@ -183,7 +177,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         const { shell } = require('electron');
                         shell.openExternal(targetUrl);
                     }
-                    // Si se ejecuta en un navegador web común, el enlace href normal abrirá la descarga
                 });
             });
         }
@@ -196,7 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return texto;
         }
 
-        // Ejecutar sincronización asíncrona
+        // Ejecutar sincronización asíncrona (Alineado con el nombre correcto de la función)
         cargarLatestRelease();
     }
 });
