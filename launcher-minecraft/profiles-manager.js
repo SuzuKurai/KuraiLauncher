@@ -21,7 +21,12 @@ function sanitizar(data) {
         limpia = { ...limpia, ...data };
     }
     limpia.list = Array.isArray(limpia.list) ? limpia.list : [];
-    limpia.accounts = Array.isArray(limpia.accounts) ? limpia.accounts.filter(acc => typeof acc === 'string' && !acc.includes('[object Object]')) : [];
+    
+    // MODIFICADO: Ahora permite strings y objetos válidos, evitando los molestos '[object Object]' rotos
+    limpia.accounts = Array.isArray(limpia.accounts) 
+        ? limpia.accounts.filter(acc => typeof acc === 'object' || (typeof acc === 'string' && !acc.includes('[object Object]'))) 
+        : [];
+        
     limpia.settings = limpia.settings && typeof limpia.settings === 'object' ? limpia.settings : {};
     return limpia;
 }
@@ -69,15 +74,32 @@ function select(id) {
     } catch (e) {}
 }
 
-function saveAccount(username) {
+function saveAccount(accountData) {
     try {
         const data = getAll();
-        if (!data.accounts.includes(username)) {
-            data.accounts.push(username);
+        
+        // Extraemos el nombre de usuario independientemente de si es un objeto o un string
+        const targetName = typeof accountData === 'object' ? accountData.username : accountData;
+
+        // Buscamos si ya existe una cuenta con ese mismo nombre
+        const existeIdx = data.accounts.findIndex(acc => {
+            const name = typeof acc === 'object' ? acc.username : acc;
+            return name === targetName;
+        });
+
+        if (existeIdx !== -1) {
+            // Si ya existe, actualizamos los datos (por si renovó token premium)
+            data.accounts[existeIdx] = accountData;
+        } else {
+            // Si es nueva, la añadimos al array
+            data.accounts.push(accountData);
         }
-        data.selectedAccount = username;
+
+        data.selectedAccount = targetName;
         save(data);
-    } catch (e) {}
+    } catch (e) {
+        console.error("Error guardando cuenta:", e);
+    }
 }
 
 function selectAccount(username) {

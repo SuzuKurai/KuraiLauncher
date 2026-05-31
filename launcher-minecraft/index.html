@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8"/>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://suzukurai.github.io; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https:;">
     <title>Kurai Launcher</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #111116; color: white; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
@@ -74,7 +75,7 @@
         .btn-action-profile:hover { color: white; background: rgba(255,255,255,0.05); }
         .btn-action-profile.delete:hover { color: #ff5c5c; background: rgba(255,92,92,0.1); }
 
-        /* --- SISTEMA DE CUENTAS REDISEÑADO CON COMPATIBILIDAD PARA SKINS --- */
+        /* --- SISTEMA DE CUENTAS REDISEÑADO --- */
         .account-widget { 
             background: #1a1a24; border: 1px solid rgba(255,255,255,0.02); padding: 12px; 
             border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 12px; 
@@ -104,8 +105,18 @@
         .account-item-card.active { background: linear-gradient(135deg, #2b2b3d, #1f1f2e); border-color: rgba(88, 101, 242, 0.25); }
         
         .account-item-click-area { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
-        .account-item-badge { font-size: 10px; background: rgba(88, 101, 242, 0.15); color: #8a9eff; padding: 2px 8px; border-radius: 20px; font-weight: 700; }
-        /* -------------------------------------------------------------------- */
+        
+        /* Badges de optimización visual */
+        .account-item-badge { font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .badge-active { background: rgba(52, 211, 153, 0.15); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); }
+        .badge-premium { background: rgba(59, 130, 246, 0.15); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3); animation: pulseGlow 2s infinite ease-in-out; }
+        .badge-offline { background: rgba(156, 163, 175, 0.15); color: #9ca3af; border: 1px solid rgba(156, 163, 175, 0.3); }
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 0px rgba(59, 130, 246, 0); }
+            50% { box-shadow: 0 0 4px rgba(59, 130, 246, 0.4); }
+            100% { box-shadow: 0 0 0px rgba(59, 130, 246, 0); }
+        }
 
         .viewport { flex: 1; background: #0e0e13; display: flex; flex-direction: column; position: relative; }
         .devlog-container { flex: 1; width: 100%; height: 100%; border: none; background: #0e0e13; }
@@ -197,7 +208,7 @@
                 <div class="account-avatar" id="active-account-avatar">-</div>
                 <div class="account-widget-info">
                     <span class="account-widget-name" id="active-account-name">Cargando...</span>
-                    <span class="account-widget-status">En línea</span>
+                    <span class="account-widget-status" id="active-account-premium-status">En línea</span>
                 </div>
                 <span style="font-size: 12px; color: #4a4a5a; margin-right: 4px;">⚙️</span>
             </div>
@@ -220,14 +231,18 @@
                 </div>
             </div>
 
-            <!-- PANEL LATERAL DE GESTIÓN DE CUENTAS -->
             <div class="panel-overlay" id="panel-accounts">
                 <div class="panel-header">
                     <h3>Gestión de Usuarios</h3>
                     <button class="btn-close-panel" onclick="togglePanel('panel-accounts', false)">&times;</button>
                 </div>
                 <div class="panel-scrollable-content">
-                    <div class="settings-section-title">Añadir Nuevo Perfil</div>
+                    <div class="settings-section-title">Cuenta Oficial</div>
+                    <button class="btn-submit" id="microsoft-login-btn" style="background: linear-gradient(135deg, #107c10, #0b5a0b); margin-top: 0; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 700; margin-bottom: 15px;">
+                        🎮 Iniciar Sesión con Microsoft
+                    </button>
+
+                    <div class="settings-section-title">Añadir Nuevo Perfil No-Premium</div>
                     <div class="account-inline-form">
                         <input type="text" class="form-control" id="new-account-input" placeholder="Nombre de usuario..."/>
                         <button class="btn-submit" id="add-account-btn" style="margin-top: 0; padding: 0 20px;">Añadir</button>
@@ -235,8 +250,7 @@
                     
                     <div class="settings-section-title">Cuentas Guardadas</div>
                     <div class="account-list-container" id="accounts-list-container">
-                        <!-- Las cuentas se renderizarán dinámicamente aquí -->
-                    </div>
+                        </div>
                 </div>
             </div>
 
@@ -329,7 +343,6 @@
         </div>
     </div>
 
-    <!-- INPUT INVISIBLE PARA SUBIR LA SKIN -->
     <input type="file" id="skin-file-input" accept="image/png" style="display: none;" />
 
     <div id="error-profile-popup-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10001; align-items: center; justify-content: center;">
@@ -377,8 +390,8 @@
 
         let rawMojangVersions = []; 
         let currentProfilesCache = [];
-        let lastLauncherData = null; // Almacenará en caché el último estado recibido de las cuentas
-        let currentSkinTargetUsername = ""; // Rastrea a qué usuario se le va a cambiar la skin
+        let lastLauncherData = null; 
+        let currentSkinTargetUsername = ""; 
 
         function togglePanel(id, open) {
             const el = document.getElementById(id);
@@ -563,13 +576,28 @@
             input.value = '';
         });
 
-        /* --- LOGICA EXCLUSIVA PARA EL PROCESAMIENTO DE IMAGENES/SKINS --- */
+        // Evento para capturar el Login de Microsoft
+        document.getElementById('microsoft-login-btn').addEventListener('click', async () => {
+            document.getElementById('status').innerText = "Abriendo inicio de sesión de Microsoft...";
+            togglePanel('panel-accounts', false);
+
+            const result = await ipcRenderer.invoke('login-microsoft');
+
+            if (result.success) {
+                document.getElementById('status').innerText = `Cuenta Premium vinculada: ¡Bienvenido ${result.username}!`;
+                const data = await ipcRenderer.invoke('get-profiles');
+                renderAll(data);
+            } else {
+                document.getElementById('status').innerText = `Error Premium: ${result.error}`;
+                alert("No se pudo iniciar sesión con Microsoft: " + result.error);
+            }
+        });
+
         function triggerSkinUpload(username) {
             currentSkinTargetUsername = username;
             document.getElementById('skin-file-input').click();
         }
 
-        /* --- BUSCA ESTA SECCIÓN EN EL SCRIPT DE TU INDEX.HTML --- */
         document.getElementById('skin-file-input').addEventListener('change', (e) => {
             if(e.target.files && e.target.files[0]) {
                 const file = e.target.files[0];
@@ -588,12 +616,9 @@
                             ctx.drawImage(img, 40, 8, 8, 8, 0, 0, 8, 8);
                             
                             const headBase64 = canvas.toDataURL('image/png');
-                            
-                            // ¡EL CAMBIO AQUÍ! Guardamos ambos por separado
                             localStorage.setItem('avatar_' + currentSkinTargetUsername, headBase64);
-                            localStorage.setItem('skin_' + currentSkinTargetUsername, event.target.result); // Full Skin
+                            localStorage.setItem('skin_' + currentSkinTargetUsername, event.target.result); 
                         } else {
-                            // Si es una foto de perfil común, se usa la misma para todo
                             localStorage.setItem('avatar_' + currentSkinTargetUsername, event.target.result);
                             localStorage.setItem('skin_' + currentSkinTargetUsername, event.target.result);
                         }
@@ -605,10 +630,9 @@
                 reader.readAsDataURL(file);
             }
         });
-        /* ----------------------------------------------------------------- */
 
         function renderAll(data) {
-            lastLauncherData = data; // Guardamos en caché local para recargas rápidas
+            lastLauncherData = data; 
             currentProfilesCache = data.list || [];
             const container = document.getElementById('profiles-container');
             container.innerHTML = '';
@@ -634,37 +658,58 @@
                 container.innerHTML = '<div style="font-size:12px; color:#525266; text-align:center; padding:20px;">No hay perfiles creados</div>';
             }
 
-            // GESTIÓN Y RENDERIZADO DE CUENTAS CON SKIN
             const activeNameEl = document.getElementById('active-account-name');
             const activeAvatarEl = document.getElementById('active-account-avatar');
+            const activeStatusEl = document.getElementById('active-account-premium-status');
             const accountsListContainer = document.getElementById('accounts-list-container');
             
             accountsListContainer.innerHTML = '';
             
-            let currentActiveAccount = data.selectedAccount;
-            if(!currentActiveAccount && data.accounts && data.accounts.length > 0) {
-                currentActiveAccount = data.accounts[0];
-            } else if(!currentActiveAccount) {
-                currentActiveAccount = "KuraiUser";
+            // 1. Extraemos de forma segura el string del nombre seleccionado
+            let activeUsernameStr = "KuraiUser";
+            if (data.selectedAccount) {
+                activeUsernameStr = (typeof data.selectedAccount === 'object') ? data.selectedAccount.username : data.selectedAccount;
+            } else if (data.accounts && data.accounts.length > 0) {
+                const firstAccount = data.accounts[0];
+                activeUsernameStr = (typeof firstAccount === 'object') ? firstAccount.username : firstAccount;
             }
 
-            // --- ¡CORRECCIÓN AQUÍ! Usamos 'avatar_' para pintar la carita en el Widget Lateral ---
-            const activeStoredAvatar = localStorage.getItem('avatar_' + currentActiveAccount);
-            activeNameEl.innerText = currentActiveAccount;
+            // 2. BUSCAMOS el objeto real dentro de la lista para saber si es Premium o no
+            const cuentaRealConDatos = data.accounts ? data.accounts.find(acc => {
+                const name = (typeof acc === 'object') ? acc.username : acc;
+                return name === activeUsernameStr;
+            }) : null;
+
+            // 3. Ahora sí evaluamos correctamente basándonos en la cuenta guardada
+            let activeIsPremium = false;
+            if (cuentaRealConDatos && typeof cuentaRealConDatos === 'object') {
+                activeIsPremium = cuentaRealConDatos.isPremium || false;
+            }
+
+            // Renderizar Widget de Cuenta Seleccionada en la Sidebar
+            const activeStoredAvatar = localStorage.getItem('avatar_' + activeUsernameStr);
+            activeNameEl.innerText = activeUsernameStr;
+            activeStatusEl.innerText = activeIsPremium ? "PREMIUM ✨" : "NO-PREMIUM";
+            activeStatusEl.style.color = activeIsPremium ? "#3b82f6" : "#5865f2";
+
             if (activeStoredAvatar) {
                 activeAvatarEl.innerText = '';
                 activeAvatarEl.style.backgroundImage = `url(${activeStoredAvatar})`;
             } else {
                 activeAvatarEl.style.backgroundImage = 'none';
-                activeAvatarEl.innerText = currentActiveAccount.charAt(0).toUpperCase();
+                activeAvatarEl.innerText = activeUsernameStr.charAt(0).toUpperCase();
             }
 
-            // Renderizado de las tarjetas del Panel de Usuarios
+            // Renderizado del Panel Lateral de Gestión de Usuarios
             if (data.accounts && data.accounts.length > 0) {
                 data.accounts.forEach(acc => {
-                    const isSelected = (acc === currentActiveAccount);
-                    // --- ¡CORRECCIÓN AQUÍ! Usamos 'avatar_' en las miniaturas de la lista ---
-                    const accountAvatar = localStorage.getItem('avatar_' + acc);
+                    // Soporte para arreglos de strings o de objetos estructurados
+                    const isAccountObj = (typeof acc === 'object');
+                    const accName = isAccountObj ? acc.username : acc;
+                    const isPremium = isAccountObj ? acc.isPremium : false;
+                    
+                    const isSelected = (accName === activeUsernameStr);
+                    const accountAvatar = localStorage.getItem('avatar_' + accName);
                     
                     let avatarStyle = '';
                     let avatarContent = '';
@@ -672,25 +717,36 @@
                     if(accountAvatar) {
                         avatarStyle = `background-image: url(${accountAvatar});`;
                     } else {
-                        avatarContent = acc.charAt(0).toUpperCase();
+                        avatarContent = accName.charAt(0).toUpperCase();
                         avatarStyle = `background: ${isSelected ? 'linear-gradient(135deg, #5865f2, #404eed)' : '#252533'};`;
+                    }
+
+                    // Determinar qué etiqueta (Badge) inyectar
+                    let badgeHTML = '';
+                    if (isSelected) {
+                        badgeHTML = `<span class="account-item-badge badge-active">Activo</span>`;
+                    } else if (isPremium) {
+                        badgeHTML = `<span class="account-item-badge badge-premium">Premium ✨</span>`;
+                    } else {
+                        badgeHTML = `<span class="account-item-badge badge-offline">No-Premium</span>`;
                     }
 
                     const card = document.createElement('div');
                     card.className = `account-item-card ${isSelected ? 'active' : ''}`;
                     
                     card.innerHTML = `
-                        <div class="account-item-click-area" onclick="ipcRenderer.send('select-account', '${acc}')">
+                        <div class="account-item-click-area" onclick="ipcRenderer.send('select-account', '${accName}')">
                             <div class="account-avatar" style="width: 28px; height: 28px; font-size: 11px; ${avatarStyle}">
                                 ${avatarContent}
                             </div>
-                            <span class="account-widget-name" style="font-size: 13px;">${acc}</span>
-                            ${isSelected ? '<span class="account-item-badge">Activo</span>' : ''}
+                            <div style="display: flex; flex-direction: column; gap: 2px;">
+                                <span class="account-widget-name" style="font-size: 13px; margin: 0;">${accName}</span>
+                                <div style="display: flex;">${badgeHTML}</div>
+                            </div>
                         </div>
                         <div style="display: flex; gap: 4px;">
-                            <button class="btn-action-profile" onclick="event.stopPropagation(); triggerSkinUpload('${acc}')" title="Subir Skin/Avatar (PNG)">🖼️</button>
-                            <!-- Eliminación limpia de skin y avatar en el botón de abajo -->
-                            <button class="btn-action-profile delete" onclick="event.stopPropagation(); localStorage.removeItem('skin_${acc}'); localStorage.removeItem('avatar_${acc}'); ipcRenderer.send('delete-account', '${acc}')" title="Eliminar cuenta">🗑️</button>
+                            <button class="btn-action-profile" onclick="event.stopPropagation(); triggerSkinUpload('${accName}')" title="Subir Skin/Avatar (PNG)">🖼️</button>
+                            <button class="btn-action-profile delete" onclick="event.stopPropagation(); localStorage.removeItem('skin_${accName}'); localStorage.removeItem('avatar_${accName}'); ipcRenderer.send('delete-account', '${accName}')" title="Eliminar cuenta">🗑️</button>
                         </div>
                     `;
                     accountsListContainer.appendChild(card);
@@ -702,7 +758,7 @@
                     <div class="account-item-click-area">
                         <div class="account-avatar" style="width: 28px; height: 28px; font-size: 11px;">K</div>
                         <span class="account-widget-name" style="font-size: 13px;">KuraiUser</span>
-                        <span class="account-item-badge" style="background: rgba(255,170,0,0.15); color: #ffaa00;">Invitado</span>
+                        <span class="account-item-badge badge-offline">Invitado</span>
                     </div>
                 `;
                 accountsListContainer.appendChild(card);
@@ -728,8 +784,9 @@
         }
 
         document.getElementById('launch-btn').addEventListener('click', () => {
-            const activeUser = lastLauncherData?.selectedAccount || "KuraiUser";
-            const fullSkinData = localStorage.getItem('skin_' + activeUser) || "";
+            let activeUser = lastLauncherData?.selectedAccount || "KuraiUser";
+            let activeUsernameStr = (typeof activeUser === 'object') ? activeUser.username : activeUser;
+            const fullSkinData = localStorage.getItem('skin_' + activeUsernameStr) || "";
             
             ipcRenderer.send('launch-game', fullSkinData);
         });

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "minecraft-launcher-core": "^3.18.2",
+    "msmc": "^5.0.5",
     "xboxlive-auth": "^0.0.1-security"
   },
   "devDependencies": {

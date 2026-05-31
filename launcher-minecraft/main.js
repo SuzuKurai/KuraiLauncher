@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os'); 
 const { Client, Authenticator } = require('minecraft-launcher-core');
+const msmc = require('msmc');
 const profilesManager = require('./profiles-manager');
 const launcher = new Client();
 
@@ -170,7 +171,10 @@ function getSanitizedData() {
         if (managerData && typeof managerData === 'object') data = { ...data, ...managerData };
     } catch (e) {}
     data.list = Array.isArray(data.list) ? data.list : [];
-    data.accounts = Array.isArray(data.accounts) ? data.accounts.filter(acc => typeof acc === 'string') : [];
+    
+    // CAMBIO AQUÍ: Ahora permitimos tanto strings (no-premium) como objetos (premium)
+    data.accounts = Array.isArray(data.accounts) ? data.accounts.filter(acc => typeof acc === 'string' || typeof acc === 'object') : [];
+    
     data.settings = data.settings && typeof data.settings === 'object' ? data.settings : {};
     return data;
 }
@@ -280,6 +284,39 @@ function setupCustomSkinLoader(minecraftRoot, username, base64Data) {
     }
 }
 
+// --- MANEJADOR DE AUTENTICACIÓN PREMIUM (MICROSOFT) ---
+ipcMain.handle('login-microsoft', async () => {
+    try {
+        const authManager = new msmc.Auth("249d8bd5-fbef-42a3-a443-05e94664b93e"); 
+        const xboxManager = await authManager.launch("raw");
+        const mcUser = await xboxManager.getMinecraft();
+
+        if (mcUser && mcUser.mclc()) {
+            const profile = mcUser.profile;
+            
+            const premiumAccountObj = {
+                username: profile.name,
+                isPremium: true,
+                mclcAuth: mcUser.mclc() 
+            };
+
+            // CAMBIO AQUÍ: Guardamos el objeto completo, no solo el string del nombre
+            profilesManager.saveAccount(premiumAccountObj); 
+            
+            // Forzamos la selección automática de la nueva cuenta premium añadida
+            if (typeof profilesManager.selectAccount === 'function') {
+                profilesManager.selectAccount(premiumAccountObj.username);
+            }
+            
+            return { success: true, username: profile.name };
+        }
+        return { success: false, error: 'No se pudo obtener el perfil de Minecraft.' };
+    } catch (error) {
+        console.error("Error en login de Microsoft:", error);
+        return { success: false, error: error.message };
+    }
+});
+
 // --- EVENTO DE LANZAMIENTO INTEGRAL (SISTEMA CUSTOM SKIN LOADER) ---
 ipcMain.on('launch-game', async (event, fullSkinBase64) => {
     const data = getSanitizedData();
@@ -338,20 +375,57 @@ ipcMain.on('launch-game', async (event, fullSkinBase64) => {
         customJvmArgs = globalSettings.jvmArgs.trim().split(' ');
     }
 
-    let opts = {
-        authorization: {
+    // --- DENTRO DE IPCMAIN.ON('LAUNCH-GAME') ---
+    
+    // Buscamos los datos completos de la cuenta actualmente seleccionada
+    const activeAccountName = typeof data.selectedAccount === 'object' ? data.selectedAccount.username : data.selectedAccount;
+    const accountData = data.accounts.find(acc => {
+        if (typeof acc === 'object') return acc.username === activeAccountName;
+        return acc === activeAccountName;
+    });
+
+    let authOpts = {};
+
+    // Si la cuenta es un objeto y tiene los datos de autenticación de Microsoft válidos
+    if (accountData && typeof accountData === 'object' && accountData.isPremium && accountData.mclcAuth) {
+        // Inyectamos los tokens oficiales de Microsoft para saltar el modo Offline
+        authOpts = accountData.mclcAuth;
+        console.log(`[LAUNCHER] Iniciando en modo PREMIUM como: ${activeAccountName}`);
+    } else {
+        // Si no, iniciamos en modo Offline tradicional (No-Premium)
+        authOpts = {
             access_token: "00000000000000000000000000000000", client_token: "00000000000000000000000000000000",
             accessToken: "00000000000000000000000000000000", clientToken: "00000000000000000000000000000000",
             uuid: "00000000-0000-0000-0000-000000000000", name: activeUser, user_properties: "{}",
             meta: { type: "mojang", demo: false }
-        },
+        };
+        console.log(`[LAUNCHER] Iniciando en modo NO-PREMIUM como: ${activeUser}`);
+    }
+
+    let opts = {
+        authorization: authOpts, // Usará los datos dinámicos que acabamos de calcular
         root: finalRoot,
-        javaPath: javaPathManual,                                      
+        javaPath: javaPathManual,
         version: { number: cleanVersion, type: "release" },
         memory: { max: maxRamMb, min: minRamMb },
-        customArgs: customJvmArgs, 
+        customArgs: customJvmArgs,
         overrides: { checkStrict: false }
     };
+
+//    let opts = {
+//        authorization: {
+//            access_token: "00000000000000000000000000000000", client_token: "00000000000000000000000000000000",
+//            accessToken: "00000000000000000000000000000000", clientToken: "00000000000000000000000000000000",
+//            uuid: "00000000-0000-0000-0000-000000000000", name: activeUser, user_properties: "{}",
+//            meta: { type: "mojang", demo: false }
+//        },
+//        root: finalRoot,
+//        javaPath: javaPathManual,                                      
+//        version: { number: cleanVersion, type: "release" },
+//        memory: { max: maxRamMb, min: minRamMb },
+//        customArgs: customJvmArgs, 
+//        overrides: { checkStrict: false }
+//    };
 
     launcher.removeAllListeners('debug');
     launcher.removeAllListeners('data');
