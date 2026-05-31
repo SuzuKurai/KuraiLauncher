@@ -8,8 +8,68 @@ const profilesManager = require('./profiles-manager');
 const launcher = new Client();
 
 // CONSTANTES DE VERSIÓN DEL LAUNCHER
-const LAUNCHER_VERSION = '1.0.0-beta.1'; // Cambia esto manualmente con cada lanzamiento, o implementa un sistema de versionado automático para mantenerlo siempre actualizado.
+const LAUNCHER_VERSION = '1.0.0-beta.1'; 
 const UPDATE_CHECK_URL = 'https://raw.githubusercontent.com/SuzuKurai/KuraiLauncher/refs/heads/main/launcher-minecraft/version.json';
+
+// --- CONFIGURACIÓN DE DISCORD RICH PRESENCE (ALTA PRIORIDAD SANEADO) ---
+const DiscordRPC = require('discord-rpc-revamp');
+
+const discordClientId = 'ad348cc338d2d1bc8705f779ba93b9e7312abc74e3a9ca6402594750fbe15022'; 
+DiscordRPC.register(discordClientId);
+
+const rpc = new DiscordRPC.Client({ transport: 'ipc' });
+let rpcConnected = false;
+let startTimestamp = null;
+
+function updateDiscordPresence(details, state, partySize = 0, partyMax = 0) {
+    if (!rpcConnected || !rpc) return;
+
+    const presence = {
+        details: details,
+        state: state,
+        startTimestamp: startTimestamp,
+        largeImageKey: 'logo_grande', 
+        largeImageText: 'Kurai Launcher',
+        instance: false,
+    };
+
+    if (partyMax > 0) {
+        presence.partySize = partySize;
+        presence.partyMax = partyMax;
+    }
+
+    rpc.setActivity(presence).catch(err => console.error("Error actualizando RPC:", err));
+}
+
+function startRpcConnection() {
+    if (rpcConnected) return;
+
+    try {
+        const loginMethod = rpc.login || rpc.connect;
+        
+        if (typeof loginMethod === 'function') {
+            loginMethod.call(rpc, { clientId: discordClientId })
+                .then(() => {
+                    rpcConnected = true;
+                    startTimestamp = new Date();
+                    console.log('¡Discord Rich Presence activado con éxito!');
+                    updateDiscordPresence('En el menú principal', 'Eligiendo versión para jugar');
+                })
+                .catch((err) => {
+                    rpcConnected = false;
+                    setTimeout(startRpcConnection, 15000); // Reintentar si Discord está cerrado
+                });
+        } else {
+            console.error("No se pudo mapear el método de conexión del cliente de Discord.");
+        }
+    } catch (e) {
+        rpcConnected = false;
+        setTimeout(startRpcConnection, 15000);
+    }
+}
+
+// Iniciar conexión de alta prioridad inmediatamente
+startRpcConnection();
 
 // --- CONFIGURACIÓN CENTRALIZADA DE LOGS ---
 const logsDir = path.join(app.getPath('appData'), '.minecraft', '.KuraiLauncher', 'logs');
@@ -171,10 +231,7 @@ function getSanitizedData() {
         if (managerData && typeof managerData === 'object') data = { ...data, ...managerData };
     } catch (e) {}
     data.list = Array.isArray(data.list) ? data.list : [];
-    
-    // CAMBIO AQUÍ: Ahora permitimos tanto strings (no-premium) como objetos (premium)
     data.accounts = Array.isArray(data.accounts) ? data.accounts.filter(acc => typeof acc === 'string' || typeof acc === 'object') : [];
-    
     data.settings = data.settings && typeof data.settings === 'object' ? data.settings : {};
     return data;
 }
@@ -237,27 +294,16 @@ ipcMain.on('delete-account', (event, username) => {
     mainWindow.webContents.send('data-updated', getSanitizedData());
 });
 
-// =========================================================================
-// FUNCIÓN AUXILIAR: ASISTENTE DE CONFIGURACIÓN DE CUSTOM SKIN LOADER
-// =========================================================================
 function setupCustomSkinLoader(minecraftRoot, username, base64Data) {
     try {
-        // Rutas donde las variantes del mod buscan la configuración global (.minecraft o dentro de /config)
         const configDirRoot = path.join(minecraftRoot, 'CustomSkinLoader');
         const configDirModern = path.join(minecraftRoot, 'config', 'CustomSkinLoader');
         
         const configContent = JSON.stringify({
             version: 14,
             loadlist: [
-                {
-                    name: "KuraiLocal",
-                    type: "LocalSkin",
-                    root: ".KuraiLauncher" // Buscará texturas en .minecraft/.KuraiLauncher/skins/
-                },
-                {
-                    name: "Mojang",
-                    type: "MojangAPI" // Si no hay local, descarga de la base oficial de Minecraft
-                }
+                { name: "KuraiLocal", type: "LocalSkin", root: ".KuraiLauncher" },
+                { name: "Mojang", type: "MojangAPI" }
             ]
         }, null, 4);
 
@@ -267,7 +313,6 @@ function setupCustomSkinLoader(minecraftRoot, username, base64Data) {
         fs.writeFileSync(path.join(configDirRoot, 'CustomSkinLoader.json'), configContent, 'utf8');
         fs.writeFileSync(path.join(configDirModern, 'CustomSkinLoader.json'), configContent, 'utf8');
 
-        // Estructurar directorio de skins locales del Launcher
         const skinsDir = path.join(minecraftRoot, '.KuraiLauncher', 'skins');
         if (!fs.existsSync(skinsDir)) fs.mkdirSync(skinsDir, { recursive: true });
 
@@ -284,7 +329,6 @@ function setupCustomSkinLoader(minecraftRoot, username, base64Data) {
     }
 }
 
-// --- MANEJADOR DE AUTENTICACIÓN PREMIUM (MICROSOFT) ---
 ipcMain.handle('login-microsoft', async () => {
     try {
         const authManager = new msmc.Auth("249d8bd5-fbef-42a3-a443-05e94664b93e"); 
@@ -300,10 +344,8 @@ ipcMain.handle('login-microsoft', async () => {
                 mclcAuth: mcUser.mclc() 
             };
 
-            // CAMBIO AQUÍ: Guardamos el objeto completo, no solo el string del nombre
             profilesManager.saveAccount(premiumAccountObj); 
             
-            // Forzamos la selección automática de la nueva cuenta premium añadida
             if (typeof profilesManager.selectAccount === 'function') {
                 profilesManager.selectAccount(premiumAccountObj.username);
             }
@@ -317,7 +359,7 @@ ipcMain.handle('login-microsoft', async () => {
     }
 });
 
-// --- EVENTO DE LANZAMIENTO INTEGRAL (SISTEMA CUSTOM SKIN LOADER) ---
+// --- EVENTO DE LANZAMIENTO INTEGRAL ---
 ipcMain.on('launch-game', async (event, fullSkinBase64) => {
     const data = getSanitizedData();
     const globalSettings = data.settings || {}; 
@@ -328,7 +370,12 @@ ipcMain.on('launch-game', async (event, fullSkinBase64) => {
         return;
     }
 
-    const activeUser = data.selectedAccount || "KuraiUser";
+    const activeUser = typeof data.selectedAccount === 'object' ? data.selectedAccount.username : data.selectedAccount || "KuraiUser";
+    
+    // CAMBIO AQUÍ: Sincronizar estado de Discord al iniciar preparativos
+    startTimestamp = new Date();
+    updateDiscordPresence(`Preparando Minecraft`, `Cuenta: ${activeUser}`);
+
     mainWindow.webContents.send('status-msg', `Iniciando Minecraft versión ${currentProfile.version || "Desconocida"}...`);
 
     const defaultRoot = path.join(app.getPath('appData'), '.minecraft');
@@ -339,7 +386,6 @@ ipcMain.on('launch-game', async (event, fullSkinBase64) => {
         finalRoot = currentProfile.path;
     }
 
-    // Procesamiento seguro de la cadena Base64 entrante
     let base64Data = typeof fullSkinBase64 === 'string' ? fullSkinBase64.trim() : '';
     let esValido = false;
 
@@ -347,15 +393,12 @@ ipcMain.on('launch-game', async (event, fullSkinBase64) => {
         if (base64Data.includes(';base64,')) {
             base64Data = base64Data.split(';base64,')[1];
         }
-        if (base64Data.length > 0) {
-            esValido = true;
-        }
+        if (base64Data.length > 0) esValido = true;
     }
 
     let cleanVersion = (currentProfile.version || "1.21").toString()
         .replace(/release:/i, '').replace(/snapshot:/i, '').replace(/beta\/alpha:/i, '').trim();
 
-    // Invocar módulo inteligente de Custom Skin Loader
     setupCustomSkinLoader(finalRoot, activeUser, esValido ? base64Data : null);
 
     const parseRamToMb = (ramString) => {
@@ -375,9 +418,6 @@ ipcMain.on('launch-game', async (event, fullSkinBase64) => {
         customJvmArgs = globalSettings.jvmArgs.trim().split(' ');
     }
 
-    // --- DENTRO DE IPCMAIN.ON('LAUNCH-GAME') ---
-    
-    // Buscamos los datos completos de la cuenta actualmente seleccionada
     const activeAccountName = typeof data.selectedAccount === 'object' ? data.selectedAccount.username : data.selectedAccount;
     const accountData = data.accounts.find(acc => {
         if (typeof acc === 'object') return acc.username === activeAccountName;
@@ -386,13 +426,10 @@ ipcMain.on('launch-game', async (event, fullSkinBase64) => {
 
     let authOpts = {};
 
-    // Si la cuenta es un objeto y tiene los datos de autenticación de Microsoft válidos
     if (accountData && typeof accountData === 'object' && accountData.isPremium && accountData.mclcAuth) {
-        // Inyectamos los tokens oficiales de Microsoft para saltar el modo Offline
         authOpts = accountData.mclcAuth;
         console.log(`[LAUNCHER] Iniciando en modo PREMIUM como: ${activeAccountName}`);
     } else {
-        // Si no, iniciamos en modo Offline tradicional (No-Premium)
         authOpts = {
             access_token: "00000000000000000000000000000000", client_token: "00000000000000000000000000000000",
             accessToken: "00000000000000000000000000000000", clientToken: "00000000000000000000000000000000",
@@ -403,7 +440,7 @@ ipcMain.on('launch-game', async (event, fullSkinBase64) => {
     }
 
     let opts = {
-        authorization: authOpts, // Usará los datos dinámicos que acabamos de calcular
+        authorization: authOpts, 
         root: finalRoot,
         javaPath: javaPathManual,
         version: { number: cleanVersion, type: "release" },
@@ -412,21 +449,7 @@ ipcMain.on('launch-game', async (event, fullSkinBase64) => {
         overrides: { checkStrict: false }
     };
 
-//    let opts = {
-//        authorization: {
-//            access_token: "00000000000000000000000000000000", client_token: "00000000000000000000000000000000",
-//            accessToken: "00000000000000000000000000000000", clientToken: "00000000000000000000000000000000",
-//            uuid: "00000000-0000-0000-0000-000000000000", name: activeUser, user_properties: "{}",
-//            meta: { type: "mojang", demo: false }
-//        },
-//        root: finalRoot,
-//        javaPath: javaPathManual,                                      
-//        version: { number: cleanVersion, type: "release" },
-//        memory: { max: maxRamMb, min: minRamMb },
-//        customArgs: customJvmArgs, 
-//        overrides: { checkStrict: false }
-//    };
-
+    // Remover listeners para evitar el aviso MaxListenersExceededWarning
     launcher.removeAllListeners('debug');
     launcher.removeAllListeners('data');
     launcher.removeAllListeners('error');
@@ -437,6 +460,7 @@ ipcMain.on('launch-game', async (event, fullSkinBase64) => {
     };
 
     launcher.on('debug', (e) => { sendLogTick('debug', `[DEBUG] ${e}`); saveLogToFile(`[DEBUG] ${e}`); });
+    
     launcher.on('data', (e) => {
         sendLogTick('info', `[INFO] ${e}`); saveLogToFile(`[INFO] ${e}`); 
         if (e.includes("UnsupportedClassVersionError") || e.includes("class file version 69.0") || e.includes("LinkageError occurred")) {
@@ -450,13 +474,25 @@ ipcMain.on('launch-game', async (event, fullSkinBase64) => {
     launcher.on('error', (e) => {
         sendLogTick('error', `[ERROR] ${e.message || e}`); saveLogToFile(`[ERROR] ${e.message || e}`); 
         if(mainWindow) mainWindow.webContents.send('status-msg', `Error al lanzar: ${e.message || e}`);
+        
+        // Si el juego da error antes de abrir, regresamos el RPC al menú
+        startTimestamp = new Date();
+        updateDiscordPresence('En el menú principal', 'Planeando la siguiente partida');
     });
     
     launcher.on('progress', (e) => { if(mainWindow) mainWindow.webContents.send('progress', e); });
 
     launcher.launch(opts).then(() => {
         const behavior = globalSettings.launcherBehavior || "hide";
-        if (behavior === "hide" && mainWindow) mainWindow.minimize();
-        else if (behavior === "close") app.quit();
+        
+        // CAMBIO AQUÍ: Actualizar presencia al entrar oficialmente al juego
+        startTimestamp = new Date();
+        updateDiscordPresence('Jugando a Minecraft', `Versión: ${cleanVersion} 🚀`);
+
+        if (behavior === "hide" && mainWindow) {
+            mainWindow.minimize();
+        } else if (behavior === "close") {
+            app.quit();
+        }
     });
 });
