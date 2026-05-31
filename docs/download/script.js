@@ -10,78 +10,82 @@ document.addEventListener('DOMContentLoaded', () => {
     const filterButtons = document.querySelectorAll('.filter-bar .filter-btn');
 
     // Inicializador del sistema dinámico
+    // Inicializador del sistema dinámico
     async function cargarReleasesDesdeGitHub() {
         try {
             const response = await fetch(API_URL);
+            let data = null;
 
-                    let data;
-                    try {
-                        data = await response.json();
-                    } catch (e) {
-                        data = null;
-                    }
+            // Intentamos parsear el JSON de la respuesta (venga con error o con datos exitosos)
+            try {
+                data = await response.json();
+            } catch (e) {
+                data = null;
+            }
 
-                    if (!response.ok) {
-                        const rateLimit =
-                            response.status === 403 &&
-                            (
-                                response.headers.get("X-RateLimit-Remaining") === "0" ||
-                                data?.message?.toLowerCase().includes("rate limit")
-                            );
+            // Si la respuesta NO fue exitosa (Status != 200-299)
+            if (!response.ok) {
+                const rateLimit =
+                    response.status === 403 &&
+                    (
+                        response.headers.get("X-RateLimit-Remaining") === "0" ||
+                        data?.message?.toLowerCase().includes("rate limit")
+                    );
 
-                        if (rateLimit) {
-                            throw new Error("RATE_LIMIT");
-                        }
-
-                        throw new Error("API_ERROR");
-                    }
-
-                const releases = await response.json();
-
-                if (releases.length === 0) {
-                    heroContainer.innerHTML = `<div class="skeleton-loader">No se han encontrado releases públicas en GitHub.</div>`;
-                    return;
+                if (rateLimit) {
+                    throw new Error("RATE_LIMIT");
                 }
 
+                throw new Error("API_ERROR");
+            }
+
+            // ASIGNACIÓN CORRECTA: 'data' ya contiene el array de releases si response.ok es true
+            const releases = data; 
+
+            if (!releases || releases.length === 0) {
+                heroContainer.innerHTML = `<div class="skeleton-loader">No se han encontrado releases públicas en GitHub.</div>`;
+                return;
+            }
+
             // 1. GENERAR EL HERO SPOTLIGHT (Primera posición devuelta por GitHub siempre es la más reciente)
-            const latestRelease = data[0];
+            const latestRelease = releases[0];
             renderHero(latestRelease);
 
             // 2. GENERAR LA TABLA HISTÓRICA COMPLETA
-            renderTabla(data);
+            renderTabla(releases);
 
             // 3. ACTIVAR LOS FILTROS DINÁMICOS
             inicializarFiltros();
 
         } catch (error) {
-                console.error("Error cargando descargas:", error);
+            console.error("Error cargando descargas:", error);
 
-                const isRateLimit = error.message === "RATE_LIMIT";
+            const isRateLimit = error.message === "RATE_LIMIT";
 
-                heroContainer.innerHTML = "";
+            heroContainer.innerHTML = "";
 
-                heroContainer.innerHTML = `
-                    <div class="skeleton-loader"
-                        style="border-color: var(--color-bug); color: var(--color-bug); display:flex; flex-direction:column; gap:12px;">
+            heroContainer.innerHTML = `
+                <div class="skeleton-loader"
+                    style="border-color: var(--color-bug); color: var(--color-bug); display:flex; flex-direction:column; gap:12px;">
 
-                        <div>
-                            <i class="fa-solid fa-triangle-exclamation"></i>
-                            ${isRateLimit
-                                ? "Límite de GitHub API alcanzado. Inténtalo más tarde."
-                                : "No se pudo conectar con GitHub. Inténtalo más tarde."}
-                        </div>
-
-                        <a href="https://github.com/${GITHUB_USER}/${GITHUB_REPO}/releases"
-                        target="_blank"
-                        class="btn-download-action available"
-                        style="margin-top:10px;">
-                            <i class="fa-brands fa-github"></i>
-                            Ver releases en GitHub
-                        </a>
-
+                    <div>
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        ${isRateLimit
+                            ? "Límite de GitHub API alcanzado. Inténtalo más tarde."
+                            : "No se pudo conectar con GitHub. Inténtalo más tarde."}
                     </div>
-                `;
-            }
+
+                    <a href="https://github.com/${GITHUB_USER}/${GITHUB_REPO}/releases"
+                    target="_blank"
+                    class="btn-download-action available"
+                    style="margin-top:10px;">
+                        <i class="fa-brands fa-github"></i>
+                        Ver releases en GitHub
+                    </a>
+
+                </div>
+            `;
+        }
     }
 
     // Renderizador del Panel Superior Destacado
