@@ -20,6 +20,11 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.05); 
             z-index: 10; 
         }
+        .navbar-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
         .navbar h2 { 
             margin: 0; 
             font-size: 16px; 
@@ -31,6 +36,78 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
+
+        /* --- MENÚ DESPLEGABLE DE REDES SOCIALES --- */
+        .social-dropdown-container {
+            display: flex;
+            align-items: center;
+            position: relative;
+            gap: 8px;
+        }
+        .btn-social-toggle {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            color: #a5a5b5;
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            transition: 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .btn-social-toggle:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+        }
+        .btn-social-toggle.active {
+            transform: rotate(180deg);
+            color: #5865f2;
+            background: rgba(88, 101, 242, 0.1);
+            border-color: rgba(88, 101, 242, 0.2);
+        }
+        .social-links-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            max-width: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            background: rgba(26, 26, 36, 0.8);
+            padding: 0;
+            border-radius: 8px;
+            border: 1px solid transparent;
+        }
+        .social-links-wrapper.open {
+            max-width: 300px;
+            opacity: 1;
+            padding: 4px 8px;
+            border-color: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(8px);
+        }
+        .social-icon-link {
+            color: #a5a5b5;
+            font-size: 14px;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            text-decoration: none;
+            transition: 0.2s;
+        }
+        .social-icon-link:hover {
+            color: white;
+            transform: scale(1.1);
+        }
+        .social-icon-link.discord:hover { background: #5865f2; }
+        .social-icon-link.web:hover { background: #30007e; }
+        .social-icon-link.twitter:hover { background: #1da1f2; }
+        .social-icon-link.github:hover { background: #24292e; }
         
         .main-container { display: flex; flex: 1; height: calc(100vh - 60px); overflow: hidden; position: relative; }
         
@@ -76,7 +153,6 @@
         .btn-action-profile:hover { color: white; background: rgba(255,255,255,0.05); }
         .btn-action-profile.delete:hover { color: #ff5c5c; background: rgba(255,92,92,0.1); }
 
-        /* --- SISTEMA DE CUENTAS REDISEÑADO --- */
         .account-widget { 
             background: #1a1a24; border: 1px solid rgba(255,255,255,0.02); padding: 12px; 
             border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 12px; 
@@ -107,16 +183,15 @@
         
         .account-item-click-area { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
         
-        /* Badges de optimización visual */
         .account-item-badge { font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
         .badge-active { background: rgba(52, 211, 153, 0.15); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); }
         .badge-premium { background: rgba(59, 130, 246, 0.15); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3); animation: pulseGlow 2s infinite ease-in-out; }
         .badge-offline { background: rgba(156, 163, 175, 0.15); color: #9ca3af; border: 1px solid rgba(156, 163, 175, 0.3); }
 
         @keyframes pulseGlow {
-            0% { box-shadow: 0 0 0px rgba(59, 130, 246, 0); }
-            50% { box-shadow: 0 0 4px rgba(59, 130, 246, 0.4); }
-            100% { box-shadow: 0 0 0px rgba(59, 130, 246, 0); }
+            0% { box-shadow: 0 0px 0px rgba(59, 130, 246, 0); }
+            50% { box-shadow: 0 0px 4px rgba(59, 130, 246, 0.4); }
+            100% { box-shadow: 0 0px 0px rgba(59, 130, 246, 0); }
         }
 
         .viewport { flex: 1; background: #0e0e13; display: flex; flex-direction: column; position: relative; }
@@ -187,7 +262,20 @@
 <body>
 
     <div class="navbar">
-        <h2>KURAI LAUNCHER</h2>
+        <div class="navbar-left">
+            <h2>KURAI LAUNCHER</h2>
+            <div class="social-dropdown-container">
+                <button class="btn-social-toggle" id="social-toggle-btn" title="Ver redes sociales">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+                <div class="social-links-wrapper" id="social-links-menu">
+                    <a href="https://suzukurai.github.io/KuraiLauncher/social/discord" target="_blank" class="social-icon-link discord" title="Discord Oficial"><i class="fab fa-discord"></i></a>
+                    <a href="https://suzukurai.github.io/KuraiLauncher/" target="_blank" class="social-icon-link web" title="Web"><i class="fa fa-globe"></i></a>
+                    <a href="https://suzukurai.github.io/KuraiLauncher/social/twitter" target="_blank" class="social-icon-link twitter" title="Twitter / X"><i class="fab fa-twitter"></i></a>
+                    <a href="https://suzukurai.github.io/KuraiLauncher/social/github" target="_blank" class="social-icon-link github" title="GitHub"><i class="fab fa-github"></i></a>
+                </div>
+            </div>
+        </div>
         <div style="font-size: 11px; font-weight: 700; color: #4e4e5f; background: #1a1a24; padding: 6px 14px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.02);" id="launcher-tag-version">Cargando...</div>
     </div>
 
@@ -346,6 +434,23 @@
 
     <input type="file" id="skin-file-input" accept="image/png" style="display: none;" />
 
+    <!-- POP-UP DE ADVERTENCIA PARA VERSIONES BETA -->
+    <div id="beta-warning-popup-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10002; align-items: center; justify-content: center;">
+        <div style="background: #16161e; border: 2px solid #5865f2; padding: 35px; border-radius: 16px; width: 450px; text-align: center; color: #ffffff; box-shadow: 0px 15px 40px rgba(0,0,0,0.6);">
+            <div style="font-size: 44px; margin-bottom: 12px;"><i class="fas fa-bug"></i></div>
+            <h2 style="margin: 0 0 10px 0; font-size: 22px; color: #5865f2; font-weight: 800; letter-spacing: 0.5px;">Versión Beta Detectada</h2>
+            <p style="font-size: 14px; color: #b3b3b3; line-height: 1.6; margin-bottom: 25px;">
+                Estás utilizando una versión <strong>Beta</strong>. Ten en cuenta que puede contener bugs o errores de estabilidad. Si encuentras algún problema, por favor repórtalo en nuestro servidor de Discord con los detalles del error y utilizando la consola.
+            </p>
+            <div style="display: flex; gap: 12px; justify-content: center;">
+                <a href="https://discord.gg/tu-invitacion" target="_blank" onclick="document.getElementById('beta-warning-popup-overlay').style.display = 'none'" style="background: #5865f2; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 13px; transition: 0.2s; display: flex; align-items: center; gap: 8px;">
+                    <i class="fab fa-discord"></i> Ir a Discord
+                </a>
+                <button onclick="document.getElementById('beta-warning-popup-overlay').style.display = 'none'" style="background: #252533; color: #a5a5b5; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px;">Continuar</button>
+            </div>
+        </div>
+    </div>
+
     <div id="error-profile-popup-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10001; align-items: center; justify-content: center;">
         <div style="background: #16161e; border: 2px solid #ffaa00; padding: 30px; border-radius: 16px; width: 400px; text-align: center; color: #ffffff; box-shadow: 0px 15px 40px rgba(0,0,0,0.6);">
             <div style="font-size: 40px; margin-bottom: 10px;">✏️</div>
@@ -394,11 +499,17 @@
         let lastLauncherData = null; 
         let currentSkinTargetUsername = ""; 
 
+        // Lógica JS para el menú desplegable de redes sociales
+        document.getElementById('social-toggle-btn').addEventListener('click', function() {
+            const wrapper = document.getElementById('social-links-menu');
+            this.classList.toggle('active');
+            wrapper.classList.toggle('open');
+        });
+
         // Lista con los IDs de todos tus paneles superpuestos
         const ALL_PANELS = ['panel-accounts', 'panel-add-profile', 'panel-settings'];
 
         function togglePanel(id, open) {
-            // 1. Si vamos a abrir un panel, primero cerramos absolutamente todos los demás
             if (open) {
                 ALL_PANELS.forEach(panelId => {
                     if (panelId !== id) {
@@ -407,7 +518,6 @@
                 });
             }
 
-            // 2. Aplicamos la acción al panel solicitado
             const el = document.getElementById(id);
             if (open) {
                 el.classList.add('open');
@@ -498,7 +608,6 @@
             document.getElementById('prof-editing-id').value = "";
             document.getElementById('prof-name').value = "";
             
-            // CAMBIO AQUÍ: Asegurar que se llama pasándole 'true' para activar la exclusividad
             togglePanel('panel-add-profile', true); 
 
             const select = document.getElementById('prof-version-select');
@@ -908,6 +1017,16 @@
         detectarYConfigurarRam().then(() => {
             ipcRenderer.invoke('get-profiles').then(data => renderAll(data));
         });
+
+        ipcRenderer.invoke('get-launcher-version').then(v => {
+            document.getElementById('launcher-tag-version').innerText = `v${v}`;
+            
+            // Si la versión del launcher contiene "beta" (ignora mayúsculas/minúsculas), muestra el pop-up
+            if (v.toLowerCase().includes('beta')) {
+                document.getElementById('beta-warning-popup-overlay').style.display = 'flex';
+            }
+        });
+
     </script>
 </body>
 </html>

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Redirigiendo a Discord</title>
+    <link rel="stylesheet" href="../style.css"> <style>
+        /* Reutilizamos los estilos que ya tienes */
+        body { display: flex; justify-content: center; align-items: center; height: 100vh; background: #050505; color: white; font-family: sans-serif; }
+        .redirect-card { border-left: 4px solid #8b5cf6; background: rgba(15,15,15,0.8); padding: 30px; text-align: center; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <div class="redirect-card">
+        <h3>DISCORD</h3>
+        <p>Si esto tarda mucho, presiona el botón de abajo...</p>
+        <a href="https://discord.gg/vzRnW6SWMv" id="btn" class="btn-action">ENTRAR YA</a>
+    </div>
+
+    <script>
+        // Redirección automática en 3 segundos
+        setTimeout(() => {
+            window.location.href = "https://discord.gg/vzRnW6SWMv";
+        }, 100);
+    </script>
+</body>
+</html>

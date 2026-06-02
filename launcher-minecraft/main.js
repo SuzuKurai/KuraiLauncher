@@ -147,7 +147,8 @@ async function createWindow() {
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false,
-            webviewTag: true 
+            webviewTag: true,
+            preload: path.join(__dirname, 'preload.js')
         }
     });
 
@@ -158,6 +159,7 @@ async function createWindow() {
         checkLauncherUpdates();
         verificarJavaAlInicio(); 
     });
+
 }
 
 function verificarJavaAlInicio() {
