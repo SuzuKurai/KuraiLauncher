@@ -1,6 +1,6 @@
 {
   "name": "kurai-launcher",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0-beta.2",
   "description": "Kurai Launcher",
   "main": "main.js",
   "author": "SuzuKurai",
@@ -29,17 +29,20 @@
       "target": [
         "nsis",
         "portable",
-        "dir"
+        "dir",
+        "zip"
       ],
       "icon": "media/KuraiLauncher.ico",
-      "requestedExecutionLevel": "asInvoker"
+      "requestedExecutionLevel": "asInvoker",
+      "artifactName": "${productName}.v${version}.${ext}"
     },
     "nsis": {
       "oneClick": true,
       "allowToChangeInstallationDirectory": false,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Kurai Launcher"
+      "shortcutName": "Kurai Launcher",
+      "artifactName": "${productName}.v${version}.${ext}"
     },
     "portable": {
       "artifactName": "${productName}.Portable.v${version}.${ext}",
