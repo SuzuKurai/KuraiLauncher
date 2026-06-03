@@ -8,7 +8,7 @@ const profilesManager = require('./profiles-manager');
 const launcher = new Client();
 
 // CONSTANTES DE VERSIÓN DEL LAUNCHER
-const LAUNCHER_VERSION = '1.0.0-beta.1'; 
+const LAUNCHER_VERSION = require('./package.json').version;
 const UPDATE_CHECK_URL = 'https://raw.githubusercontent.com/SuzuKurai/KuraiLauncher/refs/heads/main/launcher-minecraft/version.json';
 
 // --- CONFIGURACIÓN DE DISCORD RICH PRESENCE (ALTA PRIORIDAD SANEADO) ---
