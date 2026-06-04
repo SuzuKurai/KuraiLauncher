@@ -9,6 +9,3 @@
 
 ## 📞 Contacto y Soporte
 Si tienes dudas, sugerencias o encontraste algún error, puedes contactarnos a través de nuestro [Discord](https://discord.gg/vzRnW6SWMv)
-
-## 📜 Licencia
-Este proyecto está bajo la Licencia MIT. Esto significa que eres libre de usar, modificar y distribuir el software, siempre y cuando se incluya el aviso de derechos de autor original. Para más detalles, consulta el archivo LICENSE adjunto en este repositorio.
