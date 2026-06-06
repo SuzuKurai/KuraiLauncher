@@ -152,6 +152,8 @@
         .btn-action-profile { background: transparent; border: none; color: #4a4a5a; cursor: pointer; font-size: 13px; padding: 5px; border-radius: 6px; transition: 0.2s; }
         .btn-action-profile:hover { color: white; background: rgba(255,255,255,0.05); }
         .btn-action-profile.delete:hover { color: #ff5c5c; background: rgba(255,92,92,0.1); }
+        .btn-action-profile.disabled { color: #3a3a4a; cursor: not-allowed; }
+        .btn-action-profile.disabled:hover { color: #3a3a4a; background: transparent; }
 
         .account-widget { 
             background: #1a1a24; border: 1px solid rgba(255,255,255,0.02); padding: 12px; 
@@ -331,6 +333,25 @@
                         <i class="fa fa-gamepad" aria-hidden="true"></i> Iniciar Sesión con Microsoft
                     </button>
 
+                    <div class="settings-section-title">Configuración para Skins No-Premium</div>
+                    <div class="form-group" style="background: #1a1a24; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.02);">
+                        <label class="filter-checkbox-label" style="margin-bottom: 8px;">
+                            <input type="checkbox" id="enable-offline-skins" style="cursor: pointer;">
+                            <span>Activar skins para cuentas No-Premium</span>
+                        </label>
+                        <p style="font-size: 11px; color: #65657b; margin: 4px 0 0 0;">
+                            Instala AuthlibInjector automáticamente (requiere Fabric/NeoForge)
+                        </p>
+                        
+                        <div id="loader-selector-container" style="margin-top: 12px; display: none;">
+                            <label style="font-size: 12px; color: #858594; margin-bottom: 4px; display: block;">Loader para skins:</label>
+                            <select class="form-control" id="offline-skins-loader" style="font-size: 13px;">
+                                <option value="fabric">Fabric (Recomendado)</option>
+                                <option value="neoforge">NeoForge</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <div class="settings-section-title">Añadir Nueva Cuenta No-Premium</div>
                     <div class="account-inline-form">
                         <input type="text" class="form-control" id="new-account-input" placeholder="Nombre de usuario..."/>
@@ -374,6 +395,20 @@
                     <div class="form-group">
                         <label>Versión de Minecraft</label>
                         <select class="select-custom" id="prof-version-select" size="10"></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Mod Loader (Opcional)</label>
+                        <select class="form-control" id="prof-loader-select" style="font-size: 13px;">
+                            <option value="">Sin Loader (Vanilla)</option>
+                            <option value="fabric">Fabric</option>
+                            <option value="neoforge">NeoForge</option>
+                            <option value="forge">Forge</option>
+                            <option value="quilt">Quilt</option>
+                        </select>
+                        <p style="font-size: 11px; color: #65657b; margin: 4px 0 0 0;">
+                            Requerido para skins no premium
+                        </p>
                     </div>
                 </div>
                 <button class="btn-submit" id="save-profile-btn">Guardar Instancia</button>
@@ -628,6 +663,11 @@
             document.getElementById('prof-editing-id').value = profile.id;
             document.getElementById('prof-name').value = profile.name;
             
+            // Cargar loader del perfil si existe
+            if (profile.loader && document.getElementById('prof-loader-select')) {
+                document.getElementById('prof-loader-select').value = profile.loader;
+            }
+            
             const select = document.getElementById('prof-version-select');
             select.innerHTML = '<option disabled>Cargando manifiesto oficial...</option>';
 
@@ -669,6 +709,7 @@
                 id: editingId ? editingId : 'prof_' + Date.now(),
                 name: name,
                 version: version,
+                loader: document.getElementById('prof-loader-select')?.value || '',
                 ram: '',
                 path: ''
             };
@@ -706,6 +747,20 @@
             input.value = '';
         });
 
+        const offlineSkinsCheckbox = document.getElementById('enable-offline-skins');
+        if (offlineSkinsCheckbox) {
+            offlineSkinsCheckbox.addEventListener('change', function() {
+                const loaderContainer = document.getElementById('loader-selector-container');
+                if (loaderContainer) {
+                    loaderContainer.style.display = this.checked ? 'block' : 'none';
+                }
+                ipcRenderer.send('save-settings', { 
+                    offlineSkinsEnabled: this.checked,
+                    offlineSkinsLoader: document.getElementById('offline-skins-loader')?.value || 'fabric'
+                });
+            });
+        }
+
         // Evento para capturar el Login de Microsoft
         document.getElementById('microsoft-login-btn').addEventListener('click', async () => {
             document.getElementById('status').innerText = "Abriendo inicio de sesión de Microsoft...";
@@ -728,7 +783,7 @@
             document.getElementById('skin-file-input').click();
         }
 
-        document.getElementById('skin-file-input').addEventListener('change', (e) => {
+document.getElementById('skin-file-input').addEventListener('change', (e) => {
             if(e.target.files && e.target.files[0]) {
                 const file = e.target.files[0];
                 const reader = new FileReader();
@@ -747,10 +802,14 @@
                             
                             const headBase64 = canvas.toDataURL('image/png');
                             localStorage.setItem('avatar_' + currentSkinTargetUsername, headBase64);
-                            localStorage.setItem('skin_' + currentSkinTargetUsername, event.target.result); 
+                            localStorage.setItem('skin_' + currentSkinTargetUsername, event.target.result);
+
+                            ipcRenderer.send('save-skin', { username: currentSkinTargetUsername, skinBase64: event.target.result });
                         } else {
                             localStorage.setItem('avatar_' + currentSkinTargetUsername, event.target.result);
                             localStorage.setItem('skin_' + currentSkinTargetUsername, event.target.result);
+
+                            ipcRenderer.send('save-skin', { username: currentSkinTargetUsername, skinBase64: event.target.result });
                         }
                         
                         if(lastLauncherData) renderAll(lastLauncherData);
@@ -900,10 +959,11 @@
                     const card = document.createElement('div');
                     card.className = `account-item-card ${isSelected ? 'active' : ''}`;
                     
-                    // Botones de Skins contextuales
+                    // Botones de Skins contextuales - Solo habilitado si offlineSkinsEnabled está activo
+                    const offlineSkinsEnabled = (data.settings && data.settings.offlineSkinsEnabled === true);
                     const skinButtonHTML = isPremium
                         ? `<button class="btn-action-profile" onclick="event.stopPropagation(); ipcRenderer.send('open-url', 'https://www.minecraft.net/msaprofile/mygames/editskin')" title="Cambiar Skin en la Web Oficial de Minecraft"><i class="fa fa-globe" aria-hidden="true"></i></button>`
-                        : `<button class="btn-action-profile" onclick="event.stopPropagation(); triggerSkinUpload('${accName}')" title="Subir Skin Local (PNG)"><i class="fa fa-upload" aria-hidden="true"></i></button>`;
+                        : `<button class="btn-action-profile ${offlineSkinsEnabled ? '' : 'disabled'}" onclick="event.stopPropagation(); ${offlineSkinsEnabled ? `triggerSkinUpload('${accName}')` : 'return false'}" title="${offlineSkinsEnabled ? 'Subir Skin Local (PNG)' : 'Activa skins no premium en ajustes'}"><i class="fa fa-upload" aria-hidden="true"></i></button>`;
 
                     const accionesHTML = `
                         <div style="display: flex; gap: 4px;">
@@ -979,6 +1039,14 @@
                 }
                 if (data.settings.saveLogs !== undefined && document.getElementById('global-save-logs')) {
                     document.getElementById('global-save-logs').checked = data.settings.saveLogs;
+                }
+                if (data.settings.offlineSkinsEnabled !== undefined && document.getElementById('enable-offline-skins')) {
+                    document.getElementById('enable-offline-skins').checked = data.settings.offlineSkinsEnabled;
+                    const loaderContainer = document.getElementById('loader-selector-container');
+                    if (loaderContainer) loaderContainer.style.display = data.settings.offlineSkinsEnabled ? 'block' : 'none';
+                }
+                if (data.settings.offlineSkinsLoader && document.getElementById('offline-skins-loader')) {
+                    document.getElementById('offline-skins-loader').value = data.settings.offlineSkinsLoader;
                 }
             }
         }
