@@ -190,19 +190,47 @@ function createConsoleWindow() {
 app.whenReady().then(createWindow);
 
 function checkLauncherUpdates() {
-    const request = net.request(UPDATE_CHECK_URL);
+    // Obtenemos los ajustes guardados mediante profilesManager
+    const data = getSanitizedData();
+    const userChannel = data.settings?.updateChannel || (LAUNCHER_VERSION.toLowerCase().includes('beta') ? 'beta' : 'stable');
+    const allowPrereleases = (userChannel === 'beta');
+
+    const updateApiUrl = 'https://api.github.com/repos/SuzuKurai/KuraiLauncher/releases';
+
+    const request = net.request({
+        url: updateApiUrl,
+        headers: { 'User-Agent': 'KuraiLauncher' }
+    });
+
     request.on('response', (response) => {
         let body = '';
         response.on('data', (chunk) => { body += chunk; });
         response.on('end', () => {
             try {
-                const data = JSON.parse(body);
-                if (data.version && data.version !== LAUNCHER_VERSION) {
+                const releases = JSON.parse(body);
+                if (!Array.isArray(releases) || releases.length === 0) return;
+
+                // Filtramos según el canal configurado por el usuario en el index
+                const validReleases = releases.filter(rel => {
+                    if (allowPrereleases) return true; // Si eligió Beta, acepta tanto estables como pre-releases
+                    return !rel.prerelease;        // Si eligió Estable, ignora las pre-releases
+                });
+
+                if (validReleases.length === 0) return;
+
+                const latestRelease = validReleases[0];
+                const latestVersionTag = latestRelease.tag_name.replace(/^v/, '');
+
+                if (latestVersionTag !== LAUNCHER_VERSION) {
                     mainWindow.webContents.send('update-available', {
-                        current: LAUNCHER_VERSION, latest: data.version, url: data.url || 'https://github.com/'
+                        current: LAUNCHER_VERSION, 
+                        latest: latestVersionTag, 
+                        url: latestRelease.html_url || 'https://github.com/SuzuKurai/KuraiLauncher/releases'
                     });
                 }
-            } catch (e) {}
+            } catch (e) {
+                console.error("Error al procesar las actualizaciones:", e);
+            }
         });
     });
     request.end();

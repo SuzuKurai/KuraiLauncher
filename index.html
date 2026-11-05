@@ -387,6 +387,14 @@
                 </div>
                 
                 <div class="panel-scrollable-content">
+                    <div class="settings-section-title">Actualizaciones</div>
+                    <div class="form-group">
+                        <label>Canal de Actualización</label>
+                        <select class="form-control" id="global-update-channel">
+                            <option value="stable">Estable (Solo Releases oficiales)</option>
+                            <option value="beta">Beta (Incluye Pre-releases)</option>
+                        </select>
+                    </div>
                     <div class="settings-section-title">Rendimiento</div>
                     <div class="form-group">
                         <label>Asignación de Memoria RAM</label>
@@ -693,7 +701,8 @@
                 gamePath: customPath,
                 launcherBehavior: behavior,
                 jvmArgs: jvmArgs,
-                saveLogs: saveLogs
+                saveLogs: saveLogs,
+                updateChannel: updateChannel
             });
             
             togglePanel('panel-settings', false);
@@ -980,6 +989,9 @@
                 }
                 if (data.settings.saveLogs !== undefined && document.getElementById('global-save-logs')) {
                     document.getElementById('global-save-logs').checked = data.settings.saveLogs;
+                }
+                if (data.settings.updateChannel && document.getElementById('global-update-channel')) {
+                    document.getElementById('global-update-channel').value = data.settings.updateChannel;
                 }
             }
         }
