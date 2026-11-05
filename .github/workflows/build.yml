@@ -1,4 +1,4 @@
-name: Build Electron App
+name: Build and Release KuraiLauncher
 
 on:
   push:
@@ -10,7 +10,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [windows-latest, macos-latest, ubuntu-latest]
 
     steps:
       - name: Checkout repository
@@ -24,8 +24,11 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      # Sincroniza la versión desde version.json antes de compilar
+      - name: Sync versions
+        run: node sync-version.js
+
       - name: Build application
         run: npm run build
         env:
-          # Evita problemas de firma si no tienes certificados comerciales configurados aún
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
