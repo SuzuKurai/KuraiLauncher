@@ -389,6 +389,51 @@ ipcMain.handle('login-microsoft', async () => {
     }
 });
 
+// Permite comprobar actualizaciones manualmente desde los ajustes
+ipcMain.handle('check-for-updates-manual', async () => {
+    const data = getSanitizedData();
+    const userChannel = data.settings?.updateChannel || (LAUNCHER_VERSION.toLowerCase().includes('beta') ? 'beta' : 'stable');
+    const allowPrereleases = (userChannel === 'beta');
+
+    try {
+        const response = await net.fetch('https://api.github.com/repos/SuzuKurai/KuraiLauncher/releases', {
+            headers: { 'User-Agent': 'KuraiLauncher' }
+        });
+        const releases = await response.json();
+
+        if (!Array.isArray(releases) || releases.length === 0) {
+            return { hasUpdate: false, latest: LAUNCHER_VERSION, message: 'No se encontraron lanzamientos disponibles.' };
+        }
+
+        const validReleases = releases.filter(rel => {
+            if (allowPrereleases) return true;
+            return !rel.prerelease;
+        });
+
+        if (validReleases.length === 0) {
+            return { hasUpdate: false, latest: LAUNCHER_VERSION, message: 'No hay actualizaciones disponibles en el canal seleccionado.' };
+        }
+
+        const latestRelease = validReleases[0];
+        const latestVersionTag = latestRelease.tag_name.replace(/^v/, '');
+
+        if (latestVersionTag !== LAUNCHER_VERSION) {
+            return {
+                hasUpdate: true,
+                current: LAUNCHER_VERSION,
+                latest: latestVersionTag,
+                url: latestRelease.html_url || 'https://github.com/SuzuKurai/KuraiLauncher/releases'
+            };
+        } else {
+            // AQUÍ ESTABA EL ERROR: Aseguramos devolver 'latest' también cuando son iguales
+            return { hasUpdate: false, latest: latestVersionTag };
+        }
+    } catch (error) {
+        console.error("Error comprobando actualizaciones:", error);
+        return { hasUpdate: false, latest: LAUNCHER_VERSION, error: 'Error al conectar con el servidor de actualizaciones.' };
+    }
+});
+
 // --- EVENTO DE LANZAMIENTO INTEGRAL ---
 ipcMain.on('launch-game', async (event, fullSkinBase64) => {
     const data = getSanitizedData();

@@ -395,6 +395,14 @@
                             <option value="beta">Beta (Incluye Pre-releases)</option>
                         </select>
                     </div>
+                    <!-- BOTÓN AÑADIDO ABAJO DE CANAL DE ACTUALIZACIÓN -->
+                    <div class="form-group" style="margin-top: 6px;">
+                        <button class="btn-secondary" id="btn-check-updates-manual" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <i class="fas fa-sync-alt" id="check-update-icon"></i> Buscar actualizaciones
+                        </button>
+                        <!-- Texto de estado debajo del botón -->
+                        <div id="update-status-text" style="font-size: 12px; color: #858594; margin-top: 6px; text-align: center; min-height: 16px;"></div>
+                    </div>
                     <div class="settings-section-title">Rendimiento</div>
                     <div class="form-group">
                         <label>Asignación de Memoria RAM</label>
@@ -706,6 +714,50 @@
             });
             
             togglePanel('panel-settings', false);
+        });
+
+        // ========================================================
+        // BUSCAR ACTUALIZACIONES
+        // ========================================================
+        document.getElementById('btn-check-updates-manual').addEventListener('click', async () => {
+            const btn = document.getElementById('btn-check-updates-manual');
+            const icon = document.getElementById('check-update-icon');
+            const statusText = document.getElementById('update-status-text');
+            
+            icon.classList.add('fa-spin');
+            btn.disabled = true;
+            statusText.style.color = '#858594';
+            statusText.innerText = "Buscando actualizaciones...";
+
+            try {
+                const result = await ipcRenderer.invoke('check-for-updates-manual');
+
+                if (result.hasUpdate) {
+                    statusText.style.color = '#34d399';
+                    statusText.innerText = `¡Nueva versión disponible: v${result.latest}!`;
+                    
+                    document.getElementById('update-popup-text').innerHTML = `Tu versión actual es la <strong>${result.current}</strong>.<br>La nueva versión <strong>${result.latest}</strong> ya está disponible para descargar.`;
+                    document.getElementById('update-popup-overlay').style.display = 'flex';
+                    
+                    document.getElementById('btn-download-update').onclick = () => {
+                        ipcRenderer.send('open-url', result.url);
+                        document.getElementById('update-popup-overlay').style.display = 'none';
+                    };
+                } else if (result.error) {
+                    statusText.style.color = '#ff5c5c';
+                    statusText.innerText = result.error;
+                } else {
+                    statusText.style.color = '#858594';
+                    statusText.innerText = `¡Ya estás en la versión más reciente! (v${result.latest})`;
+                }
+            } catch (err) {
+                console.error(err);
+                statusText.style.color = '#ff5c5c';
+                statusText.innerText = "Ocurrió un error al verificar las actualizaciones.";
+            } finally {
+                icon.classList.remove('fa-spin');
+                btn.disabled = false;
+            }
         });
 
         document.getElementById('add-account-btn').addEventListener('click', () => {
