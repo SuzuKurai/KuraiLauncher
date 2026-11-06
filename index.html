@@ -258,6 +258,30 @@
         .btn-secondary:hover { background: #3b3b54; color: white; }
 
         .select-custom { background: #1a1a24; color: white; border: 1px solid rgba(255,255,255,0.04); padding: 10px; border-radius: 8px; font-size: 13px; outline: none; max-height: 160px; }
+    
+        /* --- ESTILOS PARA LOS COPOS DE NIEVE --- */
+        .snowflake {
+            position: fixed;
+            top: -10px;
+            background: #ffffff;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1; /* Por debajo de los paneles y modales, pero visible sobre el fondo */
+            opacity: 0.8;
+            animation: fall linear infinite;
+        }
+
+        @keyframes fall {
+            0% {
+                transform: translateY(-10px) translateX(0);
+            }
+            50% {
+                transform: translateY(50vh) translateX(15px);
+            }
+            100% {
+                transform: translateY(105vh) translateX(-15px);
+            }
+        }
     </style>
 </head>
 <body>
@@ -442,6 +466,11 @@
                     <div class="form-group">
                         <button class="btn-secondary" id="open-console-btn">Abrir consola</button>
                     </div>
+                    <div class="settings-section-title">Efectos Visuales</div>
+                    <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="global-snow-effect" style="cursor: pointer;" checked>
+                        <label for="global-snow-effect" style="margin:0;">Nieve</label>
+                    </div>
                 </div>
                 <button class="btn-submit" id="save-settings-btn">Guardar Cambios</button>
             </div>
@@ -515,6 +544,58 @@
         let currentProfilesCache = [];
         let lastLauncherData = null; 
         let currentSkinTargetUsername = ""; 
+
+        // --- LÓGICA DE COPOS DE NIEVE ---
+        let snowInterval = null;
+
+        function createSnowflake() {
+            // Si la opción está desactivada, no crear copos
+            const snowCheckbox = document.getElementById('global-snow-effect');
+            if (snowCheckbox && !snowCheckbox.checked) return;
+
+            const snowflake = document.createElement('div');
+            snowflake.classList.add('snowflake');
+
+            // Tamaño aleatorio entre 2px y 6px
+            const size = Math.random() * 4 + 2;
+            snowflake.style.width = `${size}px`;
+            snowflake.style.height = `${size}px`;
+
+            // Posición horizontal aleatoria en toda la pantalla
+            snowflake.style.left = `${Math.random() * window.innerWidth}px`;
+
+            // Duración de caída aleatoria (entre 4 y 9 segundos para que sea suave)
+            const duration = Math.random() * 5 + 4;
+            snowflake.style.animationDuration = `${duration}s`;
+
+            // Opacidad variable
+            snowflake.style.opacity = Math.random() * 0.6 + 0.2;
+
+            document.body.appendChild(snowflake);
+
+            // Eliminar el copo del DOM cuando termine su animación para evitar acumulación
+            setTimeout(() => {
+                snowflake.remove();
+            }, duration * 1000);
+        }
+
+        function toggleSnowEffect(enable) {
+            if (enable) {
+                if (!snowInterval) {
+                    snowInterval = setInterval(createSnowflake, 150); // Frecuencia de generación de copos
+                }
+            } else {
+                clearInterval(snowInterval);
+                snowInterval = null;
+                // Limpiar los copos que estén cayendo en pantalla en ese momento
+                document.querySelectorAll('.snowflake').forEach(el => el.remove());
+            }
+        }
+
+        // Escuchar cambios en tiempo real desde el checkbox de ajustes
+        document.getElementById('global-snow-effect').addEventListener('change', (e) => {
+            toggleSnowEffect(e.target.checked);
+        });
 
         // Lógica JS para el menú desplegable de redes sociales
         document.getElementById('social-toggle-btn').addEventListener('click', function() {
@@ -710,7 +791,8 @@
                 launcherBehavior: behavior,
                 jvmArgs: jvmArgs,
                 saveLogs: saveLogs,
-                updateChannel: updateChannel
+                updateChannel: updateChannel,
+                snowEffect: snowEffectEnabled
             });
             
             togglePanel('panel-settings', false);
@@ -1044,6 +1126,12 @@
                 }
                 if (data.settings.updateChannel && document.getElementById('global-update-channel')) {
                     document.getElementById('global-update-channel').value = data.settings.updateChannel;
+                }
+                const isSnowEnabled = data.settings.snowEffect !== undefined ? data.settings.snowEffect : true;
+                const snowCheckbox = document.getElementById('global-snow-effect');
+                if (snowCheckbox) {
+                    snowCheckbox.checked = isSnowEnabled;
+                    toggleSnowEffect(isSnowEnabled);
                 }
             }
         }
