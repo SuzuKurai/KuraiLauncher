@@ -7,22 +7,30 @@ const msmc = require('msmc');
 const profilesManager = require('./profiles-manager');
 const launcher = new Client();
 
+
 // CONSTANTES DE VERSIÓN DEL LAUNCHER
 const LAUNCHER_VERSION = require('./package.json').version;
 const UPDATE_CHECK_URL = 'https://raw.githubusercontent.com/SuzuKurai/KuraiLauncher/refs/heads/main/launcher-minecraft/version.json';
 
-// --- CONFIGURACIÓN DE DISCORD RICH PRESENCE (ALTA PRIORIDAD SANEADO) ---
+// --- CONFIGURACIÓN DE DISCORD RICH PRESENCE (CON DEPURACIÓN) ---
 const DiscordRPC = require('discord-rpc-revamp');
 
-const discordClientId = 'ad348cc338d2d1bc8705f779ba93b9e7312abc74e3a9ca6402594750fbe15022'; 
-DiscordRPC.register(discordClientId);
+const discordClientId = '1509574161603887124'; 
+try {
+    DiscordRPC.register(discordClientId);
+} catch (e) {
+    console.error("[DISCORD RPC] Error al registrar el Client ID:", e);
+}
 
 const rpc = new DiscordRPC.Client({ transport: 'ipc' });
 let rpcConnected = false;
 let startTimestamp = null;
 
 function updateDiscordPresence(details, state, partySize = 0, partyMax = 0) {
-    if (!rpcConnected || !rpc) return;
+    if (!rpcConnected || !rpc) {
+        console.log("[DISCORD RPC] No se pudo actualizar el estado: RPC no conectado.");
+        return;
+    }
 
     const presence = {
         details: details,
@@ -38,11 +46,13 @@ function updateDiscordPresence(details, state, partySize = 0, partyMax = 0) {
         presence.partyMax = partyMax;
     }
 
-    rpc.setActivity(presence).catch(err => console.error("Error actualizando RPC:", err));
+    rpc.setActivity(presence).catch(err => console.error("[DISCORD RPC] Error actualizando actividad:", err));
 }
 
 function startRpcConnection() {
     if (rpcConnected) return;
+
+    console.log("[DISCORD RPC] Intentando conectar con la aplicación de Discord...");
 
     try {
         const loginMethod = rpc.login || rpc.connect;
@@ -51,19 +61,21 @@ function startRpcConnection() {
             loginMethod.call(rpc, { clientId: discordClientId })
                 .then(() => {
                     rpcConnected = true;
-                    startTimestamp = new Date();
-                    console.log('¡Discord Rich Presence activado con éxito!');
-                    updateDiscordPresence('En el menú principal', 'Eligiendo versión para jugar');
+                    startTimestamp = Date.now();
+                    console.log('¡Discord Rich Presence activado y conectado con éxito!');
+                    updateDiscordPresence('En el menú principal', '');
                 })
                 .catch((err) => {
                     rpcConnected = false;
-                    setTimeout(startRpcConnection, 15000); // Reintentar si Discord está cerrado
+                    console.warn("[DISCORD RPC] Discord no está abierto o rechazó la conexión. Reintentando en 15s...", err.message || err);
+                    setTimeout(startRpcConnection, 15000); // Reintentar
                 });
         } else {
-            console.error("No se pudo mapear el método de conexión del cliente de Discord.");
+            console.error("[DISCORD RPC] Error crítico: No se encontró el método de inicio de sesión en discord-rpc-revamp.");
         }
     } catch (e) {
         rpcConnected = false;
+        console.error("[DISCORD RPC] Excepción capturada al intentar conectar:", e);
         setTimeout(startRpcConnection, 15000);
     }
 }
@@ -101,29 +113,48 @@ let consoleWindow = null;
 
 const ICONO_URL = 'https://raw.githubusercontent.com/SuzuKurai/KuraiLauncher/refs/heads/main/launcher-minecraft/media/KuraiLauncher.png';
 
-const RUTAS_JAVA_25 = [
-    "C:\\Program Files\\Java\\jdk-25\\bin\\javaw.exe",
-    "C:\\Program Files\\Java\\jre-25\\bin\\javaw.exe",
-    "C:\\Program Files\\Eclipse Foundation\\jdk-25-hotspot\\bin\\javaw.exe",
-    "C:\\Program Files\\Eclipse Adoptium\\jdk-25-hotspot\\bin\\javaw.exe",
-    "C:\\Program Files (x86)\\Java\\jdk-25\\bin\\javaw.exe"
+const RUTAS_JAVA_21 = [
+    "C:\\Program Files\\Eclipse Adoptium\\jdk-21.*-hotspot\\bin\\javaw.exe",
+    "C:\\Program Files\\Java\\jdk-21\\bin\\javaw.exe",
+    "C:\\Program Files\\Java\\jre-21\\bin\\javaw.exe",
+    "C:\\Program Files\\Eclipse Foundation\\jdk-21-hotspot\\bin\\javaw.exe",
+    "C:\\Program Files (x86)\\Java\\jdk-21\\bin\\javaw.exe"
 ];
 
-function obtenerRutaJava25() {
-    for (const ruta of RUTAS_JAVA_25) {
-        if (fs.existsSync(ruta)) return ruta;
-    }
-    const baseJavaDir = "C:\\Program Files\\Java";
-    if (fs.existsSync(baseJavaDir)) {
-        try {
-            const carpetas = fs.readdirSync(baseJavaDir);
-            const carpetaJdk25 = carpetas.find(f => f.toLowerCase().includes('jdk-25') || f.toLowerCase().includes('25'));
-            if (carpetaJdk25) {
-                const rutaDetectada = path.join(baseJavaDir, carpetaJdk25, 'bin', 'javaw.exe');
+function obtenerRutaJava21() {
+    // 1. Buscar en la ruta de usuario (AppData\Local\Programs\Eclipse Adoptium) para JDK 25 o JDK 21
+    try {
+        const localProgramsDir = path.join(os.homedir(), 'AppData', 'Local', 'Programs', 'Eclipse Adoptium');
+        if (fs.existsSync(localProgramsDir)) {
+            const carpetas = fs.readdirSync(localProgramsDir);
+            const carpetaJdk = carpetas.find(f => f.toLowerCase().includes('jdk-25') || f.toLowerCase().includes('jdk-21') || f.toLowerCase().includes('25.') || f.toLowerCase().includes('21.'));
+            if (carpetaJdk) {
+                const rutaDetectada = path.join(localProgramsDir, carpetaJdk, 'bin', 'javaw.exe');
                 if (fs.existsSync(rutaDetectada)) return rutaDetectada;
             }
-        } catch (err) {}
+        }
+    } catch (e) {}
+
+    // 2. Buscar en Program Files de forma global
+    const baseJavaDirs = [
+        "C:\\Program Files\\Java",
+        "C:\\Program Files\\Eclipse Adoptium",
+        "C:\\Program Files (x86)\\Java"
+    ];
+
+    for (const baseJavaDir of baseJavaDirs) {
+        if (fs.existsSync(baseJavaDir)) {
+            try {
+                const carpetas = fs.readdirSync(baseJavaDir);
+                const carpetaJdk = carpetas.find(f => f.toLowerCase().includes('jdk-25') || f.toLowerCase().includes('jdk-21') || f.toLowerCase().includes('25') || f.toLowerCase().includes('21'));
+                if (carpetaJdk) {
+                    const rutaDetectada = path.join(baseJavaDir, carpetaJdk, 'bin', 'javaw.exe');
+                    if (fs.existsSync(rutaDetectada)) return rutaDetectada;
+                }
+            } catch (err) {}
+        }
     }
+
     return null;
 }
 
@@ -163,7 +194,7 @@ async function createWindow() {
 }
 
 function verificarJavaAlInicio() {
-    const javaPath = obtenerRutaJava25();
+    const javaPath = obtenerRutaJava21();
     if (!javaPath) {
         mainWindow.webContents.send('java-missing-error');
     }
@@ -190,19 +221,47 @@ function createConsoleWindow() {
 app.whenReady().then(createWindow);
 
 function checkLauncherUpdates() {
-    const request = net.request(UPDATE_CHECK_URL);
+    // Obtenemos los ajustes guardados mediante profilesManager
+    const data = getSanitizedData();
+    const userChannel = data.settings?.updateChannel || (LAUNCHER_VERSION.toLowerCase().includes('beta') ? 'beta' : 'stable');
+    const allowPrereleases = (userChannel === 'beta');
+
+    const updateApiUrl = 'https://api.github.com/repos/SuzuKurai/KuraiLauncher/releases';
+
+    const request = net.request({
+        url: updateApiUrl,
+        headers: { 'User-Agent': 'KuraiLauncher' }
+    });
+
     request.on('response', (response) => {
         let body = '';
         response.on('data', (chunk) => { body += chunk; });
         response.on('end', () => {
             try {
-                const data = JSON.parse(body);
-                if (data.version && data.version !== LAUNCHER_VERSION) {
+                const releases = JSON.parse(body);
+                if (!Array.isArray(releases) || releases.length === 0) return;
+
+                // Filtramos según el canal configurado por el usuario en el index
+                const validReleases = releases.filter(rel => {
+                    if (allowPrereleases) return true; // Si eligió Beta, acepta tanto estables como pre-releases
+                    return !rel.prerelease;        // Si eligió Estable, ignora las pre-releases
+                });
+
+                if (validReleases.length === 0) return;
+
+                const latestRelease = validReleases[0];
+                const latestVersionTag = latestRelease.tag_name.replace(/^v/, '');
+
+                if (latestVersionTag !== LAUNCHER_VERSION) {
                     mainWindow.webContents.send('update-available', {
-                        current: LAUNCHER_VERSION, latest: data.version, url: data.url || 'https://github.com/'
+                        current: LAUNCHER_VERSION, 
+                        latest: latestVersionTag, 
+                        url: latestRelease.html_url || 'https://github.com/SuzuKurai/KuraiLauncher/releases'
                     });
                 }
-            } catch (e) {}
+            } catch (e) {
+                console.error("Error al procesar las actualizaciones:", e);
+            }
         });
     });
     request.end();
@@ -245,6 +304,10 @@ ipcMain.handle('get-system-ram', () => {
 ipcMain.handle('get-mojang-versions', async () => { return await fetchMojangVersions(); });
 ipcMain.handle('get-profiles', () => { return getSanitizedData(); });
 ipcMain.handle('get-launcher-version', () => { return LAUNCHER_VERSION; });
+ipcMain.handle('check-java-status', () => {
+        const javaPath = obtenerRutaJava21();
+        return javaPath !== null;
+    });
 ipcMain.on('open-external-console', () => { createConsoleWindow(); });
 ipcMain.on('open-url', (event, url) => { shell.openExternal(url); });
 
@@ -296,11 +359,34 @@ ipcMain.on('delete-account', (event, username) => {
     mainWindow.webContents.send('data-updated', getSanitizedData());
 });
 
+function injectVanillaSkin(minecraftRoot, versionId, base64Data) {
+    if (!base64Data) return;
+    try {
+        // Las texturas base de entidad en las versiones modernas suelen estar en los assets o se pueden forzar.
+        // Una forma muy limpia en Vanilla sin romper hashes es colocar un archivo de skin local 
+        // o parchear la textura predeterminada de los assets.
+        const assetsDir = path.join(minecraftRoot, 'assets');
+        // O si prefieres usar un enfoque directo para texturas de entidad:
+        console.log(`[SKIN SYSTEM] Preparando skin personalizada para modo Vanilla...`);
+        
+        // Guardamos la skin subida en una ruta fija que tu launcher pueda inyectar
+        const customSkinPath = path.join(minecraftRoot, '.KuraiLauncher', 'skins', 'current_custom.png');
+        const dir = path.dirname(customSkinPath);
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        
+        fs.writeFileSync(customSkinPath, Buffer.from(base64Data, 'base64'));
+        console.log(`[SKIN SYSTEM] Skin personalizada guardada en: ${customSkinPath}`);
+    } catch (error) {
+        console.error("[SKIN SYSTEM] Error al inyectar skin en vanilla:", error);
+    }
+}
+
 function setupCustomSkinLoader(minecraftRoot, username, base64Data) {
     try {
         const configDirRoot = path.join(minecraftRoot, 'CustomSkinLoader');
         const configDirModern = path.join(minecraftRoot, 'config', 'CustomSkinLoader');
         
+        // Configuración estándar para que CustomSkinLoader lea las skins locales de .KuraiLauncher
         const configContent = JSON.stringify({
             version: 14,
             loadlist: [
@@ -315,6 +401,7 @@ function setupCustomSkinLoader(minecraftRoot, username, base64Data) {
         fs.writeFileSync(path.join(configDirRoot, 'CustomSkinLoader.json'), configContent, 'utf8');
         fs.writeFileSync(path.join(configDirModern, 'CustomSkinLoader.json'), configContent, 'utf8');
 
+        // Ruta donde el loader buscará la skin del usuario offline
         const skinsDir = path.join(minecraftRoot, '.KuraiLauncher', 'skins');
         if (!fs.existsSync(skinsDir)) fs.mkdirSync(skinsDir, { recursive: true });
 
@@ -322,9 +409,12 @@ function setupCustomSkinLoader(minecraftRoot, username, base64Data) {
 
         if (base64Data) {
             fs.writeFileSync(targetSkinPath, Buffer.from(base64Data, 'base64'));
-            console.log(`[SKIN SYSTEM] Skin local asociada con éxito para el usuario: ${username}`);
+            console.log(`[SKIN SYSTEM] Skin local guardada con éxito para el usuario no-premium: ${username} en ${targetSkinPath}`);
         } else {
-            if (fs.existsSync(targetSkinPath)) fs.unlinkSync(targetSkinPath);
+            // Si no se subió una nueva en este inicio pero ya existía, la respetamos
+            if (!fs.existsSync(targetSkinPath)) {
+                console.log(`[SKIN SYSTEM] No hay skin personalizada subida para ${username}.`);
+            }
         }
     } catch (error) {
         console.error("[SKIN SYSTEM] Error gestionando Custom Skin Loader:", error);
@@ -342,6 +432,7 @@ ipcMain.handle('login-microsoft', async () => {
             
             const premiumAccountObj = {
                 username: profile.name,
+                uuid: profile.id,
                 isPremium: true,
                 mclcAuth: mcUser.mclc() 
             };
@@ -361,6 +452,51 @@ ipcMain.handle('login-microsoft', async () => {
     }
 });
 
+// Permite comprobar actualizaciones manualmente desde los ajustes
+ipcMain.handle('check-for-updates-manual', async () => {
+    const data = getSanitizedData();
+    const userChannel = data.settings?.updateChannel || (LAUNCHER_VERSION.toLowerCase().includes('beta') ? 'beta' : 'stable');
+    const allowPrereleases = (userChannel === 'beta');
+
+    try {
+        const response = await net.fetch('https://api.github.com/repos/SuzuKurai/KuraiLauncher/releases', {
+            headers: { 'User-Agent': 'KuraiLauncher' }
+        });
+        const releases = await response.json();
+
+        if (!Array.isArray(releases) || releases.length === 0) {
+            return { hasUpdate: false, latest: LAUNCHER_VERSION, message: 'No se encontraron lanzamientos disponibles.' };
+        }
+
+        const validReleases = releases.filter(rel => {
+            if (allowPrereleases) return true;
+            return !rel.prerelease;
+        });
+
+        if (validReleases.length === 0) {
+            return { hasUpdate: false, latest: LAUNCHER_VERSION, message: 'No hay actualizaciones disponibles en el canal seleccionado.' };
+        }
+
+        const latestRelease = validReleases[0];
+        const latestVersionTag = latestRelease.tag_name.replace(/^v/, '');
+
+        if (latestVersionTag !== LAUNCHER_VERSION) {
+            return {
+                hasUpdate: true,
+                current: LAUNCHER_VERSION,
+                latest: latestVersionTag,
+                url: latestRelease.html_url || 'https://github.com/SuzuKurai/KuraiLauncher/releases'
+            };
+        } else {
+            // AQUÍ ESTABA EL ERROR: Aseguramos devolver 'latest' también cuando son iguales
+            return { hasUpdate: false, latest: latestVersionTag };
+        }
+    } catch (error) {
+        console.error("Error comprobando actualizaciones:", error);
+        return { hasUpdate: false, latest: LAUNCHER_VERSION, error: 'Error al conectar con el servidor de actualizaciones.' };
+    }
+});
+
 // --- EVENTO DE LANZAMIENTO INTEGRAL ---
 ipcMain.on('launch-game', async (event, fullSkinBase64) => {
     const data = getSanitizedData();
@@ -375,7 +511,7 @@ ipcMain.on('launch-game', async (event, fullSkinBase64) => {
     const activeUser = typeof data.selectedAccount === 'object' ? data.selectedAccount.username : data.selectedAccount || "KuraiUser";
     
     // CAMBIO AQUÍ: Sincronizar estado de Discord al iniciar preparativos
-    startTimestamp = new Date();
+    startTimestamp = Date.now();
     updateDiscordPresence(`Preparando Minecraft`, `Cuenta: ${activeUser}`);
 
     mainWindow.webContents.send('status-msg', `Iniciando Minecraft versión ${currentProfile.version || "Desconocida"}...`);
@@ -413,7 +549,7 @@ ipcMain.on('launch-game', async (event, fullSkinBase64) => {
     const maxRamMb = `${parseRamToMb(globalSettings.maxMemory || "4G")}M`;
     const minRamMb = `${parseRamToMb(globalSettings.minMemory || "2G")}M`;
 
-    let javaPathManual = obtenerRutaJava25() || "javaw"; 
+    let javaPathManual = obtenerRutaJava21() || "javaw";
 
     let customJvmArgs = [];
     if(globalSettings.jvmArgs && globalSettings.jvmArgs.trim() !== "") {
@@ -426,19 +562,38 @@ ipcMain.on('launch-game', async (event, fullSkinBase64) => {
         return acc === activeAccountName;
     });
 
+    const isPremiumAccount = accountData && typeof accountData === 'object' && accountData.isPremium;
+
+    // SÓLO aplicamos CustomSkinLoader si la cuenta es NO-PREMIUM
+    if (!isPremiumAccount) {
+        setupCustomSkinLoader(finalRoot, activeUser, esValido ? base64Data : null);
+        console.log(`[SKIN SYSTEM] Cuenta no-premium detectada. Aplicando CustomSkinLoader para: ${activeUser}`);
+    } else {
+        console.log(`[SKIN SYSTEM] Cuenta premium detectada (${activeUser}). Omitiendo CustomSkinLoader para usar la skin oficial de Mojang/Microsoft.`);
+    }
+
     let authOpts = {};
 
     if (accountData && typeof accountData === 'object' && accountData.isPremium && accountData.mclcAuth) {
         authOpts = accountData.mclcAuth;
         console.log(`[LAUNCHER] Iniciando en modo PREMIUM como: ${activeAccountName}`);
     } else {
+        // Generar un UUID offline estándar tipo Mojang (OfflinePlayer:Nombre)
+        const crypto = require('crypto');
+        const hash = crypto.createHash('md5').update(`OfflinePlayer:${activeUser}`).digest('hex');
+        const offlineUuid = `${hash.substring(0,8)}-${hash.substring(8,12)}-4${hash.substring(13,16)}-a${hash.substring(17,20)}-${hash.substring(20,32)}`;
+
         authOpts = {
-            access_token: "00000000000000000000000000000000", client_token: "00000000000000000000000000000000",
-            accessToken: "00000000000000000000000000000000", clientToken: "00000000000000000000000000000000",
-            uuid: "00000000-0000-0000-0000-000000000000", name: activeUser, user_properties: "{}",
-            meta: { type: "mojang", demo: false }
+            access_token: "0",
+            client_token: "0",
+            accessToken: "0",
+            clientToken: "0",
+            uuid: offlineUuid,
+            name: activeUser,
+            user_properties: {}, // <--- DEBE SER UN OBJETO VACÍO, NO UN STRING "{}"
+            meta: { type: "legacy", demo: false } // <--- Usar "legacy" en vez de "mojang" para evitar comprobaciones de red
         };
-        console.log(`[LAUNCHER] Iniciando en modo NO-PREMIUM como: ${activeUser}`);
+        console.log(`[LAUNCHER] Iniciando en modo NO-PREMIUM como: ${activeUser} (UUID: ${offlineUuid})`);
     }
 
     let opts = {
@@ -478,8 +633,8 @@ ipcMain.on('launch-game', async (event, fullSkinBase64) => {
         if(mainWindow) mainWindow.webContents.send('status-msg', `Error al lanzar: ${e.message || e}`);
         
         // Si el juego da error antes de abrir, regresamos el RPC al menú
-        startTimestamp = new Date();
-        updateDiscordPresence('En el menú principal', 'Planeando la siguiente partida');
+        startTimestamp = Date.now();
+        updateDiscordPresence('En el menú principal', '');
     });
     
     launcher.on('progress', (e) => { if(mainWindow) mainWindow.webContents.send('progress', e); });
@@ -488,8 +643,8 @@ ipcMain.on('launch-game', async (event, fullSkinBase64) => {
         const behavior = globalSettings.launcherBehavior || "hide";
         
         // CAMBIO AQUÍ: Actualizar presencia al entrar oficialmente al juego
-        startTimestamp = new Date();
-        updateDiscordPresence('Jugando a Minecraft', `Versión: ${cleanVersion} 🚀`);
+        startTimestamp = Date.now();
+        updateDiscordPresence('Jugando a Minecraft ${cleanVersion}', `Jugador: ${activeUser}`);
 
         if (behavior === "hide" && mainWindow) {
             mainWindow.minimize();

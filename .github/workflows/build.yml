@@ -2,10 +2,11 @@ name: Build and Release KuraiLauncher
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "beta", "main" ]
 
 jobs:
   build:
+    name: Build and Release
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -13,22 +14,51 @@ jobs:
         os: [windows-latest, macos-latest, ubuntu-latest]
 
     steps:
+      # 1. Obtener el código del repositorio
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 2. Configurar Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
 
+      # 3. Instalar dependencias del proyecto
       - name: Install dependencies
         run: npm install
 
-      # Sincroniza la versión desde version.json antes de compilar
+      # 4. Sincronizar version.json con package.json usando tu script
       - name: Sync versions
         run: node sync-version.js
 
+      # 5. Leer la versión resultante de package.json para usarla en la Release (Forzando Bash)
+      - name: Read version from package.json
+        id: get_version
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      # 6. Compilar el launcher con electron-builder
       - name: Build application
         run: npm run build
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 7. Crear la Release y subir los binarios generados a GitHub Releases
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.get_version.outputs.VERSION }}
+          name: KuraiLauncher v${{ steps.get_version.outputs.VERSION }}
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ github.ref_name == 'beta' }} # Si subes a beta, se marca como Pre-release automáticamente
+          files: |
+            dist/*.exe
+            dist/*.dmg
+            dist/*.AppImage
+            dist/*.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

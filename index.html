@@ -258,6 +258,30 @@
         .btn-secondary:hover { background: #3b3b54; color: white; }
 
         .select-custom { background: #1a1a24; color: white; border: 1px solid rgba(255,255,255,0.04); padding: 10px; border-radius: 8px; font-size: 13px; outline: none; max-height: 160px; }
+    
+        /* --- ESTILOS PARA LOS COPOS DE NIEVE --- */
+        .snowflake {
+            position: fixed;
+            top: -10px;
+            background: #ffffff;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1; /* Por debajo de los paneles y modales, pero visible sobre el fondo */
+            opacity: 0.8;
+            animation: fall linear infinite;
+        }
+
+        @keyframes fall {
+            0% {
+                transform: translateY(-10px) translateX(0);
+            }
+            50% {
+                transform: translateY(50vh) translateX(15px);
+            }
+            100% {
+                transform: translateY(105vh) translateX(-15px);
+            }
+        }
     </style>
 </head>
 <body>
@@ -387,6 +411,22 @@
                 </div>
                 
                 <div class="panel-scrollable-content">
+                    <div class="settings-section-title">Actualizaciones</div>
+                    <div class="form-group">
+                        <label>Canal de Actualización</label>
+                        <select class="form-control" id="global-update-channel">
+                            <option value="stable">Estable (Solo Releases oficiales)</option>
+                            <option value="beta">Beta (Incluye Pre-releases)</option>
+                        </select>
+                    </div>
+                    <!-- BOTÓN AÑADIDO ABAJO DE CANAL DE ACTUALIZACIÓN -->
+                    <div class="form-group" style="margin-top: 6px;">
+                        <button class="btn-secondary" id="btn-check-updates-manual" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <i class="fas fa-sync-alt" id="check-update-icon"></i> Buscar actualizaciones
+                        </button>
+                        <!-- Texto de estado debajo del botón -->
+                        <div id="update-status-text" style="font-size: 12px; color: #858594; margin-top: 6px; text-align: center; min-height: 16px;"></div>
+                    </div>
                     <div class="settings-section-title">Rendimiento</div>
                     <div class="form-group">
                         <label>Asignación de Memoria RAM</label>
@@ -426,6 +466,11 @@
                     <div class="form-group">
                         <button class="btn-secondary" id="open-console-btn">Abrir consola</button>
                     </div>
+                    <div class="settings-section-title">Efectos Visuales</div>
+                    <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="global-snow-effect" style="cursor: pointer;" checked>
+                        <label for="global-snow-effect" style="margin:0;">Nieve</label>
+                    </div>
                 </div>
                 <button class="btn-submit" id="save-settings-btn">Guardar Cambios</button>
             </div>
@@ -464,16 +509,29 @@
     </div>
 
     <div id="java-popup-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center;">
-        <div style="background: #16161e; border: 2px solid #ff4a4a; padding: 35px; border-radius: 16px; width: 480px; text-align: center; color: #ffffff; box-shadow: 0px 15px 40px rgba(0,0,0,0.6);">
+        <div style="background: #16161e; border: 2px solid #ff4a4a; padding: 35px; border-radius: 16px; width: 500px; text-align: center; color: #ffffff; box-shadow: 0px 15px 40px rgba(0,0,0,0.6);">
             <div style="font-size: 44px; margin-bottom: 15px;">⚠️</div>
-            <h2 style="margin: 0 0 12px 0; font-size: 24px; color: #ff4a4a; font-weight: 800; letter-spacing: 0.5px;">Falta Java 25 en el Equipo</h2>
-            <p style="font-size: 14px; color: #b3b3b3; line-height: 1.6; margin-bottom: 28px;">
-                No hemos detectado una instalación de <strong>Java 25 (JDK 25)</strong> en tu sistema. Las versiones modernas de Minecraft requieren este componente para arrancar correctamente. Por favor, instálalo usando los siguientes enlaces oficiales.
+            <h2 style="margin: 0 0 12px 0; font-size: 24px; color: #ff4a4a; font-weight: 800; letter-spacing: 0.5px;">Falta Java 21 o Java 25 en el Equipo</h2>
+            <p style="font-size: 14px; color: #b3b3b3; line-height: 1.6; margin-bottom: 25px;">
+                No hemos detectado una instalación compatible de <strong>Java 21 o Java 25 (JDK)</strong> en tu sistema. Las versiones modernas y snapshots de Minecraft requieren estos componentes según la versión que intentes arrancar.
             </p>
-            <div style="display: flex; gap: 12px; justify-content: center;">
-                <a href="https://www.oracle.com/java/technologies/downloads/#java21" target="_blank" style="background: #2b2b3d; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 13px; border: 1px solid rgba(255,255,255,0.05); transition: 0.2s;">JDK 21</a>
-                <a href="https://www.oracle.com/java/technologies/downloads/#java25" target="_blank" style="background: #ff4a4a; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 13px;">Descargar JDK 25 (Recomendado)</a>
-                <button onclick="document.getElementById('java-popup-overlay').style.display = 'none'" style="background: #1a1a24; color: #b3b3b3; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px;">Omitir / Cerrar</button>
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+                <a href="https://adoptium.net/temurin/releases/?version=25" target="_blank" style="background: #5865f2; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 13px; display: block;">
+                    Descargar Eclipse Adoptium Java 25
+                </a>
+                <a href="https://www.oracle.com/java/technologies/downloads/#java25" target="_blank" style="background: #2b2b3d; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 12px; border: 1px solid rgba(255,255,255,0.05); transition: 0.2s; display: block;">
+                    Descargar desde Oracle (Puede requerir registro)
+                </a>
+            </div>
+
+            <!-- BOTONES DE ACCIÓN (REINTENTAR Y OMITIR) -->
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button id="btn-retry-java" style="background: #34d399; color: #111116; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-sync-alt" id="retry-java-icon"></i> Reintentar
+                </button>
+                <button onclick="document.getElementById('java-popup-overlay').style.display = 'none'" style="background: #1a1a24; color: #b3b3b3; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px;">
+                    Omitir / Cerrar
+                </button>
             </div>
         </div>
     </div>
@@ -499,6 +557,58 @@
         let currentProfilesCache = [];
         let lastLauncherData = null; 
         let currentSkinTargetUsername = ""; 
+
+        // --- LÓGICA DE COPOS DE NIEVE ---
+        let snowInterval = null;
+
+        function createSnowflake() {
+            // Si la opción está desactivada, no crear copos
+            const snowCheckbox = document.getElementById('global-snow-effect');
+            if (snowCheckbox && !snowCheckbox.checked) return;
+
+            const snowflake = document.createElement('div');
+            snowflake.classList.add('snowflake');
+
+            // Tamaño aleatorio entre 2px y 6px
+            const size = Math.random() * 4 + 2;
+            snowflake.style.width = `${size}px`;
+            snowflake.style.height = `${size}px`;
+
+            // Posición horizontal aleatoria en toda la pantalla
+            snowflake.style.left = `${Math.random() * window.innerWidth}px`;
+
+            // Duración de caída aleatoria (entre 4 y 9 segundos para que sea suave)
+            const duration = Math.random() * 5 + 4;
+            snowflake.style.animationDuration = `${duration}s`;
+
+            // Opacidad variable
+            snowflake.style.opacity = Math.random() * 0.6 + 0.2;
+
+            document.body.appendChild(snowflake);
+
+            // Eliminar el copo del DOM cuando termine su animación para evitar acumulación
+            setTimeout(() => {
+                snowflake.remove();
+            }, duration * 1000);
+        }
+
+        function toggleSnowEffect(enable) {
+            if (enable) {
+                if (!snowInterval) {
+                    snowInterval = setInterval(createSnowflake, 150); // Frecuencia de generación de copos
+                }
+            } else {
+                clearInterval(snowInterval);
+                snowInterval = null;
+                // Limpiar los copos que estén cayendo en pantalla en ese momento
+                document.querySelectorAll('.snowflake').forEach(el => el.remove());
+            }
+        }
+
+        // Escuchar cambios en tiempo real desde el checkbox de ajustes
+        document.getElementById('global-snow-effect').addEventListener('change', (e) => {
+            toggleSnowEffect(e.target.checked);
+        });
 
         // Lógica JS para el menú desplegable de redes sociales
         document.getElementById('social-toggle-btn').addEventListener('click', function() {
@@ -693,10 +803,56 @@
                 gamePath: customPath,
                 launcherBehavior: behavior,
                 jvmArgs: jvmArgs,
-                saveLogs: saveLogs
+                saveLogs: saveLogs,
+                updateChannel: updateChannel,
+                snowEffect: snowEffectEnabled
             });
             
             togglePanel('panel-settings', false);
+        });
+
+        // ========================================================
+        // BUSCAR ACTUALIZACIONES
+        // ========================================================
+        document.getElementById('btn-check-updates-manual').addEventListener('click', async () => {
+            const btn = document.getElementById('btn-check-updates-manual');
+            const icon = document.getElementById('check-update-icon');
+            const statusText = document.getElementById('update-status-text');
+            
+            icon.classList.add('fa-spin');
+            btn.disabled = true;
+            statusText.style.color = '#858594';
+            statusText.innerText = "Buscando actualizaciones...";
+
+            try {
+                const result = await ipcRenderer.invoke('check-for-updates-manual');
+
+                if (result.hasUpdate) {
+                    statusText.style.color = '#34d399';
+                    statusText.innerText = `¡Nueva versión disponible: v${result.latest}!`;
+                    
+                    document.getElementById('update-popup-text').innerHTML = `Tu versión actual es la <strong>${result.current}</strong>.<br>La nueva versión <strong>${result.latest}</strong> ya está disponible para descargar.`;
+                    document.getElementById('update-popup-overlay').style.display = 'flex';
+                    
+                    document.getElementById('btn-download-update').onclick = () => {
+                        ipcRenderer.send('open-url', result.url);
+                        document.getElementById('update-popup-overlay').style.display = 'none';
+                    };
+                } else if (result.error) {
+                    statusText.style.color = '#ff5c5c';
+                    statusText.innerText = result.error;
+                } else {
+                    statusText.style.color = '#858594';
+                    statusText.innerText = `¡Ya estás en la versión más reciente! (v${result.latest})`;
+                }
+            } catch (err) {
+                console.error(err);
+                statusText.style.color = '#ff5c5c';
+                statusText.innerText = "Ocurrió un error al verificar las actualizaciones.";
+            } finally {
+                icon.classList.remove('fa-spin');
+                btn.disabled = false;
+            }
         });
 
         document.getElementById('add-account-btn').addEventListener('click', () => {
@@ -837,10 +993,14 @@
             }
         }
 
+            // Identificador para el avatar grande de la cuenta activa (Usa el UUID si existe, si no el nombre)
+            const activeAccountObj = data.accounts ? data.accounts.find(acc => (typeof acc === 'object' ? acc.username : acc) === activeUsernameStr) : null;
+            const activeIdentifier = (activeAccountObj && activeAccountObj.uuid) ? activeAccountObj.uuid : activeUsernameStr;
+
             // Renderizado del avatar principal (Grande)
             if (activeAvatarEl) {
                 if (activeIsPremium) {
-                    activeAvatarEl.innerHTML = `<img src="https://minotar.net/helm/${activeUsernameStr}/64.png" style="width: 100%; height: 100%; border-radius: 6px;" onerror="this.src='https://minotar.net/avatar/char/64.png'">`;
+                    activeAvatarEl.innerHTML = `<img src="https://mc-heads.net/avatar/${activeUsernameStr}/64" style="width: 100%; height: 100%; border-radius: 6px; display: block;" onerror="this.src='https://minotar.net/avatar/char/64.png'">`;
                     activeAvatarEl.style.background = "transparent";
                     activeAvatarEl.style.backgroundImage = "none";
                 } else if (localStorage.getItem(`avatar_${activeUsernameStr}`)) {
@@ -870,16 +1030,20 @@
                 data.accounts.forEach(acc => {
                     const isAccountObj = (typeof acc === 'object');
                     const accName = isAccountObj ? acc.username : acc;
+                    const accUuid = isAccountObj ? acc.uuid : null; // <--- OBTENEMOS EL UUID AQUÍ
                     const isPremium = isAccountObj ? acc.isPremium : false;
                     const isSelected = (accName === activeUsernameStr);
                     const accountAvatar = localStorage.getItem('avatar_' + accName);
+                    
+                    // Identificador para skins (Usa el UUID si lo tiene guardado, si no el nombre)
+                    const skinIdentifier = accUuid ? accUuid : accName;
                     
                     let avatarStyle = '';
                     let avatarContent = '';
 
                     // Configurar diseño de los mini avatares de la lista
                     if (isPremium) {
-                        avatarContent = `<img src="https://minotar.net/helm/${accName}/32.png" alt="${accName}" style="width: 100%; height: 100%; border-radius: 4px; display: block;" onerror="this.src='https://minotar.net/avatar/char/32.png'">`;
+                        avatarContent = `<img src="https://mc-heads.net/avatar/${accName}/32" alt="${accName}" style="width: 100%; height: 100%; border-radius: 4px; display: block;" onerror="this.src='https://minotar.net/avatar/char/32.png'">`;
                         avatarStyle = `background: transparent; display: flex; align-items: center; justify-content: center;`;
                     } else if (accountAvatar) {
                         avatarStyle = `background-image: url(${accountAvatar}); background-size: cover; background-position: center;`;
@@ -981,6 +1145,15 @@
                 if (data.settings.saveLogs !== undefined && document.getElementById('global-save-logs')) {
                     document.getElementById('global-save-logs').checked = data.settings.saveLogs;
                 }
+                if (data.settings.updateChannel && document.getElementById('global-update-channel')) {
+                    document.getElementById('global-update-channel').value = data.settings.updateChannel;
+                }
+                const isSnowEnabled = data.settings.snowEffect !== undefined ? data.settings.snowEffect : true;
+                const snowCheckbox = document.getElementById('global-snow-effect');
+                if (snowCheckbox) {
+                    snowCheckbox.checked = isSnowEnabled;
+                    toggleSnowEffect(isSnowEnabled);
+                }
             }
         }
 
@@ -1028,6 +1201,22 @@
             }
         });
 
+    document.getElementById('btn-retry-java').addEventListener('click', async () => {
+        const icon = document.getElementById('retry-java-icon');
+        icon.classList.add('fa-spin');
+        
+        // Le pedimos a main.js que vuelva a verificar la presencia de Java
+        const hasJava = await ipcRenderer.invoke('check-java-status');
+        
+        icon.classList.remove('fa-spin');
+        
+        if (hasJava) {
+            document.getElementById('java-popup-overlay').style.display = 'none';
+            document.getElementById('status').innerText = 'Java 21 detectado correctamente. Listo para jugar.';
+        } else {
+            document.getElementById('status').innerText = 'Sigue sin detectarse Java 21. Revisa la instalación.';
+        }
+    });
     </script>
 </body>
 </html>
