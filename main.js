@@ -7,6 +7,7 @@ const msmc = require('msmc');
 const profilesManager = require('./profiles-manager');
 const launcher = new Client();
 
+
 // CONSTANTES DE VERSIÓN DEL LAUNCHER
 const LAUNCHER_VERSION = require('./package.json').version;
 const UPDATE_CHECK_URL = 'https://raw.githubusercontent.com/SuzuKurai/KuraiLauncher/refs/heads/main/launcher-minecraft/version.json';
@@ -101,29 +102,48 @@ let consoleWindow = null;
 
 const ICONO_URL = 'https://raw.githubusercontent.com/SuzuKurai/KuraiLauncher/refs/heads/main/launcher-minecraft/media/KuraiLauncher.png';
 
-const RUTAS_JAVA_25 = [
-    "C:\\Program Files\\Java\\jdk-25\\bin\\javaw.exe",
-    "C:\\Program Files\\Java\\jre-25\\bin\\javaw.exe",
-    "C:\\Program Files\\Eclipse Foundation\\jdk-25-hotspot\\bin\\javaw.exe",
-    "C:\\Program Files\\Eclipse Adoptium\\jdk-25-hotspot\\bin\\javaw.exe",
-    "C:\\Program Files (x86)\\Java\\jdk-25\\bin\\javaw.exe"
+const RUTAS_JAVA_21 = [
+    "C:\\Program Files\\Eclipse Adoptium\\jdk-21.*-hotspot\\bin\\javaw.exe",
+    "C:\\Program Files\\Java\\jdk-21\\bin\\javaw.exe",
+    "C:\\Program Files\\Java\\jre-21\\bin\\javaw.exe",
+    "C:\\Program Files\\Eclipse Foundation\\jdk-21-hotspot\\bin\\javaw.exe",
+    "C:\\Program Files (x86)\\Java\\jdk-21\\bin\\javaw.exe"
 ];
 
-function obtenerRutaJava25() {
-    for (const ruta of RUTAS_JAVA_25) {
-        if (fs.existsSync(ruta)) return ruta;
-    }
-    const baseJavaDir = "C:\\Program Files\\Java";
-    if (fs.existsSync(baseJavaDir)) {
-        try {
-            const carpetas = fs.readdirSync(baseJavaDir);
-            const carpetaJdk25 = carpetas.find(f => f.toLowerCase().includes('jdk-25') || f.toLowerCase().includes('25'));
-            if (carpetaJdk25) {
-                const rutaDetectada = path.join(baseJavaDir, carpetaJdk25, 'bin', 'javaw.exe');
+function obtenerRutaJava21() {
+    // 1. Buscar en la ruta de usuario (donde lo tienes instalado: AppData\Local\Programs)
+    try {
+        const localProgramsDir = path.join(os.homedir(), 'AppData', 'Local', 'Programs', 'Eclipse Adoptium');
+        if (fs.existsSync(localProgramsDir)) {
+            const carpetas = fs.readdirSync(localProgramsDir);
+            const carpetaJdk21 = carpetas.find(f => f.toLowerCase().includes('jdk-21'));
+            if (carpetaJdk21) {
+                const rutaDetectada = path.join(localProgramsDir, carpetaJdk21, 'bin', 'javaw.exe');
                 if (fs.existsSync(rutaDetectada)) return rutaDetectada;
             }
-        } catch (err) {}
+        }
+    } catch (e) {}
+
+    // 2. Buscar en Program Files por si estuviera instalado de forma global
+    const baseJavaDirs = [
+        "C:\\Program Files\\Java",
+        "C:\\Program Files\\Eclipse Adoptium",
+        "C:\\Program Files (x86)\\Java"
+    ];
+
+    for (const baseJavaDir of baseJavaDirs) {
+        if (fs.existsSync(baseJavaDir)) {
+            try {
+                const carpetas = fs.readdirSync(baseJavaDir);
+                const carpetaJdk21 = carpetas.find(f => f.toLowerCase().includes('jdk-21') || f.toLowerCase().includes('21'));
+                if (carpetaJdk21) {
+                    const rutaDetectada = path.join(baseJavaDir, carpetaJdk21, 'bin', 'javaw.exe');
+                    if (fs.existsSync(rutaDetectada)) return rutaDetectada;
+                }
+            } catch (err) {}
+        }
     }
+
     return null;
 }
 
@@ -163,7 +183,7 @@ async function createWindow() {
 }
 
 function verificarJavaAlInicio() {
-    const javaPath = obtenerRutaJava25();
+    const javaPath = obtenerRutaJava21();
     if (!javaPath) {
         mainWindow.webContents.send('java-missing-error');
     }
@@ -273,6 +293,10 @@ ipcMain.handle('get-system-ram', () => {
 ipcMain.handle('get-mojang-versions', async () => { return await fetchMojangVersions(); });
 ipcMain.handle('get-profiles', () => { return getSanitizedData(); });
 ipcMain.handle('get-launcher-version', () => { return LAUNCHER_VERSION; });
+ipcMain.handle('check-java-status', () => {
+        const javaPath = obtenerRutaJava21();
+        return javaPath !== null;
+    });
 ipcMain.on('open-external-console', () => { createConsoleWindow(); });
 ipcMain.on('open-url', (event, url) => { shell.openExternal(url); });
 
@@ -370,6 +394,7 @@ ipcMain.handle('login-microsoft', async () => {
             
             const premiumAccountObj = {
                 username: profile.name,
+                uuid: profile.id,
                 isPremium: true,
                 mclcAuth: mcUser.mclc() 
             };
@@ -486,7 +511,7 @@ ipcMain.on('launch-game', async (event, fullSkinBase64) => {
     const maxRamMb = `${parseRamToMb(globalSettings.maxMemory || "4G")}M`;
     const minRamMb = `${parseRamToMb(globalSettings.minMemory || "2G")}M`;
 
-    let javaPathManual = obtenerRutaJava25() || "javaw"; 
+    let javaPathManual = obtenerRutaJava21() || "javaw";
 
     let customJvmArgs = [];
     if(globalSettings.jvmArgs && globalSettings.jvmArgs.trim() !== "") {
@@ -498,6 +523,16 @@ ipcMain.on('launch-game', async (event, fullSkinBase64) => {
         if (typeof acc === 'object') return acc.username === activeAccountName;
         return acc === activeAccountName;
     });
+
+    const isPremiumAccount = accountData && typeof accountData === 'object' && accountData.isPremium;
+
+    // SÓLO aplicamos CustomSkinLoader si la cuenta es NO-PREMIUM
+    if (!isPremiumAccount) {
+        setupCustomSkinLoader(finalRoot, activeUser, esValido ? base64Data : null);
+        console.log(`[SKIN SYSTEM] Cuenta no-premium detectada. Aplicando CustomSkinLoader para: ${activeUser}`);
+    } else {
+        console.log(`[SKIN SYSTEM] Cuenta premium detectada (${activeUser}). Omitiendo CustomSkinLoader para usar la skin oficial de Mojang/Microsoft.`);
+    }
 
     let authOpts = {};
 
