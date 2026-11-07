@@ -12,18 +12,25 @@ const launcher = new Client();
 const LAUNCHER_VERSION = require('./package.json').version;
 const UPDATE_CHECK_URL = 'https://raw.githubusercontent.com/SuzuKurai/KuraiLauncher/refs/heads/main/launcher-minecraft/version.json';
 
-// --- CONFIGURACIÓN DE DISCORD RICH PRESENCE (ALTA PRIORIDAD SANEADO) ---
+// --- CONFIGURACIÓN DE DISCORD RICH PRESENCE (CON DEPURACIÓN) ---
 const DiscordRPC = require('discord-rpc-revamp');
 
-const discordClientId = 'ad348cc338d2d1bc8705f779ba93b9e7312abc74e3a9ca6402594750fbe15022'; 
-DiscordRPC.register(discordClientId);
+const discordClientId = '1509574161603887124'; 
+try {
+    DiscordRPC.register(discordClientId);
+} catch (e) {
+    console.error("[DISCORD RPC] Error al registrar el Client ID:", e);
+}
 
 const rpc = new DiscordRPC.Client({ transport: 'ipc' });
 let rpcConnected = false;
 let startTimestamp = null;
 
 function updateDiscordPresence(details, state, partySize = 0, partyMax = 0) {
-    if (!rpcConnected || !rpc) return;
+    if (!rpcConnected || !rpc) {
+        console.log("[DISCORD RPC] No se pudo actualizar el estado: RPC no conectado.");
+        return;
+    }
 
     const presence = {
         details: details,
@@ -39,11 +46,13 @@ function updateDiscordPresence(details, state, partySize = 0, partyMax = 0) {
         presence.partyMax = partyMax;
     }
 
-    rpc.setActivity(presence).catch(err => console.error("Error actualizando RPC:", err));
+    rpc.setActivity(presence).catch(err => console.error("[DISCORD RPC] Error actualizando actividad:", err));
 }
 
 function startRpcConnection() {
     if (rpcConnected) return;
+
+    console.log("[DISCORD RPC] Intentando conectar con la aplicación de Discord...");
 
     try {
         const loginMethod = rpc.login || rpc.connect;
@@ -52,19 +61,21 @@ function startRpcConnection() {
             loginMethod.call(rpc, { clientId: discordClientId })
                 .then(() => {
                     rpcConnected = true;
-                    startTimestamp = new Date();
-                    console.log('¡Discord Rich Presence activado con éxito!');
-                    updateDiscordPresence('En el menú principal', 'Eligiendo versión para jugar');
+                    startTimestamp = Date.now();
+                    console.log('¡Discord Rich Presence activado y conectado con éxito!');
+                    updateDiscordPresence('En el menú principal', '');
                 })
                 .catch((err) => {
                     rpcConnected = false;
-                    setTimeout(startRpcConnection, 15000); // Reintentar si Discord está cerrado
+                    console.warn("[DISCORD RPC] Discord no está abierto o rechazó la conexión. Reintentando en 15s...", err.message || err);
+                    setTimeout(startRpcConnection, 15000); // Reintentar
                 });
         } else {
-            console.error("No se pudo mapear el método de conexión del cliente de Discord.");
+            console.error("[DISCORD RPC] Error crítico: No se encontró el método de inicio de sesión en discord-rpc-revamp.");
         }
     } catch (e) {
         rpcConnected = false;
+        console.error("[DISCORD RPC] Excepción capturada al intentar conectar:", e);
         setTimeout(startRpcConnection, 15000);
     }
 }
@@ -111,20 +122,20 @@ const RUTAS_JAVA_21 = [
 ];
 
 function obtenerRutaJava21() {
-    // 1. Buscar en la ruta de usuario (donde lo tienes instalado: AppData\Local\Programs)
+    // 1. Buscar en la ruta de usuario (AppData\Local\Programs\Eclipse Adoptium) para JDK 25 o JDK 21
     try {
         const localProgramsDir = path.join(os.homedir(), 'AppData', 'Local', 'Programs', 'Eclipse Adoptium');
         if (fs.existsSync(localProgramsDir)) {
             const carpetas = fs.readdirSync(localProgramsDir);
-            const carpetaJdk21 = carpetas.find(f => f.toLowerCase().includes('jdk-21'));
-            if (carpetaJdk21) {
-                const rutaDetectada = path.join(localProgramsDir, carpetaJdk21, 'bin', 'javaw.exe');
+            const carpetaJdk = carpetas.find(f => f.toLowerCase().includes('jdk-25') || f.toLowerCase().includes('jdk-21') || f.toLowerCase().includes('25.') || f.toLowerCase().includes('21.'));
+            if (carpetaJdk) {
+                const rutaDetectada = path.join(localProgramsDir, carpetaJdk, 'bin', 'javaw.exe');
                 if (fs.existsSync(rutaDetectada)) return rutaDetectada;
             }
         }
     } catch (e) {}
 
-    // 2. Buscar en Program Files por si estuviera instalado de forma global
+    // 2. Buscar en Program Files de forma global
     const baseJavaDirs = [
         "C:\\Program Files\\Java",
         "C:\\Program Files\\Eclipse Adoptium",
@@ -135,9 +146,9 @@ function obtenerRutaJava21() {
         if (fs.existsSync(baseJavaDir)) {
             try {
                 const carpetas = fs.readdirSync(baseJavaDir);
-                const carpetaJdk21 = carpetas.find(f => f.toLowerCase().includes('jdk-21') || f.toLowerCase().includes('21'));
-                if (carpetaJdk21) {
-                    const rutaDetectada = path.join(baseJavaDir, carpetaJdk21, 'bin', 'javaw.exe');
+                const carpetaJdk = carpetas.find(f => f.toLowerCase().includes('jdk-25') || f.toLowerCase().includes('jdk-21') || f.toLowerCase().includes('25') || f.toLowerCase().includes('21'));
+                if (carpetaJdk) {
+                    const rutaDetectada = path.join(baseJavaDir, carpetaJdk, 'bin', 'javaw.exe');
                     if (fs.existsSync(rutaDetectada)) return rutaDetectada;
                 }
             } catch (err) {}
@@ -348,11 +359,34 @@ ipcMain.on('delete-account', (event, username) => {
     mainWindow.webContents.send('data-updated', getSanitizedData());
 });
 
+function injectVanillaSkin(minecraftRoot, versionId, base64Data) {
+    if (!base64Data) return;
+    try {
+        // Las texturas base de entidad en las versiones modernas suelen estar en los assets o se pueden forzar.
+        // Una forma muy limpia en Vanilla sin romper hashes es colocar un archivo de skin local 
+        // o parchear la textura predeterminada de los assets.
+        const assetsDir = path.join(minecraftRoot, 'assets');
+        // O si prefieres usar un enfoque directo para texturas de entidad:
+        console.log(`[SKIN SYSTEM] Preparando skin personalizada para modo Vanilla...`);
+        
+        // Guardamos la skin subida en una ruta fija que tu launcher pueda inyectar
+        const customSkinPath = path.join(minecraftRoot, '.KuraiLauncher', 'skins', 'current_custom.png');
+        const dir = path.dirname(customSkinPath);
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        
+        fs.writeFileSync(customSkinPath, Buffer.from(base64Data, 'base64'));
+        console.log(`[SKIN SYSTEM] Skin personalizada guardada en: ${customSkinPath}`);
+    } catch (error) {
+        console.error("[SKIN SYSTEM] Error al inyectar skin en vanilla:", error);
+    }
+}
+
 function setupCustomSkinLoader(minecraftRoot, username, base64Data) {
     try {
         const configDirRoot = path.join(minecraftRoot, 'CustomSkinLoader');
         const configDirModern = path.join(minecraftRoot, 'config', 'CustomSkinLoader');
         
+        // Configuración estándar para que CustomSkinLoader lea las skins locales de .KuraiLauncher
         const configContent = JSON.stringify({
             version: 14,
             loadlist: [
@@ -367,6 +401,7 @@ function setupCustomSkinLoader(minecraftRoot, username, base64Data) {
         fs.writeFileSync(path.join(configDirRoot, 'CustomSkinLoader.json'), configContent, 'utf8');
         fs.writeFileSync(path.join(configDirModern, 'CustomSkinLoader.json'), configContent, 'utf8');
 
+        // Ruta donde el loader buscará la skin del usuario offline
         const skinsDir = path.join(minecraftRoot, '.KuraiLauncher', 'skins');
         if (!fs.existsSync(skinsDir)) fs.mkdirSync(skinsDir, { recursive: true });
 
@@ -374,9 +409,12 @@ function setupCustomSkinLoader(minecraftRoot, username, base64Data) {
 
         if (base64Data) {
             fs.writeFileSync(targetSkinPath, Buffer.from(base64Data, 'base64'));
-            console.log(`[SKIN SYSTEM] Skin local asociada con éxito para el usuario: ${username}`);
+            console.log(`[SKIN SYSTEM] Skin local guardada con éxito para el usuario no-premium: ${username} en ${targetSkinPath}`);
         } else {
-            if (fs.existsSync(targetSkinPath)) fs.unlinkSync(targetSkinPath);
+            // Si no se subió una nueva en este inicio pero ya existía, la respetamos
+            if (!fs.existsSync(targetSkinPath)) {
+                console.log(`[SKIN SYSTEM] No hay skin personalizada subida para ${username}.`);
+            }
         }
     } catch (error) {
         console.error("[SKIN SYSTEM] Error gestionando Custom Skin Loader:", error);
@@ -473,7 +511,7 @@ ipcMain.on('launch-game', async (event, fullSkinBase64) => {
     const activeUser = typeof data.selectedAccount === 'object' ? data.selectedAccount.username : data.selectedAccount || "KuraiUser";
     
     // CAMBIO AQUÍ: Sincronizar estado de Discord al iniciar preparativos
-    startTimestamp = new Date();
+    startTimestamp = Date.now();
     updateDiscordPresence(`Preparando Minecraft`, `Cuenta: ${activeUser}`);
 
     mainWindow.webContents.send('status-msg', `Iniciando Minecraft versión ${currentProfile.version || "Desconocida"}...`);
@@ -540,13 +578,22 @@ ipcMain.on('launch-game', async (event, fullSkinBase64) => {
         authOpts = accountData.mclcAuth;
         console.log(`[LAUNCHER] Iniciando en modo PREMIUM como: ${activeAccountName}`);
     } else {
+        // Generar un UUID offline estándar tipo Mojang (OfflinePlayer:Nombre)
+        const crypto = require('crypto');
+        const hash = crypto.createHash('md5').update(`OfflinePlayer:${activeUser}`).digest('hex');
+        const offlineUuid = `${hash.substring(0,8)}-${hash.substring(8,12)}-4${hash.substring(13,16)}-a${hash.substring(17,20)}-${hash.substring(20,32)}`;
+
         authOpts = {
-            access_token: "00000000000000000000000000000000", client_token: "00000000000000000000000000000000",
-            accessToken: "00000000000000000000000000000000", clientToken: "00000000000000000000000000000000",
-            uuid: "00000000-0000-0000-0000-000000000000", name: activeUser, user_properties: "{}",
-            meta: { type: "mojang", demo: false }
+            access_token: "0",
+            client_token: "0",
+            accessToken: "0",
+            clientToken: "0",
+            uuid: offlineUuid,
+            name: activeUser,
+            user_properties: {}, // <--- DEBE SER UN OBJETO VACÍO, NO UN STRING "{}"
+            meta: { type: "legacy", demo: false } // <--- Usar "legacy" en vez de "mojang" para evitar comprobaciones de red
         };
-        console.log(`[LAUNCHER] Iniciando en modo NO-PREMIUM como: ${activeUser}`);
+        console.log(`[LAUNCHER] Iniciando en modo NO-PREMIUM como: ${activeUser} (UUID: ${offlineUuid})`);
     }
 
     let opts = {
@@ -586,8 +633,8 @@ ipcMain.on('launch-game', async (event, fullSkinBase64) => {
         if(mainWindow) mainWindow.webContents.send('status-msg', `Error al lanzar: ${e.message || e}`);
         
         // Si el juego da error antes de abrir, regresamos el RPC al menú
-        startTimestamp = new Date();
-        updateDiscordPresence('En el menú principal', 'Planeando la siguiente partida');
+        startTimestamp = Date.now();
+        updateDiscordPresence('En el menú principal', '');
     });
     
     launcher.on('progress', (e) => { if(mainWindow) mainWindow.webContents.send('progress', e); });
@@ -596,8 +643,8 @@ ipcMain.on('launch-game', async (event, fullSkinBase64) => {
         const behavior = globalSettings.launcherBehavior || "hide";
         
         // CAMBIO AQUÍ: Actualizar presencia al entrar oficialmente al juego
-        startTimestamp = new Date();
-        updateDiscordPresence('Jugando a Minecraft', `Versión: ${cleanVersion} 🚀`);
+        startTimestamp = Date.now();
+        updateDiscordPresence('Jugando a Minecraft ${cleanVersion}', `Jugador: ${activeUser}`);
 
         if (behavior === "hide" && mainWindow) {
             mainWindow.minimize();
