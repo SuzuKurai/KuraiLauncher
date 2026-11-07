@@ -509,16 +509,29 @@
     </div>
 
     <div id="java-popup-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center;">
-        <div style="background: #16161e; border: 2px solid #ff4a4a; padding: 35px; border-radius: 16px; width: 480px; text-align: center; color: #ffffff; box-shadow: 0px 15px 40px rgba(0,0,0,0.6);">
+        <div style="background: #16161e; border: 2px solid #ff4a4a; padding: 35px; border-radius: 16px; width: 500px; text-align: center; color: #ffffff; box-shadow: 0px 15px 40px rgba(0,0,0,0.6);">
             <div style="font-size: 44px; margin-bottom: 15px;">⚠️</div>
-            <h2 style="margin: 0 0 12px 0; font-size: 24px; color: #ff4a4a; font-weight: 800; letter-spacing: 0.5px;">Falta Java 25 en el Equipo</h2>
-            <p style="font-size: 14px; color: #b3b3b3; line-height: 1.6; margin-bottom: 28px;">
-                No hemos detectado una instalación de <strong>Java 25 (JDK 25)</strong> en tu sistema. Las versiones modernas de Minecraft requieren este componente para arrancar correctamente. Por favor, instálalo usando los siguientes enlaces oficiales.
+            <h2 style="margin: 0 0 12px 0; font-size: 24px; color: #ff4a4a; font-weight: 800; letter-spacing: 0.5px;">Falta Java 21 en el Equipo</h2>
+            <p style="font-size: 14px; color: #b3b3b3; line-height: 1.6; margin-bottom: 25px;">
+                No hemos detectado una instalación de <strong>Java 21 (JDK 21)</strong> en tu sistema. Las versiones modernas de Minecraft requieren este componente. Puedes descargarlo sin registros desde alguna de estas opciones:
             </p>
-            <div style="display: flex; gap: 12px; justify-content: center;">
-                <a href="https://www.oracle.com/java/technologies/downloads/#java21" target="_blank" style="background: #2b2b3d; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 13px; border: 1px solid rgba(255,255,255,0.05); transition: 0.2s;">JDK 21</a>
-                <a href="https://www.oracle.com/java/technologies/downloads/#java25" target="_blank" style="background: #ff4a4a; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 13px;">Descargar JDK 25 (Recomendado)</a>
-                <button onclick="document.getElementById('java-popup-overlay').style.display = 'none'" style="background: #1a1a24; color: #b3b3b3; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px;">Omitir / Cerrar</button>
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+                <a href="https://adoptium.net/temurin/releases/?version=21" target="_blank" style="background: #5865f2; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 13px; transition: 0.2s; display: block;">
+                    Descargar Eclipse Adoptium Java 21 (Recomendado / Sin registro)
+                </a>
+                <a href="https://www.oracle.com/java/technologies/downloads/#java21" target="_blank" style="background: #2b2b3d; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 12px; border: 1px solid rgba(255,255,255,0.05); transition: 0.2s; display: block;">
+                    Descargar desde Oracle (Requiere cuenta)
+                </a>
+            </div>
+
+            <!-- BOTONES DE ACCIÓN (REINTENTAR Y OMITIR) -->
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button id="btn-retry-java" style="background: #34d399; color: #111116; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-sync-alt" id="retry-java-icon"></i> Reintentar
+                </button>
+                <button onclick="document.getElementById('java-popup-overlay').style.display = 'none'" style="background: #1a1a24; color: #b3b3b3; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px;">
+                    Omitir / Cerrar
+                </button>
             </div>
         </div>
     </div>
@@ -980,10 +993,14 @@
             }
         }
 
+            // Identificador para el avatar grande de la cuenta activa (Usa el UUID si existe, si no el nombre)
+            const activeAccountObj = data.accounts ? data.accounts.find(acc => (typeof acc === 'object' ? acc.username : acc) === activeUsernameStr) : null;
+            const activeIdentifier = (activeAccountObj && activeAccountObj.uuid) ? activeAccountObj.uuid : activeUsernameStr;
+
             // Renderizado del avatar principal (Grande)
             if (activeAvatarEl) {
                 if (activeIsPremium) {
-                    activeAvatarEl.innerHTML = `<img src="https://minotar.net/helm/${activeUsernameStr}/64.png" style="width: 100%; height: 100%; border-radius: 6px;" onerror="this.src='https://minotar.net/avatar/char/64.png'">`;
+                    activeAvatarEl.innerHTML = `<img src="https://mc-heads.net/avatar/${activeUsernameStr}/64" style="width: 100%; height: 100%; border-radius: 6px; display: block;" onerror="this.src='https://minotar.net/avatar/char/64.png'">`;
                     activeAvatarEl.style.background = "transparent";
                     activeAvatarEl.style.backgroundImage = "none";
                 } else if (localStorage.getItem(`avatar_${activeUsernameStr}`)) {
@@ -1013,16 +1030,20 @@
                 data.accounts.forEach(acc => {
                     const isAccountObj = (typeof acc === 'object');
                     const accName = isAccountObj ? acc.username : acc;
+                    const accUuid = isAccountObj ? acc.uuid : null; // <--- OBTENEMOS EL UUID AQUÍ
                     const isPremium = isAccountObj ? acc.isPremium : false;
                     const isSelected = (accName === activeUsernameStr);
                     const accountAvatar = localStorage.getItem('avatar_' + accName);
+                    
+                    // Identificador para skins (Usa el UUID si lo tiene guardado, si no el nombre)
+                    const skinIdentifier = accUuid ? accUuid : accName;
                     
                     let avatarStyle = '';
                     let avatarContent = '';
 
                     // Configurar diseño de los mini avatares de la lista
                     if (isPremium) {
-                        avatarContent = `<img src="https://minotar.net/helm/${accName}/32.png" alt="${accName}" style="width: 100%; height: 100%; border-radius: 4px; display: block;" onerror="this.src='https://minotar.net/avatar/char/32.png'">`;
+                        avatarContent = `<img src="https://mc-heads.net/avatar/${accName}/32" alt="${accName}" style="width: 100%; height: 100%; border-radius: 4px; display: block;" onerror="this.src='https://minotar.net/avatar/char/32.png'">`;
                         avatarStyle = `background: transparent; display: flex; align-items: center; justify-content: center;`;
                     } else if (accountAvatar) {
                         avatarStyle = `background-image: url(${accountAvatar}); background-size: cover; background-position: center;`;
@@ -1180,6 +1201,22 @@
             }
         });
 
+    document.getElementById('btn-retry-java').addEventListener('click', async () => {
+        const icon = document.getElementById('retry-java-icon');
+        icon.classList.add('fa-spin');
+        
+        // Le pedimos a main.js que vuelva a verificar la presencia de Java
+        const hasJava = await ipcRenderer.invoke('check-java-status');
+        
+        icon.classList.remove('fa-spin');
+        
+        if (hasJava) {
+            document.getElementById('java-popup-overlay').style.display = 'none';
+            document.getElementById('status').innerText = 'Java 21 detectado correctamente. Listo para jugar.';
+        } else {
+            document.getElementById('status').innerText = 'Sigue sin detectarse Java 21. Revisa la instalación.';
+        }
+    });
     </script>
 </body>
 </html>
