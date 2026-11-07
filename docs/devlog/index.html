@@ -24,6 +24,48 @@
     </header>
 
     <main class="changelog-container">
+        <section class="version-block" data-version="v1.0.0">
+            <div class="version-sidebar">
+                <div class="version-tag">v1.0.0</div>
+                <time class="version-date">7 de Noviembre, 2026</time>
+                <span class="badge badge-major">Lanzamiento</span>
+                    <button class="btn-download-action" data-target-url="https://github.com/SuzuKurai/KuraiLauncher/releases/tag/v1.0.0">
+                    <i class="fa-solid fa-download"></i> <span>Detectando...</span>
+                </button>
+            </div>
+            <div class="version-content">
+                <h2>☃️ ¡Feliz Navidad!</h2>
+                <p class="version-summary">Dado que ya se ha implementado todo lo que creo esencial para el launcher, considero que ya es posible lanzar una versión estable. Es cierto que todavía quedan muchas cosas que mejorar, pero se harán con el tiempo, creo que es mejor tener una versión estable por el momento antes que tener una versión inestable y caótica durante tanto tiempo.</p>
+                
+                <ul class="change-list">
+                    <li class="change-item type-add">
+                        <span class="change-icon"><i class="fa-solid fa-plus"></i></span>
+                        <div class="change-text"><strong>Botón para reintentar en pop-up</strong> Se agregó un botón al pop-up que proporciona una verificación para comprar Java 21/25</div>
+                    </li>
+                    <li class="change-item type-add">
+                        <span class="change-icon"><i class="fa-solid fa-plus"></i></span>
+                        <div class="change-text"><strong>Alternativa para descargar Java 21</strong> Dado que Oracle no permite descargar Java 21 sin iniciar sesión, se habilitó el servicio de descarga alternativa de Eclipse Adoptium Java, siendo Javacompletamente compatible con Java, pero libre de descargar sin inicio de sesión.</div>
+                    </li>
+                    <li class="change-item type-add">
+                        <span class="change-icon"><i class="fa-solid fa-plus"></i></span>
+                        <div class="change-text"><strong>Nieve en el launcher</strong> Al ser una actualización navideña, el launcher tendrá por defecto nieve en la interfaz. Esta opción viene por defecto en el launcher</div>
+                    </li>
+                    <li class="change-item type-change">
+                        <span class="change-icon"><i class="fa-solid fa-wrench"></i></span>
+                        <div class="change-text"><strong>Ajustes en el pop-up de Java</strong> Ahora se revisa en más directorios si Java se encuentra instalado.</div>
+                    </li>
+                    <li class="change-item type-change">
+                        <span class="change-icon"><i class="fa-solid fa-wrench"></i></span>
+                        <div class="change-text"><strong>Perfiles arreglados</strong> Los perfiles no mostraban la skin del jugador premium, es por esto que ahora se usa NameMC para mostrar las caras del jugador. Sin embargo, las skins no premium no funcionan todavía.</div>
+                    </li>
+                    <li class="change-item type-bug">
+                        <span class="change-icon"><i class="fa-solid fa-bug"></i></span>
+                        <div class="change-text"><strong>Discord Rich Presence corregido</strong> Se ha corregido un error que había con el Rich Presence de Discord, ahora se mostrará de forma correcta.</div>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
         <section class="version-block" data-version="v1.0.0-beta.3">
             <div class="version-sidebar">
                 <div class="version-tag">v1.0.0-beta.3</div>
@@ -35,8 +77,7 @@
             </div>
             <div class="version-content">
                 <h2>Autobuild integrado</h2>
-                <p class="version-summary">Esta versión de prueba se centra en desarrollar la opción de builds automáticas por push,
-                    la idea es tener un constructor automático por cada versión.</p>
+                <p class="version-summary">Esta versión de prueba se centra en desarrollar la opción de builds automáticas por push, la idea es tener un constructor automático por cada versión.</p>
                 
                 <ul class="change-list">
                     <li class="change-item type-add">
@@ -49,7 +90,6 @@
                     </li>
                 </ul>
             </div>
-
         </section>
 
         <section class="version-block" data-version="v1.0.0-beta.2">
@@ -84,7 +124,6 @@
                     </li>
                 </ul>
             </div>
-
         </section>
 
         <section class="version-block" data-version="1.0.0-beta.1">
