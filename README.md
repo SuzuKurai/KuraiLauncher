@@ -7,5 +7,21 @@
 *   **Privacidad por Defecto:** No recopilamos tus datos de uso. Todo se procesa de manera local.
 *   **Código abierto:** Revisa en cualquier momento el código que estás ejecutando entrando en este repositorio.
 
+## 🛠️ Cómo compilar tu propia Build
+
+Si quieres clonar el repositorio y generar el ejecutable de tu propio launcher en tu ordenador, sigue estos pasos:
+
+### Prerrequisitos
+Asegúrate de tener instalado en tu sistema:
+- **Node.js** (versión LTS recomendada, incluye npm).
+- **Git**.
+
+### 1. Clonar el repositorio
+Abre tu terminal y clona el proyecto:
+```bash
+git clone https://github.com/SuzuKurai/KuraiLauncher.git
+cd tu-repositorio
+```
+
 ## 📞 Contacto y Soporte
 Si tienes dudas, sugerencias o encontraste algún error, puedes contactarnos a través de nuestro [Discord](https://discord.gg/vzRnW6SWMv)
