@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kurai Launcher - FAQ</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- BARRA DE NAVEGACIÓN -->
+    <nav class="navbar" style="background-color: var(--bg-sidebar); border-bottom: 1px solid #2a2a38; padding: 12px 30px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000;">
+        <div class="nav-brand" style="display: flex; align-items: center; font-weight: 800; font-size: 1.5rem; letter-spacing: 1px; color: var(--text-main);">
+            <img src="https://raw.githubusercontent.com/SuzuKurai/KuraiLauncher/refs/heads/main/media/KuraiLauncher.png" alt="Kurai Launcher" style="height: 1.6em; width: auto; margin-right: 12px; vertical-align: middle;">
+            KURAI LAUNCHER
+        </div>
+        <div class="nav-links" style="display: flex; gap: 20px; align-items: center;">
+            <a href="../" style="color: var(--text-muted); text-decoration: none; font-size: 0.95rem; font-weight: 600;"><i class="fa-solid fa-house"></i> Inicio</a>
+            <a href="../download/" style="color: var(--text-muted); text-decoration: none; font-size: 0.95rem; font-weight: 600;"><i class="fa-solid fa-download"></i> Descargas</a>
+            <a href="../devlog/" style="color: var(--text-muted); text-decoration: none; font-size: 0.95rem; font-weight: 600; transition: color 0.2s;"><i class="fa-solid fa-code-branch"></i> Devlog</a>
+            <a href="../faq" style="color: var(--text-main); text-decoration: none; font-size: 0.95rem; font-weight: 600; transition: color 0.2s;"><i class="fa-solid fa-circle-question"></i> FAQ</a>
+            <a href="../privacy" style="color: var(--text-muted); text-decoration: none; font-size: 0.95rem; font-weight: 600; transition: color 0.2s;"><i class="fa-solid fa-shield-alt"></i> Política de Privacidad</a>
+            <a href="https://github.com/SuzuKurai/KuraiLauncher" target="_blank" style="color: var(--text-muted); text-decoration: none; font-size: 0.95rem; font-weight: 600; transition: color 0.2s;"><i class="fa-brands fa-github"></i> GitHub</a>
+        </div>
+    </nav>
+
+<!-- Encabezado Principal -->
+<header class="changelog-header">
+    <div class="header-container">
+        <h1>KURAI LAUNCHER</h1>
+        <p>Preguntas Frecuentes (FAQ) y solución a dudas comunes.</p>
+    </div>
+</header>
+
+<main class="changelog-container">
+    
+    <div class="back-home-container">
+        <a href="../" class="back-home-btn">
+            <i class="fa-solid fa-arrow-left"></i> Volver al Inicio
+        </a>
+    </div>
+
+    <section class="privacy-content">
+        <h1>Preguntas Frecuentes (FAQ)</h1>
+        <p>Encuentra respuestas rápidas a los problemas más comunes al descargar, instalar y utilizar Kurai Launcher.</p>
+        
+        <h2>1. Descarga y Seguridad</h2>
+        <h3>¿Por qué mi antivirus (Windows Defender) detecta Kurai Launcher como virus o troyano?</h3>
+        <p>Esto ocurre debido a un <strong>falso positivo</strong> muy común en aplicaciones desarrolladas con Electron y Node.js. Como el instalador empaqueta scripts y herramientas de automatización sin un certificado comercial de pago, los análisis heurísticos de los antivirus a veces lo confunden con software sospechoso. Puedes estar tranquilo: el código es 100% seguro y de código abierto en nuestro repositorio oficial de GitHub.</p>
+
+        <h3>¿Cómo puedo evitar que el navegador o Windows bloqueen la descarga?</h3>
+        <p>Si Windows SmartScreen bloquea el archivo, haz clic en <strong>"Más información"</strong> y luego en <strong>"Ejecutar de todas formas"</strong>. A medida que más usuarios descarguen la aplicación de forma legítima, la reputación del archivo aumentará y estas advertencias desaparecerán automáticamente.</p>
+
+        <h2>2. Instalación y Uso</h2>
+        <h3>¿Necesito tener Java instalado en mi ordenador?</h3>
+        <p><strong>Si.</strong> Kurai Launcher te pedirá que tengas Java instalado para poder iniciar de forma correcta. Ofrece diferentes opciones de instalación.</p>
+
+        <h3>¿Cómo puedo solucionar problemas de rendimiento o tirones (lag) en el juego?</h3>
+        <p>Dentro de la configuración de instancias de Kurai Launcher, puedes ajustar la cantidad de memoria RAM asignada. Te recomendamos asignar al menos 2 GB o 4 GB dependiendo de los mods que utilices, asegurándote de no sobrepasar la memoria total disponible en tu PC.</p>
+
+        <h2>3. Cuentas</h2>
+        <h3>¿Es seguro iniciar sesión en mi cuenta de Microsoft / Minecraft?</h3>
+        <p>Sí. El launcher utiliza flujos de autenticación oficiales y seguros a través de librerías dedicadas (msmc y xboxlive-auth). Kurai Launcher nunca almacena tus contraseñas personales; únicamente maneja los tokens de sesión oficiales proporcionados por los servidores de autenticación de Microsoft.</p>
+
+        <h2>4. Soporte y Contacto</h2>
+        <h3>¿Qué hago si sigo experimentando un error o un fallo técnico?</h3>
+        <p>Si encuentras un error inesperado, puedes ponerte en contacto con nosotros o reportarlo directamente en nuestra comunidad:</p>
+        <ul>
+            <li><strong>Correo de soporte:</strong> contacto.suzukurai@gmail.com</li>
+            <li><strong>Repositorio de GitHub:</strong> Abre un Issue en nuestro proyecto oficial si detectas un error de programación.</li>
+        </ul>
+    </section>
+
+</main>
+
+<footer class="changelog-footer">
+    <p>&copy; 2026 Kurai Launcher. Desarrollado con tecnología Electron.</p>
+</footer>
+
