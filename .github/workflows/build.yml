@@ -1,8 +1,7 @@
 name: Build and Release KuraiLauncher
 
 on:
-  push:
-    branches: [ "beta", "main" ]
+  workflow_dispatch: # <-- Esto habilita el botón "Run workflow" en la pestaña Actions de GitHub
 
 jobs:
   build:
@@ -54,7 +53,7 @@ jobs:
           name: KuraiLauncher v${{ steps.get_version.outputs.VERSION }}
           generate_release_notes: true
           draft: false
-          prerelease: ${{ github.ref_name == 'beta' }} # Si subes a beta, se marca como Pre-release automáticamente
+          prerelease: false
           files: |
             dist/*.exe
             dist/*.dmg
